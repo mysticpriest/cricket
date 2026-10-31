@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#080d0b">
+
+    <title>Cricket | Operations Workspace</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader" class="loader" role="status" aria-live="polite">
+
+        <div class="ambient a"></div>
+        <div class="ambient b"></div>
+
+        <div class="load-content">
+
+            <div class="mark">
+                <span class="mark-inner">C</span>
+                <span class="orbit"></span>
+            </div>
+
+            <div class="wordmark">
+                cricket<span class="period">.</span>
+            </div>
+
+            <div class="subtitle">
+                OPERATIONS WORKSPACE
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+
+            <div class="loading-row">
+                <span id="status">Initializing workspace</span>
+                <span id="percent">0%</span>
+            </div>
+
+        </div>
+
+        <div class="bottom-note">
+            BUILT FOR BETTER WORKFLOWS
+            <span>•</span>
+            CRICKET v1.0
+        </div>
+
+    </div>
+
+
+    <!-- MAIN APPLICATION -->
+    <main id="app" class="app hidden">
+
+        <!-- HEADER -->
+        <header>
+
+            <div class="brand">
+                <span class="small-mark">C</span>
+                cricket<span class="period">.</span>
+            </div>
+
+            <span class="header-meta">
+                OPERATIONS WORKSPACE
+                <span class="live-dot"></span>
+                SYSTEM READY
+            </span>
+
+        </header>
+
+
+        <!-- WELCOME SECTION -->
+        <section class="hero">
+
+            <div class="eyebrow">
+                YOUR WORKSPACE
+            </div>
+
+            <h1>
+                Welcome to <em>Cricket.</em>
+            </h1>
+
+            <p>
+                Everything your scheduling team needs,
+                organized in one place.
+            </p>
+
+        </section>
+
+
+        <!-- DEPARTMENTS -->
+        <section class="departments">
+
+            <!-- INBOUND -->
+            <button
+                class="department"
+                data-name="Inbound"
+                type="button"
+            >
+
+                <div class="dept-icon">↙</div>
+
+                <div class="dept-type">
+                    PRIMARY WORKFLOW
+                </div>
+
+                <h2>
+                    Inbound
+                    <span>↗</span>
+                </h2>
+
+                <p>
+                    Handle incoming requests, scheduling
+                    inquiries, and patient communication.
+                </p>
+
+                <div class="dept-footer">
+                    ENTER WORKSPACE
+                    <span>→</span>
+                </div>
+
+            </button>
+
+
+            <!-- OUTBOUND -->
+            <button
+                class="department"
+                data-name="Outbound"
+                type="button"
+            >
+
+                <div class="dept-icon">↗</div>
+
+                <div class="dept-type">
+                    PRIMARY WORKFLOW
+                </div>
+
+                <h2>
+                    Outbound
+                    <span>↗</span>
+                </h2>
+
+                <p>
+                    Manage outreach, appointment coordination,
+                    and follow-up activities.
+                </p>
+
+                <div class="dept-footer">
+                    ENTER WORKSPACE
+                    <span>→</span>
+                </div>
+
+            </button>
+
+
+            <!-- CASE MANAGEMENT -->
+            <button
+                class="department secondary"
+                data-name="Case Management"
+                type="button"
+            >
+
+                <div class="dept-icon">▤</div>
+
+                <div class="dept-type">
+                    SUPPORT WORKFLOW
+                </div>
+
+                <h2>
+                    Case Management
+                    <span>↗</span>
+                </h2>
+
+                <p>
+                    Keep supporting case information
+                    and coordination resources together.
+                </p>
+
+                <div class="dept-footer">
+                    ENTER WORKSPACE
+                    <span>→</span>
+                </div>
+
+            </button>
+
+        </section>
+
+
+        <!-- NOTIFICATIONS -->
+        <div
+            id="notice"
+            class="notice"
+            aria-live="polite"
+        ></div>
+
+
+        <!-- FOOTER -->
+        <footer>
+
+            <span>
+                CRICKET © 2026
+            </span>
+
+            <span>
+                WORK SMARTER. STAY CONNECTED.
+            </span>
+
+        </footer>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

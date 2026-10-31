@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta name="theme-color" content="#f7f9fc">
+
+    <title>Cricket | Inbound Workflow</title>
+
+    <link rel="stylesheet" href="inbound.css">
+
+</head>
+
+<body>
+
+    <!-- ==================================
+         APPLICATION HEADER
+    =================================== -->
+
+    <header class="topbar">
+
+        <div class="topbar-left">
+
+            <a href="index.html" class="brand">
+                <span class="brand-icon">C</span>
+
+                <span>
+                    cricket<span class="brand-dot">.</span>
+                </span>
+            </a>
+
+            <span class="header-divider"></span>
+
+            <div class="workspace-name">
+                <span class="workspace-indicator"></span>
+                Inbound
+            </div>
+
+        </div>
+
+        <div class="topbar-right">
+
+            <span class="version">
+                WORKFLOW v1.0
+            </span>
+
+            <a href="index.html" class="home-button">
+                <span>←</span>
+                Dashboard
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- ==================================
+         MAIN WORKSPACE
+    =================================== -->
+
+    <main class="workspace">
+
+        <!-- WORKFLOW TOP BAR -->
+
+        <div class="workflow-top">
+
+            <div class="breadcrumb">
+
+                <a href="index.html">
+                    Workspace
+                </a>
+
+                <span class="breadcrumb-separator">/</span>
+
+                <button
+                    id="breadcrumbInbound"
+                    class="breadcrumb-current"
+                    type="button"
+                >
+                    Inbound
+                </button>
+
+                <span
+                    id="routeBreadcrumb"
+                    class="route-breadcrumb hidden"
+                ></span>
+
+            </div>
+
+            <button
+                id="restartButton"
+                class="restart-button"
+                type="button"
+                hidden
+            >
+                <span>↻</span>
+                Start Over
+            </button>
+
+        </div>
+
+
+        <!-- ==================================
+             ROUTE SELECTION SCREEN
+        =================================== -->
+
+        <section
+            id="selectionScreen"
+            class="selection-screen screen active"
+        >
+
+            <div class="welcome-area">
+
+                <div class="eyebrow">
+                    INBOUND OPERATIONS
+                </div>
+
+                <h1>
+                    What can we help
+                    <span>with today?</span>
+                </h1>
+
+                <p>
+                    Select the type of inquiry to begin
+                    your inbound workflow.
+                </p>
+
+            </div>
+
+
+            <!-- AVAILABLE ROUTES -->
+
+            <div class="routes-heading">
+
+                <div>
+                    <h2>Select an inquiry</h2>
+
+                    <p>
+                        Choose the option that best matches
+                        the caller's request.
+                    </p>
+                </div>
+
+                <div class="route-count">
+                    03 AVAILABLE ROUTES
+                </div>
+
+            </div>
+
+
+            <div class="route-grid">
+
+                <!-- SCHEDULING INQUIRY -->
+
+                <button
+                    class="route-card"
+                    type="button"
+                    data-route="scheduling"
+                >
+
+                    <div class="route-card-top">
+
+                        <div class="route-icon">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="3"
+                                    y="5"
+                                    width="18"
+                                    height="16"
+                                    rx="2"
+                                />
+
+                                <path d="M16 3v4M8 3v4M3 10h18"/>
+                                <path d="M12 14v5M9.5 16.5h5"/>
+                            </svg>
+                        </div>
+
+                        <span class="route-number">
+                            01
+                        </span>
+
+                    </div>
+
+                    <div class="route-content">
+
+                        <h3>Scheduling Inquiry</h3>
+
+                        <p>
+                            Assist callers with scheduling
+                            new appointments and related
+                            scheduling requests.
+                        </p>
+
+                    </div>
+
+                    <div class="route-card-footer">
+
+                        <span>SELECT WORKFLOW</span>
+
+                        <span class="route-arrow">→</span>
+
+                    </div>
+
+                </button>
+
+
+                <!-- APPOINTMENT INQUIRY -->
+
+                <button
+                    class="route-card"
+                    type="button"
+                    data-route="appointment"
+                >
+
+                    <div class="route-card-top">
+
+                        <div class="route-icon">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                />
+
+                                <path d="M12 7v5l3.5 2"/>
+                            </svg>
+                        </div>
+
+                        <span class="route-number">
+                            02
+                        </span>
+
+                    </div>
+
+                    <div class="route-content">
+
+                        <h3>Appointment Inquiry</h3>
+
+                        <p>
+                            Handle questions regarding
+                            existing appointments,
+                            appointment details, and status.
+                        </p>
+
+                    </div>
+
+                    <div class="route-card-footer">
+
+                        <span>SELECT WORKFLOW</span>
+
+                        <span class="route-arrow">→</span>
+
+                    </div>
+
+                </button>
+
+
+                <!-- CLINIC INFORMATION -->
+
+                <button
+                    class="route-card"
+                    type="button"
+                    data-route="clinic"
+                >
+
+                    <div class="route-card-top">
+
+                        <div class="route-icon">
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path
+                                    d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16"
+                                />
+
+                                <path d="M2 21h20"/>
+                                <path d="M9 8h6M12 5v6"/>
+                                <path d="M9 21v-6h6v6"/>
+                            </svg>
+                        </div>
+
+                        <span class="route-number">
+                            03
+                        </span>
+
+                    </div>
+
+                    <div class="route-content">
+
+                        <h3>Clinic Information</h3>
+
+                        <p>
+                            Provide callers with clinic
+                            information, location details,
+                            and general assistance.
+                        </p>
+
+                    </div>
+
+                    <div class="route-card-footer">
+
+                        <span>SELECT WORKFLOW</span>
+
+                        <span class="route-arrow">→</span>
+
+                    </div>
+
+                </button>
+
+            </div>
+
+
+            <!-- WORKFLOW INFORMATION -->
+
+            <div class="workflow-info">
+
+                <div class="info-icon">i</div>
+
+                <div>
+
+                    <strong>
+                        Guided Workflow
+                    </strong>
+
+                    <p>
+                        Each inquiry type will guide you
+                        through the appropriate steps,
+                        decisions, and possible outcomes.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ==================================
+             ACTIVE ROUTE SCREEN
+        =================================== -->
+
+        <section
+            id="routeScreen"
+            class="route-screen screen"
+            hidden
+        >
+
+            <div class="route-screen-header">
+
+                <button
+                    id="backButton"
+                    class="back-button"
+                    type="button"
+                >
+                    <span>←</span>
+                    All Inbound Routes
+                </button>
+
+                <div class="active-route-label">
+                    <span class="active-dot"></span>
+                    INBOUND WORKFLOW
+                </div>
+
+            </div>
+
+
+            <!-- SELECTED ROUTE TITLE -->
+
+            <div class="active-route-intro">
+
+                <div
+                    class="eyebrow"
+                    id="activeRouteCategory"
+                >
+                    INBOUND / WORKFLOW
+                </div>
+
+                <h1 id="activeRouteTitle">
+                    Scheduling Inquiry
+                </h1>
+
+                <p id="activeRouteDescription">
+                    Follow the guided workflow below.
+                </p>
+
+            </div>
+
+
+            <!-- WORKFLOW STEPS GO HERE -->
+
+            <div
+                id="workflowContainer"
+                class="workflow-container"
+            >
+
+                <div class="workflow-placeholder">
+
+                    <div class="placeholder-icon">
+
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M8 4h8"/>
+                            <rect
+                                x="5"
+                                y="3"
+                                width="14"
+                                height="18"
+                                rx="2"
+                            />
+                            <path d="M9 10h6M9 14h6"/>
+                        </svg>
+
+                    </div>
+
+                    <div class="placeholder-label">
+                        WORKFLOW CONFIGURATION
+                    </div>
+
+                    <h2>
+                        Ready for workflow steps
+                    </h2>
+
+                    <p>
+                        This route has been created.
+                        Its questions, decision paths,
+                        and instructions will be added next.
+                    </p>
+
+                    <div class="placeholder-status">
+                        <span class="status-dot"></span>
+                        Awaiting route configuration
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ==================================
+         FOOTER
+    =================================== -->
+
+    <footer class="footer">
+
+        <span>
+            CRICKET © 2026
+        </span>
+
+        <span>
+            INBOUND OPERATIONS
+        </span>
+
+    </footer>
+
+
+    <script src="inbound.js"></script>
+
+</body>
+</html>

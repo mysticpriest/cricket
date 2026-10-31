@@ -1,0 +1,683 @@
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ==============================
+   CRICKET - LIGHT THEME
+   WHITE / BLUE / BLACK
+============================== */
+
+:root {
+    color-scheme: light;
+
+    --bg: #f7f9fc;
+    --panel: #ffffff;
+    --panel-hover: #f4f8ff;
+
+    --line: #e2e8f0;
+
+    --blue: #2563eb;
+    --blue-light: #3b82f6;
+    --blue-dark: #1d4ed8;
+    --blue-soft: #eff6ff;
+
+    --white: #ffffff;
+    --black: #111827;
+
+    --text: #111827;
+    --muted: #64748b;
+
+    --shadow: 0 4px 24px rgba(15, 23, 42, 0.04);
+}
+
+/* ==============================
+   GLOBAL
+============================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+button {
+    font: inherit;
+}
+
+/* ==============================
+   LOADING SCREEN
+============================== */
+
+.loader {
+    position: fixed;
+    inset: 0;
+
+    display: grid;
+    place-items: center;
+
+    background: #f8fafc;
+
+    z-index: 10;
+    overflow: hidden;
+
+    transition:
+        opacity 0.7s ease,
+        visibility 0.7s ease;
+}
+
+.loader.done {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* ==============================
+   BACKGROUND EFFECTS
+============================== */
+
+.ambient {
+    position: absolute;
+
+    width: 650px;
+    height: 650px;
+
+    border-radius: 50%;
+    filter: blur(110px);
+
+    opacity: 0.15;
+    pointer-events: none;
+}
+
+.ambient.a {
+    background: #93c5fd;
+
+    left: -320px;
+    top: -350px;
+}
+
+.ambient.b {
+    background: #bfdbfe;
+
+    right: -330px;
+    bottom: -390px;
+}
+
+/* ==============================
+   LOADING CONTENT
+============================== */
+
+.load-content {
+    width: min(330px, 80vw);
+    text-align: center;
+    z-index: 1;
+}
+
+/* ==============================
+   CRICKET LOGO
+============================== */
+
+.mark {
+    width: 90px;
+    height: 90px;
+
+    margin: 0 auto 28px;
+
+    border: 1px solid #dbeafe;
+    border-radius: 25px;
+
+    display: grid;
+    place-items: center;
+
+    position: relative;
+
+    background: linear-gradient(
+        145deg,
+        #ffffff,
+        #eff6ff
+    );
+
+    box-shadow:
+        0 10px 35px rgba(37, 99, 235, 0.12),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.mark-inner {
+    font: 700 55px 'Space Grotesk';
+
+    color: var(--blue);
+    transform: translateY(-2px);
+}
+
+.orbit {
+    position: absolute;
+    inset: -9px;
+
+    border: 1px solid rgba(37, 99, 235, 0.17);
+    border-radius: 31px;
+
+    animation: breathe 2.2s ease-in-out infinite;
+}
+
+/* ==============================
+   WORDMARK
+============================== */
+
+.wordmark {
+    font: 700 54px 'Space Grotesk';
+
+    letter-spacing: -3px;
+    line-height: 1;
+
+    color: var(--black);
+}
+
+.period {
+    color: var(--blue);
+}
+
+.subtitle {
+    font-size: 10px;
+    letter-spacing: 3.2px;
+
+    color: #64748b;
+    margin-top: 15px;
+}
+
+/* ==============================
+   LOADING PROGRESS
+============================== */
+
+.progress-track {
+    height: 4px;
+
+    background: #e2e8f0;
+    border-radius: 8px;
+
+    overflow: hidden;
+    margin-top: 55px;
+}
+
+.progress-fill {
+    width: 0;
+    height: 100%;
+
+    background: linear-gradient(
+        90deg,
+        #2563eb,
+        #60a5fa
+    );
+
+    border-radius: 8px;
+
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.25);
+    transition: width 0.12s linear;
+}
+
+.loading-row {
+    display: flex;
+    justify-content: space-between;
+
+    color: #64748b;
+    font-size: 11px;
+
+    margin-top: 13px;
+    letter-spacing: 0.5px;
+}
+
+/* ==============================
+   BOTTOM NOTE
+============================== */
+
+.bottom-note {
+    position: absolute;
+    bottom: 30px;
+
+    font-size: 10px;
+    color: #94a3b8;
+
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.bottom-note span {
+    margin: 0 12px;
+    color: var(--blue);
+}
+
+/* ==============================
+   ANIMATIONS
+============================== */
+
+@keyframes breathe {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.4;
+    }
+}
+
+/* ==============================
+   APPLICATION
+============================== */
+
+.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.app {
+    max-width: 1200px;
+
+    margin: auto;
+    padding: 0 36px;
+
+    transition:
+        opacity 0.8s ease,
+        visibility 0.8s ease;
+}
+
+.app.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ==============================
+   HEADER
+============================== */
+
+header {
+    height: 95px;
+
+    border-bottom: 1px solid var(--line);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand {
+    font: 700 25px 'Space Grotesk';
+
+    letter-spacing: -1px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    color: var(--black);
+}
+
+.small-mark {
+    display: inline-grid;
+    place-items: center;
+
+    width: 34px;
+    height: 34px;
+
+    border-radius: 10px;
+
+    background: var(--blue);
+    color: var(--white);
+
+    font-size: 23px;
+
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.header-meta {
+    display: flex;
+    align-items: center;
+
+    font-size: 10px;
+    letter-spacing: 1.6px;
+
+    color: var(--muted);
+}
+
+.live-dot {
+    display: inline-block;
+
+    width: 7px;
+    height: 7px;
+
+    background: var(--blue);
+    border-radius: 50%;
+
+    margin: 0 7px 0 20px;
+
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* ==============================
+   HERO
+============================== */
+
+.hero {
+    padding: 85px 0 52px;
+}
+
+.eyebrow {
+    font-size: 11px;
+    letter-spacing: 2.6px;
+
+    color: var(--blue);
+    font-weight: 700;
+}
+
+.hero h1 {
+    font: 600 clamp(
+        38px,
+        5vw,
+        62px
+    ) 'Space Grotesk';
+
+    letter-spacing: -2.8px;
+
+    margin: 17px 0 12px;
+
+    color: var(--black);
+}
+
+.hero h1 em {
+    font-style: normal;
+    color: var(--blue);
+}
+
+.hero p {
+    color: var(--muted);
+
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+/* ==============================
+   DEPARTMENT GRID
+============================== */
+
+.departments {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+/* ==============================
+   DEPARTMENT CARDS
+============================== */
+
+.department {
+    background: var(--panel);
+
+    border: 1px solid var(--line);
+    border-radius: 16px;
+
+    text-align: left;
+    color: var(--text);
+
+    padding: 30px;
+    min-height: 285px;
+
+    cursor: pointer;
+
+    box-shadow: var(--shadow);
+
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        background 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.department:hover {
+    transform: translateY(-5px);
+
+    border-color: #93c5fd;
+    background: #ffffff;
+
+    box-shadow:
+        0 15px 40px rgba(15, 23, 42, 0.07),
+        0 0 0 1px rgba(37, 99, 235, 0.04);
+}
+
+.department:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 4px;
+}
+
+/* ==============================
+   DEPARTMENT ICONS
+============================== */
+
+.dept-icon {
+    display: grid;
+    place-items: center;
+
+    width: 45px;
+    height: 45px;
+
+    border-radius: 12px;
+
+    background: var(--blue-soft);
+    color: var(--blue);
+
+    font-size: 24px;
+    margin-bottom: 25px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.department:hover .dept-icon {
+    background: var(--blue);
+    color: var(--white);
+
+    transform: scale(1.05);
+}
+
+/* ==============================
+   DEPARTMENT TEXT
+============================== */
+
+.dept-type {
+    font-size: 10px;
+    letter-spacing: 1.7px;
+
+    color: var(--blue);
+    font-weight: 700;
+}
+
+.department h2 {
+    font: 600 29px 'Space Grotesk';
+
+    margin: 9px 0;
+    color: var(--black);
+}
+
+.department h2 span {
+    float: right;
+
+    color: #94a3b8;
+    font-size: 18px;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.department:hover h2 span {
+    color: var(--blue);
+    transform: translate(2px, -2px);
+}
+
+.department p {
+    font-size: 13px;
+    line-height: 1.7;
+
+    color: var(--muted);
+    max-width: 380px;
+}
+
+/* ==============================
+   DEPARTMENT FOOTER
+============================== */
+
+.dept-footer {
+    border-top: 1px solid var(--line);
+
+    padding-top: 18px;
+    margin-top: 25px;
+
+    font-size: 10px;
+    letter-spacing: 1.5px;
+
+    font-weight: 700;
+    color: var(--blue);
+}
+
+.dept-footer span {
+    float: right;
+    font-size: 17px;
+}
+
+/* ==============================
+   CASE MANAGEMENT CARD
+============================== */
+
+.department.secondary {
+    grid-column: 1 / -1;
+
+    min-height: 220px;
+
+    background: #ffffff;
+}
+
+.department.secondary .dept-icon {
+    margin-bottom: 15px;
+}
+
+.department.secondary p {
+    max-width: 650px;
+}
+
+/* ==============================
+   NOTIFICATIONS
+============================== */
+
+.notice {
+    color: var(--blue);
+
+    font-size: 13px;
+
+    margin-top: 20px;
+    min-height: 20px;
+}
+
+/* ==============================
+   FOOTER
+============================== */
+
+footer {
+    display: flex;
+    justify-content: space-between;
+
+    border-top: 1px solid var(--line);
+
+    margin-top: 70px;
+    padding: 26px 0;
+
+    color: #94a3b8;
+
+    font-size: 10px;
+    letter-spacing: 1.5px;
+}
+
+/* ==============================
+   RESPONSIVE DESIGN
+============================== */
+
+@media (max-width: 700px) {
+
+    .app {
+        padding: 0 20px;
+    }
+
+    header {
+        height: 80px;
+    }
+
+    .header-meta {
+        font-size: 8px;
+        letter-spacing: 0;
+    }
+
+    .hero {
+        padding: 65px 0 36px;
+    }
+
+    .hero h1 {
+        letter-spacing: -1.7px;
+    }
+
+    .departments {
+        grid-template-columns: 1fr;
+    }
+
+    .department {
+        padding: 25px;
+        min-height: auto;
+    }
+
+    .department.secondary {
+        grid-column: auto;
+    }
+
+    footer span:last-child {
+        display: none;
+    }
+
+    .bottom-note {
+        font-size: 8px;
+        letter-spacing: 1px;
+    }
+
+}
+
+/* ==============================
+   REDUCED MOTION
+============================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    .orbit {
+        animation: none;
+    }
+
+    .department,
+    .loader,
+    .app,
+    .progress-fill,
+    .dept-icon,
+    .department h2 span {
+        transition-duration: 0.01ms;
+    }
+
+}
