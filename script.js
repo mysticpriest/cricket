@@ -95,6 +95,10 @@ function openDepartment(departmentName) {
                 "Outbound workspace is coming soon.";
             break;
 
+        case "Quality Control":
+            window.location.href = "qc.html";
+            break;
+
         case "Case Management":
             notice.textContent =
                 "Case Management workspace is coming soon.";
