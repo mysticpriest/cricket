@@ -346,11 +346,11 @@ function serveStatic(req, res, pathname) {
   try { decoded = decodeURIComponent(pathname); } catch (_) { return send(res, 400, { error: 'Invalid path' }); }
   if (decoded === '/') decoded = '/index.html';
   if (decoded.includes('\\') || decoded.includes('\0') || decoded.split('/').includes('..')) return send(res, 403, { error: 'Forbidden' });
-  if (denyWorkspaceAccess(req, res, decoded)) return;
   const filename = path.resolve(ROOT, '.' + decoded);
   if (!filename.startsWith(ROOT + path.sep) || filename.startsWith(path.join(ROOT, 'server') + path.sep) || filename.startsWith(path.join(ROOT, 'tests') + path.sep) || filename.startsWith(path.join(ROOT, 'data') + path.sep) || path.basename(filename).startsWith('.')) return send(res, 404, { error: 'Not found' });
   const type = FILE_TYPES[path.extname(filename)];
   if (!type) return send(res, 404, { error: 'Not found' });
+  if (denyWorkspaceAccess(req, res, decoded)) return;
   fs.readFile(filename, (error, content) => {
     if (error) return send(res, 404, { error: 'Not found' });
     res.writeHead(200, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; frame-ancestors 'none'" });
