@@ -345,7 +345,7 @@ function serveStatic(req, res, pathname) {
   let decoded;
   try { decoded = decodeURIComponent(pathname); } catch (_) { return send(res, 400, { error: 'Invalid path' }); }
   if (decoded === '/') decoded = '/index.html';
-  if (decoded.includes('\\') || decoded.includes('\0') || decoded.split('/').includes('..')) return send(res, 403, { error: 'Forbidden' });
+  if (decoded.includes('\\') || decoded.includes('\0') || decoded !== path.posix.normalize(decoded) || decoded.split('/').includes('..')) return send(res, 403, { error: 'Forbidden' });
   const filename = path.resolve(ROOT, '.' + decoded);
   if (!filename.startsWith(ROOT + path.sep) || filename.startsWith(path.join(ROOT, 'server') + path.sep) || filename.startsWith(path.join(ROOT, 'tests') + path.sep) || filename.startsWith(path.join(ROOT, 'data') + path.sep) || path.basename(filename).startsWith('.')) return send(res, 404, { error: 'Not found' });
   const type = FILE_TYPES[path.extname(filename)];

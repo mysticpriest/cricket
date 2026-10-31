@@ -51,6 +51,10 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     for(const page of ['/index.html','/inbound.html','/outbound.html','/cases.html']){
       assert.equal(await staticStatus(page,agentCookie),200,'agent should open '+page);
     }
+    // Percent-encoded path separators must not bypass static role checks.
+    for (const page of ['/%2Fqc.html', '/private%2F..%2Fqc.html']) {
+      assert.equal(await staticStatus(page,agentCookie),403,'noncanonical URL must be blocked');
+    }
     for(const page of ['/qc.html','/staff.html','/qc.js']){
       assert.equal(await staticStatus(page,agentCookie),403,'agent must be blocked from '+page);
     }
