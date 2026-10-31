@@ -44,13 +44,16 @@ function renderUser(user) {
   const settings = roleDescriptions[user.role];
   if (!settings) throw new Error('Unknown employee role.');
   const email = user.email || 'Employee';
-  const name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+  // Never guess a person's real name from their email username.
+  const name = typeof user.displayName === 'string' && user.displayName.trim()
+    ? user.displayName.trim()
+    : (user.role === 'admin' ? 'Administrator' : 'there');
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
   setText('#greeting', greeting + ', ' + name.split(' ')[0] + '.');
   setText('#accountEmail', email);
   setText('#accountRole', settings.title);
-  setText('#avatar', email[0].toUpperCase());
+  setText('#avatar', name === 'there' ? 'C' : name[0].toUpperCase());
   setText('#roleIntro', settings.intro);
   setText('#dateStamp', new Intl.DateTimeFormat(undefined, { weekday:'short', month:'short', day:'numeric' }).format(new Date()));
   const primary = document.querySelector('#primaryAction');

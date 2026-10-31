@@ -113,9 +113,39 @@
              ROUTE SELECTION SCREEN
         =================================== -->
 
+        <!-- A call must be registered before any guided route is available. -->
+        <section id="callIntakeScreen" class="call-intake-screen screen active">
+            <div class="intake-heading">
+                <span class="eyebrow">INBOUND / NEW CALL</span>
+                <h1>Start with the <span>call number.</span></h1>
+                <p>Paste the incoming call's phone number to create its record before selecting a workflow. The number will appear in the QC case details when the call is documented.</p>
+            </div>
+            <div class="intake-card">
+                <div class="intake-card-header">
+                    <span class="intake-step">01 / CALL IDENTIFICATION</span>
+                    <span class="intake-tag">REQUIRED</span>
+                </div>
+                <form id="callIntakeForm" novalidate>
+                    <label class="intake-label" for="callPhoneInput">Caller phone number</label>
+                    <div class="intake-input-wrap">
+                        <span aria-hidden="true">☎</span>
+                        <input id="callPhoneInput" type="tel" inputmode="tel" maxlength="40" autocomplete="off" required placeholder="e.g. (404) 555-0148" aria-describedby="callPhoneHelp callPhoneMessage">
+                    </div>
+                    <p id="callPhoneHelp" class="intake-tip">Use a test number for demonstrations. Enter 7–15 digits; international + prefixes, spaces, brackets, and hyphens are supported.</p>
+                    <p id="callPhoneMessage" class="intake-error" role="status" aria-live="polite"></p>
+                    <button id="beginCallButton" class="intake-submit" type="submit" disabled>Continue to inquiry routes <span aria-hidden="true">→</span></button>
+                </form>
+            </div>
+            <div class="intake-footnote">
+                <span class="intake-footnote-icon">✓</span>
+                <div><strong>One number per call</strong><p>The number stays attached when you handle another inquiry during the same call. Starting a new call asks for a new number.</p></div>
+            </div>
+        </section>
+
         <section
             id="selectionScreen"
-            class="selection-screen screen active"
+            class="selection-screen screen"
+            hidden
         >
 
             <div class="welcome-area">
@@ -136,6 +166,12 @@
 
             </div>
 
+
+            <div class="active-call-banner" aria-live="polite">
+                <span class="active-call-icon">☎</span>
+                <div><strong>Active inbound call</strong><span id="activeCallPhone">—</span></div>
+                <button id="changeCallPhone" type="button">Start new call →</button>
+            </div>
 
             <!-- AVAILABLE ROUTES -->
 

@@ -969,6 +969,7 @@ const WORKFLOWS = {
 ============================================================ */
 
 const cricketState = {
+    callPhone: null,
     department: null,
     step: null,
     history: [],
@@ -997,6 +998,14 @@ let shiftLog = loadShiftLog();
 ============================================================ */
 
 const $ = id => document.getElementById(id);
+
+const callIntakeScreen = $("callIntakeScreen");
+const callIntakeForm = $("callIntakeForm");
+const callPhoneInput = $("callPhoneInput");
+const beginCallButton = $("beginCallButton");
+const callPhoneMessage = $("callPhoneMessage");
+const activeCallPhone = $("activeCallPhone");
+const changeCallPhone = $("changeCallPhone");
 
 const selectionScreen = $("selectionScreen");
 const routeScreen = $("routeScreen");
@@ -1157,6 +1166,21 @@ function createCopyButton(
     return button;
 }
 
+/* Accept familiar phone formatting; keep phone numbers out of public Case IDs.
+   Use fictional numbers only until the hosting/security review is complete. */
+function normalizeCallPhone(input) {
+    if (typeof input !== "string" || input.length > 40) return null;
+    const raw = input.trim();
+    if (!/^\+?[\d\s().-]+$/.test(raw)) return null;
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length < 7 || digits.length > 15) return null;
+    return (raw.startsWith("+") ? "+" : "") + digits;
+}
+
+function showIntakeMessage(message) {
+    if (callPhoneMessage) callPhoneMessage.textContent = message;
+}
+
 /* ============================================================
    14. CALL LIFECYCLE
 
@@ -1168,6 +1192,7 @@ function createCopyButton(
 function resetCallState() {
     cancelAnimation();
 
+    cricketState.callPhone = null;
     cricketState.department = null;
     cricketState.step = null;
     cricketState.history = [];
@@ -1213,6 +1238,12 @@ function startDepartment(department, sameCall = false) {
     const selected = config[department];
 
     if (!selected) return;
+    if (!normalizeCallPhone(cricketState.callPhone)) {
+        newCall();
+        return;
+    }
+
+    const existingCallPhone = cricketState.callPhone;
 
     const preserveVerification =
         sameCall && cricketState.verified;
@@ -1222,15 +1253,10 @@ function startDepartment(department, sameCall = false) {
 
     resetCallState();
 
-    if (sameCall) {
-        cricketState.verified = preserveVerification;
-
-        cricketState.callStartedAt =
-            existingCallStartedAt || new Date().toISOString();
-    } else {
-        cricketState.callStartedAt =
-            new Date().toISOString();
-    }
+    // Opening another route must not erase the active call number.
+    cricketState.callPhone = existingCallPhone;
+    cricketState.verified = sameCall ? preserveVerification : false;
+    cricketState.callStartedAt = existingCallStartedAt || new Date().toISOString();
 
     cricketState.department = department;
 
@@ -1279,7 +1305,18 @@ function newInquirySameCall() {
 }
 
 function newCall() {
-    returnToSelection();
+    resetCallState();
+
+    routeBreadcrumb.textContent = "";
+    routeBreadcrumb.classList.add("hidden");
+    restartButton.hidden = true;
+    callIntakeForm.reset();
+    beginCallButton.disabled = true;
+    showIntakeMessage("");
+
+    showScreen("intake");
+    updateActiveControls();
+    scrollToTop();
 }
 
 /* ============================================================
@@ -1288,6 +1325,7 @@ function newCall() {
 
 function showScreen(name) {
     const screens = {
+        intake: callIntakeScreen,
         selection: selectionScreen,
         route: routeScreen
     };
@@ -1459,7 +1497,11 @@ function goBack() {
 }
 
 function returnToSelection() {
+    const activePhone = cricketState.callPhone;
+    const activeStarted = cricketState.callStartedAt;
     resetCallState();
+    cricketState.callPhone = activePhone;
+    cricketState.callStartedAt = activeStarted;
 
     routeBreadcrumb.textContent = "";
 
@@ -1469,25 +1511,20 @@ function returnToSelection() {
 
     restartButton.hidden = true;
 
-    showScreen("selection");
+    if (normalizeCallPhone(cricketState.callPhone)) {
+        activeCallPhone.textContent = cricketState.callPhone;
+        showScreen("selection");
+    } else {
+        showScreen("intake");
+    }
 
     updateActiveControls();
     scrollToTop();
 }
 
 function restartWorkflow() {
-    const department =
-        cricketState.department;
-
-    if (!department) {
-        returnToSelection();
-        return;
-    }
-
-    /* Start Over means a new call,
-       including fresh verification. */
-
-    startDepartment(department, false);
+    // A fresh call must have its own number, timestamp and verification.
+    newCall();
 }
 
 /* ============================================================
@@ -2503,6 +2540,8 @@ function createDocumentationEditor(note, status) {
                     inquiry: cricketState.originalInquiry || "General Inquiry",
                     route: cricketState.step || "unresolved",
                     outcome: status === "pending" ? "pending" : "resolved",
+                    callPhone: cricketState.callPhone,
+                    callStartedAt: cricketState.callStartedAt,
                     note: finalNote,
                     events: cricketState.events.slice(0, 50)
                 };
@@ -3987,6 +4026,34 @@ function installSmartStyles() {
 ============================================================ */
 
 function initializeCricketInbound() {
+    // No route is accessible until a valid call number has been entered.
+    function validateIntake() {
+        const normalized = normalizeCallPhone(callPhoneInput.value);
+        beginCallButton.disabled = !normalized;
+        showIntakeMessage(callPhoneInput.value.trim() && !normalized
+            ? "Enter a valid phone number containing 7–15 digits."
+            : "");
+        return normalized;
+    }
+
+    callPhoneInput.addEventListener("input", validateIntake);
+    callIntakeForm.addEventListener("submit", event => {
+        event.preventDefault();
+        const phone = validateIntake();
+        if (!phone) {
+            callPhoneInput.focus();
+            return;
+        }
+        resetCallState();
+        cricketState.callPhone = phone;
+        cricketState.callStartedAt = new Date().toISOString();
+        activeCallPhone.textContent = phone;
+        showScreen("selection");
+        scrollToTop();
+    });
+    changeCallPhone.addEventListener("click", newCall);
+    newCall();
+
     /* Department cards */
 
     routeCards.forEach(card => {

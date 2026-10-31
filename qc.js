@@ -73,7 +73,11 @@ async function loadCases() {
       const card = button('', 'qc-case' + (state.selected === item.caseId ? ' selected' : ''), () => selectCase(item.caseId));
       const top = node('div', 'qc-case-line');
       top.append(node('span', 'qc-case-id', item.caseId), badge(item.reviewStatus));
-      card.append(top, node('strong', 'qc-case-route', item.inquiry), node('div', 'qc-case-meta', `${item.department} · ${item.agent} · ${displayDate(item.createdAt)}`));
+      card.append(top,
+        node('strong', 'qc-case-route', item.inquiry),
+        node('div', 'qc-case-meta', `${item.department} · ${item.agentName || item.agent} · ${displayDate(item.createdAt)}`),
+        node('div', 'qc-case-meta', 'Caller: ' + (item.callPhone || 'Not captured (older case)'))
+      );
       els.caseList.append(card);
     }
     els.prevPage.disabled = state.offset === 0;
@@ -110,12 +114,23 @@ function renderCase(data) {
   const h = node('div'); h.append(node('div', 'qc-eyebrow', 'CASE REVIEW'), node('h2', '', item.caseId));
   head.append(h, badge(item.reviewStatus));
   const meta = node('div', 'qc-detail-meta');
-  meta.append(fact('Agent', item.agent), fact('Department', item.department), fact('Inquiry', item.inquiry), fact('Outcome', item.outcome), fact('Created', displayDate(item.createdAt)), fact('Route', item.route));
+  meta.append(
+    fact('Agent', item.agentName || item.agent),
+    fact('Caller phone', item.callPhone || 'Not captured (older case)'),
+    fact('Call started', item.callStartedAt ? displayDate(item.callStartedAt) : 'Not captured'),
+    fact('Department', item.department),
+    fact('Inquiry', item.inquiry),
+    fact('Outcome', item.outcome),
+    fact('Case created', displayDate(item.createdAt)),
+    fact('Route', item.route)
+  );
   const note = node('div', 'qc-note', item.note);
   const timeline = node('ul', 'qc-timeline');
   for (const entry of item.events) timeline.append(node('li', '', entry));
   if (!item.events.length) timeline.append(node('li', '', 'No route events recorded.'));
-  els.caseDetail.append(head, meta, title('Agent documentation'), note, title('Confirmed workflow actions'), timeline);
+  els.caseDetail.append(head, meta);
+  els.caseDetail.append(node('p', 'qc-muted', 'Recording lookup: use the caller number and call start time in your approved call-recording platform. Cricket does not store or play audio recordings.'));
+  els.caseDetail.append(title('Agent documentation'), note, title('Confirmed workflow actions'), timeline);
   if (data.reviews.length) {
     els.caseDetail.append(title('Previous QC evaluations'));
     for (const review of data.reviews) {

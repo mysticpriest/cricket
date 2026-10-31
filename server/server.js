@@ -80,6 +80,19 @@ CREATE INDEX IF NOT EXISTS idx_reviews_case ON reviews(case_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_case ON audit_events(case_id, id);
 `);
 
+// Additive migrations preserve existing employees, local sessions, and case history.
+for (const [table, column, definition] of [
+  ['users', 'display_name', "TEXT NOT NULL DEFAULT ''"],
+  ['cases', 'call_phone', "TEXT"],
+  ['cases', 'call_started_at', "TEXT"]
+]) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!columns.some(entry => entry.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+db.exec('CREATE INDEX IF NOT EXISTS idx_cases_phone ON cases(call_phone);');
+
 function now() { return new Date().toISOString(); }
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -96,6 +109,19 @@ function verifyPassword(password, stored) {
 function validatePassword(p) { return typeof p === 'string' && p.length >= 12 && p.length <= 128; }
 function validateEmail(v) { return typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 254; }
 function clean(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : ''; }
+function employeeName(v) {
+  if (typeof v !== 'string' || v.trim().length > 80) return null;
+  const name = v.trim().replace(/\s+/g, ' ');
+  return name.length >= 2 && /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u.test(name) ? name : null;
+}
+function normalizeCallPhone(input) {
+  if (typeof input !== 'string' || input.length > 40) return null;
+  const raw = input.trim();
+  if (!/^\+?[\d\s().-]+$/.test(raw)) return null;
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) return null;
+  return (raw.startsWith('+') ? '+' : '') + digits;
+}
 function err(status, message) { const error = new Error(message); error.status = status; throw error; }
 function send(res, status, data, extra = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra });
@@ -129,7 +155,7 @@ function clearCookie() { return `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; 
 function currentUser(req) {
   const token = parseCookie(req);
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
-  const row = db.prepare(`SELECT u.id, u.email, u.role FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?`).get(tokenHash(token), Date.now());
+  const row = db.prepare(`SELECT u.id, u.email, u.role, u.display_name AS displayName FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?`).get(tokenHash(token), Date.now());
   return row || null;
 }
 function requireRole(user, ...allowed) {
@@ -155,7 +181,13 @@ function rateCheck(email) {
   loginAttempts.set(key, existing);
 }
 function mapCase(row) {
-  return { caseId: row.case_id, department: row.department, inquiry: row.inquiry, route: row.route, outcome: row.outcome, note: row.note, events: JSON.parse(row.events_json), reviewStatus: row.review_status, createdAt: row.created_at, agent: row.agent_email };
+  return {
+    caseId: row.case_id, department: row.department, inquiry: row.inquiry, route: row.route,
+    outcome: row.outcome, note: row.note, events: JSON.parse(row.events_json),
+    callPhone: row.call_phone || null, callStartedAt: row.call_started_at || null,
+    reviewStatus: row.review_status, createdAt: row.created_at,
+    agent: row.agent_email, agentName: row.agent_name || null
+  };
 }
 function listQuery(url, user) {
   const search = clean(url.searchParams.get('search'), 100);
@@ -166,9 +198,18 @@ function listQuery(url, user) {
   const params = [];
   if (user.role === 'agent') { query += ' AND c.agent_id=?'; params.push(user.id); }
   if (status && ['pending_review','approved','coaching','flagged'].includes(status)) { query += ' AND c.review_status=?'; params.push(status); }
-  if (search) { query += ' AND (c.case_id LIKE ? OR c.inquiry LIKE ? OR u.email LIKE ?)'; params.push(...Array(3).fill('%' + search + '%')); }
+  if (search) {
+    const phoneSearch = normalizeCallPhone(search);
+    query += ' AND (c.case_id LIKE ? OR c.inquiry LIKE ? OR u.email LIKE ? OR u.display_name LIKE ?';
+    params.push(...Array(4).fill('%' + search + '%'));
+    if (phoneSearch) {
+      query += ' OR c.call_phone LIKE ?';
+      params.push('%' + phoneSearch.replace(/\D/g, '') + '%');
+    }
+    query += ')';
+  }
   const total = db.prepare('SELECT count(*) AS n ' + query).get(...params).n;
-  const rows = db.prepare(`SELECT c.*, u.email AS agent_email ${query} ORDER BY c.id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+  const rows = db.prepare(`SELECT c.*, u.email AS agent_email, u.display_name AS agent_name ${query} ORDER BY c.id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
   return { total, cases: rows.map(mapCase) };
 }
 function processAPI(req, res, url) {
@@ -203,7 +244,7 @@ function processAPI(req, res, url) {
     db.prepare('DELETE FROM sessions WHERE expires_at<?').run(Date.now());
     const token = sessionToken();
     db.prepare('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES(?,?,?)').run(tokenHash(token), found.id, Date.now() + SESSION_AGE_MS);
-    return send(res, 200, { user: { id: found.id, email: found.email, role: found.role } }, { 'Set-Cookie': setCookie(token) });
+    return send(res, 200, { user: { id: found.id, email: found.email, role: found.role, displayName: found.display_name || '' } }, { 'Set-Cookie': setCookie(token) });
   });
   if (p === '/api/auth/logout' && req.method === 'POST') {
     const token = parseCookie(req); if (token) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(token));
@@ -211,15 +252,36 @@ function processAPI(req, res, url) {
   }
   if (p === '/api/users' && req.method === 'GET') {
     requireRole(user, 'admin');
-    return send(res, 200, { users: db.prepare('SELECT id,email,role,created_at FROM users ORDER BY id').all() });
+    return send(res, 200, { users: db.prepare('SELECT id,email,display_name AS displayName,role,created_at FROM users ORDER BY id').all() });
   }
   if (p === '/api/users' && req.method === 'POST') {
     requireRole(user, 'admin');
     return readBody(req).then(data => {
-      const email = clean(data.email, 254).toLowerCase(); const password = data.password; const role = data.role;
-      if (!validateEmail(email) || !validatePassword(password) || !ROLES.has(role)) err(400, 'Enter a valid email, role, and password of at least 12 characters');
-      try { const result = db.prepare('INSERT INTO users(email,role,password_hash,created_at) VALUES(?,?,?,?)').run(email, role, hashPassword(password), now()); return send(res, 201, { user: { id: Number(result.lastInsertRowid), email, role } }); }
+      const email = clean(data.email, 254).toLowerCase();
+      const password = data.password;
+      const role = data.role;
+      const displayName = employeeName(data.displayName);
+      if (!validateEmail(email) || !validatePassword(password) || !ROLES.has(role) || !displayName) {
+        err(400, 'Enter an employee name, valid email, role, and password of at least 12 characters');
+      }
+      try {
+        const result = db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at) VALUES(?,?,?,?,?)')
+          .run(email, displayName, role, hashPassword(password), now());
+        return send(res, 201, { user: { id: Number(result.lastInsertRowid), email, displayName, role } });
+      }
       catch (e) { if (e.code === 'ERR_SQLITE_ERROR') err(409, 'Account already exists'); throw e; }
+    });
+  }
+  const employeeMatch = p.match(/^\/api\/users\/(\d+)$/);
+  if (employeeMatch && req.method === 'PATCH') {
+    requireRole(user, 'admin');
+    return readBody(req).then(data => {
+      const displayName = employeeName(data.displayName);
+      if (!displayName) err(400, 'Enter a valid employee name (2–80 characters)');
+      const targetId = Number(employeeMatch[1]);
+      const result = db.prepare('UPDATE users SET display_name=? WHERE id=?').run(displayName, targetId);
+      if (!result.changes) err(404, 'Employee not found');
+      return send(res, 200, { user: { id: targetId, displayName } });
     });
   }
   if (p === '/api/cases' && req.method === 'POST') {
@@ -232,6 +294,12 @@ function processAPI(req, res, url) {
       const outcome = data.outcome;
       const events = data.events;
       const requestId = clean(data.requestId, 64);
+      const callPhone = normalizeCallPhone(data.callPhone);
+      if (!callPhone) err(400, 'Enter a valid call phone number before submitting a case');
+      const rawStarted = data.callStartedAt;
+      const callStartedAt = typeof rawStarted === 'string' && rawStarted.length <= 40 && !Number.isNaN(Date.parse(rawStarted))
+        ? new Date(rawStarted).toISOString()
+        : now();
       if (requestId && !/^[a-f0-9-]{36}$/i.test(requestId)) err(400, 'Invalid submission request ID');
       if (!department || !inquiry || !route || note.length < 15 || !OUTCOMES.has(outcome) || !Array.isArray(events) || events.length > 50 || !events.every(x => typeof x === 'string' && x.length <= 250)) err(400, 'Invalid case data');
       const created = now();
@@ -242,7 +310,7 @@ function processAPI(req, res, url) {
       // SQLite autoincrement ID guarantees uniqueness across concurrent requests.
       db.exec('BEGIN IMMEDIATE');
       try {
-        const result = db.prepare('INSERT INTO cases(agent_id,request_id,department,inquiry,route,outcome,note,events_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)').run(user.id, requestId || null, department, inquiry, route, outcome, note, JSON.stringify(events), created);
+        const result = db.prepare('INSERT INTO cases(agent_id,request_id,department,inquiry,route,outcome,note,events_json,call_phone,call_started_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(user.id, requestId || null, department, inquiry, route, outcome, note, JSON.stringify(events), callPhone, callStartedAt, created);
         const id = Number(result.lastInsertRowid);
         const caseId = `CR-${created.slice(0, 10).replaceAll('-', '')}-${String(id).padStart(6, '0')}`;
         db.prepare('UPDATE cases SET case_id=? WHERE id=?').run(caseId, id);
@@ -259,7 +327,7 @@ function processAPI(req, res, url) {
   const match = p.match(/^\/api\/cases\/(CR-\d{8}-\d{6,})$/);
   if (match && req.method === 'GET') {
     requireRole(user, 'agent', 'qc', 'admin');
-    const row = db.prepare('SELECT c.*, u.email AS agent_email FROM cases c JOIN users u ON u.id=c.agent_id WHERE c.case_id=?').get(match[1]);
+    const row = db.prepare('SELECT c.*, u.email AS agent_email, u.display_name AS agent_name FROM cases c JOIN users u ON u.id=c.agent_id WHERE c.case_id=?').get(match[1]);
     if (!row) err(404, 'Case not found');
     if (user.role === 'agent' && row.agent_id !== user.id) err(403, 'Insufficient permission');
     const reviews = db.prepare('SELECT r.id,r.decision,r.criteria_json,r.score,r.feedback,r.created_at,u.email AS reviewer FROM reviews r JOIN users u ON u.id=r.reviewer_id WHERE r.case_id=? ORDER BY r.id DESC').all(row.id).map(x => ({ ...x, criteria: JSON.parse(x.criteria_json), criteria_json: undefined }));
@@ -362,8 +430,9 @@ const initialCount = db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
 if (!initialCount) {
   const email = String(process.env.CRICKET_ADMIN_EMAIL || '').trim().toLowerCase();
   const password = process.env.CRICKET_ADMIN_PASSWORD;
+  const adminName = employeeName(process.env.CRICKET_ADMIN_NAME) || 'Administrator';
   if (!validateEmail(email) || !validatePassword(password)) throw Error('First run requires CRICKET_ADMIN_EMAIL and CRICKET_ADMIN_PASSWORD (12+ characters). See README.md.');
-  db.prepare('INSERT INTO users(email,role,password_hash,created_at) VALUES(?,?,?,?)').run(email, 'admin', hashPassword(password), now());
+  db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at) VALUES(?,?,?,?,?)').run(email, adminName, 'admin', hashPassword(password), now());
   process.stdout.write('Cricket QC administrator initialized.\n');
 }
 

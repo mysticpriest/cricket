@@ -14,9 +14,9 @@ Cricket is a local-development workflow application with an employee sign-in, ro
    ```
 4. Subsequent restarts generally only need `npm.cmd start`, because the administrator is already stored in your local SQLite database.
 5. Open `http://127.0.0.1:3000`. Sign in; there is no anonymous dashboard.
-6. As administrator, use **Staff accounts** to create fictional Agent and QC Reviewer accounts for demonstrating role separation.
-7. Sign in as Agent → open Inbound → choose Clinic Information → provide the main phone number → complete documentation → copy the generated **Case ID**. Then open **My cases** to show the stored record.
-8. Sign out, sign in as QC Reviewer → open **Quality Control** → search by Case ID → score and submit the review.
+6. As administrator, use **Staff accounts** to create fictional Agent and QC Reviewer accounts, with each employee's **name**, email, role, and password. Existing accounts have an **Edit name** action; update older accounts instead of recreating them.
+7. Sign in as Agent → open Inbound → enter a **fictional phone number** such as `(404) 555-0148` before choosing any route → choose Clinic Information → provide the main phone number → complete documentation → copy the generated **Case ID**. The case stores the caller phone and call-start timestamp separately from its opaque Case ID.
+8. Sign out, sign in as QC Reviewer → open **Quality Control** → search by Case ID or call number → inspect the number and start time to locate the recording in your **separate, approved** call recording system → score and submit the review. Cricket itself does not contain any audio or a call-recording integration.
 9. Sign in as Administrator to show both divisions and employee management.
 
 ### Employee access matrix
@@ -26,6 +26,16 @@ Cricket is a local-development workflow application with an employee sign-in, ro
 | Agent | Yes | Preview | Own cases | No | No |
 | QC Reviewer | No | No | No | Yes | No |
 | Administrator | Yes | Preview | All cases | Yes | Yes |
+
+The backend **enforces** these permissions for page resources and APIs. An Inbound call now starts with a required caller number (7–15 digits with optional formatting) before the route grid is displayed. On **Start New Call** the form is reset; on **Another Inquiry — Same Call** the number stays attached.
+
+### Existing local databases
+
+The server runs additive SQLite migrations on startup, preserving existing users, sessions, and documented cases. Legacy accounts do not automatically receive a guessed name from their email address; an administrator can use **Staff accounts → Edit name** to set their real display name. Previously documented cases correctly display “Not captured (older case)” because they did not have caller numbers.
+
+### Recording matching and privacy
+
+A Case ID remains a unique non-identifying reference; the caller number is stored as **separate case metadata** (with a recorded call start time) and can be searched by QC. A phone number is **not a unique recording identifier** and cannot by itself open or retrieve a recording. If integrated with a recording vendor in the future, use the vendor's immutable recording ID and access-controlled link. Until then, match a fictional number + timestamp manually inside an approved system. Do not put real caller numbers, PHI, or recordings into this demo.
 
 The backend **enforces** these permissions for page resources and APIs. The dashboard's locked cards are informational; removing a link is not an authorization mechanism. Do not use GitHub Pages to host a sensitive app: GitHub Pages cannot enforce these server-side roles.
 

@@ -1,14 +1,15 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f7f9fc"><title>Cricket | Staff Accounts</title><link rel="stylesheet" href="qc.css"><script src="staff.js" defer></script></head>
 <body>
-<header class="qc-topbar"><a class="qc-brand" href="index.html"><span class="qc-mark">C</span> cricket<span class="qc-dot">.</span></a><span class="qc-header-section">/ Staff Accounts</span><span class="qc-spacer"></span><a class="qc-btn qc-btn-light" href="qc.html">← QC Workspace</a></header>
+<header class="qc-topbar"><a class="qc-brand" href="index.html"><span class="qc-mark">C</span> cricket<span class="qc-dot">.</span></a><span class="qc-header-section">/ Staff Accounts</span><span class="qc-spacer"></span><a class="qc-btn qc-btn-light" href="index.html">← Dashboard</a></header>
 <main class="qc-page" style="max-width:950px">
-<div class="qc-eyebrow">ADMINISTRATION</div><h1 style="font:600 38px 'Space Grotesk',sans-serif;letter-spacing:-1px;margin:8px 0">Employee access</h1><p class="qc-muted">Create agent and Quality Control accounts. Only administrators can view or use this page.</p>
+<div class="qc-eyebrow">ADMINISTRATION</div><h1 style="font:600 38px 'Space Grotesk',sans-serif;letter-spacing:-1px;margin:8px 0">Employee access</h1><p class="qc-muted">Create employee accounts with a proper display name and assigned role. You can also correct names on existing accounts. Only administrators can access this page.</p>
 <div class="qc-content-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));margin-top:25px">
 <section class="qc-panel" style="padding:24px"><h2>Create account</h2><form class="qc-form" id="staffForm">
+<label for="newName">Employee name</label><input id="newName" type="text" minlength="2" maxlength="80" required autocomplete="off" placeholder="e.g. Samantha Stewart">
 <label for="newEmail">Employee email</label><input id="newEmail" type="email" required autocomplete="off" placeholder="agent@company.com">
 <label for="newRole">Access role</label><select id="newRole" required><option value="agent">Agent</option><option value="qc">QC Reviewer</option><option value="admin">Administrator</option></select>
 <label for="newPassword">Temporary password</label><input id="newPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" required placeholder="Minimum 12 characters">
 <button id="createStaff" type="submit" class="qc-btn qc-btn-primary">Create employee account</button><p id="staffMessage" class="qc-message" role="status"></p>
 </form><p class="qc-fineprint">Share passwords through an approved secure channel. A production version should use Microsoft Entra ID rather than local passwords.</p></section>
-<section class="qc-panel" style="padding:24px"><h2>Existing accounts</h2><div id="staffList" style="margin-top:20px"><p class="qc-muted">Loading...</p></div></section>
+<section class="qc-panel" style="padding:24px"><h2>Existing accounts</h2><p class="qc-muted" style="font-size:12px;margin-top:8px">Use Edit name to change the name displayed in the dashboard greeting.</p><div id="staffList" style="margin-top:20px"><p class="qc-muted">Loading...</p></div></section>
 </div></main></body></html>
