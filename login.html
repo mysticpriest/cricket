@@ -2,28 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f9fc">
-  <title>Cricket | Sign in</title>
-  <link rel="stylesheet" href="qc.css">
-  <script src="login.js" defer></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f1f6fd">
+  <meta name="description" content="Sign in to the Cricket operations workspace.">
+  <title>Cricket | Employee Sign In</title>
+  <link rel="stylesheet" href="workspace.css">
+  <script defer src="login.js"></script>
 </head>
-<body class="qc-login-page">
-  <main class="qc-login-card">
-    <a class="qc-brand" href="index.html"><span class="qc-mark">C</span> cricket<span class="qc-dot">.</span></a>
-    <div class="qc-eyebrow">SECURE OPERATIONS</div>
-    <h1>Welcome back.</h1>
-    <p class="qc-muted">Sign in with your Cricket employee account to submit or review case documentation.</p>
-    <form id="loginForm" class="qc-form">
-      <label for="email">Work email</label>
-      <input id="email" name="email" type="email" autocomplete="username" required placeholder="name@company.com">
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Your account password">
-      <button class="qc-btn qc-btn-primary" type="submit" id="loginButton">Sign in</button>
-      <p class="qc-message" id="loginMessage" role="alert"></p>
-    </form>
-    <p class="qc-fineprint">Cricket QC requires its backend server. GitHub Pages alone cannot provide shared case storage.</p>
-    <a class="qc-text-link" href="index.html">← Return to workspace</a>
+<body>
+  <main class="auth-body">
+    <section class="auth-showcase" aria-label="About Cricket">
+      <a href="login.html" class="logo"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
+      <div class="auth-statement">
+        <span class="eyebrow">THE OPERATIONS WORKSPACE</span>
+        <h1>Every call.<br>One <em>clearer</em> workflow.</h1>
+        <p>Cricket brings guided conversations, documentation, and quality assurance together in a focused employee workspace.</p>
+        <div class="auth-preview" aria-label="Workflow features">
+          <div class="auth-preview-top"><span>YOUR WORKDAY, ORGANIZED</span><span>● WORKSPACE READY</span></div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:15px">
+            <span style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:grid;place-items:center;color:#2563eb">✓</span>
+            <div><strong style="font-size:12px">Guide → Document → Review</strong><p style="margin:4px 0 0;font-size:10px;color:#64748b">A connected workflow from agent to QC</p></div>
+          </div>
+          <div class="auth-preview-bars"><div class="auth-bar" style="--bar-width:84%"></div><div class="auth-bar" style="--bar-width:67%"></div><div class="auth-bar" style="--bar-width:91%"></div></div>
+        </div>
+      </div>
+      <span class="auth-caption">CRICKET / INTERNAL PRODUCT DEMONSTRATION</span>
+    </section>
+
+    <section class="auth-pane">
+      <div class="auth-card">
+        <a href="login.html" class="logo"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
+        <div class="eyebrow">EMPLOYEE PORTAL</div>
+        <h2>Welcome back<span class="logo-period">.</span></h2>
+        <p class="auth-subtitle">Sign in with your employee credentials to access your authorized division.</p>
+        <form id="loginForm" novalidate>
+          <div class="form-field"><label for="email">Work email</label><input id="email" name="email" type="email" required autocomplete="username" placeholder="you@company.com" maxlength="254"></div>
+          <div class="form-field"><label for="password">Password</label>
+            <div class="field-control"><input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Enter your password" minlength="12"><button id="togglePassword" class="toggle-password" type="button" aria-label="Show password">Show</button></div>
+          </div>
+          <button id="loginButton" class="button" type="submit">Sign in to Cricket <span aria-hidden="true">→</span></button>
+          <p id="loginMessage" class="auth-message" role="alert" aria-live="polite"></p>
+        </form>
+        <div class="auth-logo-bottom"><span class="dot"></span> Account permissions are assigned by your administrator</div>
+        <p class="auth-small">This is a local demonstration environment. Use fictional data only, and do not upload patient-identifying information.</p>
+        <p class="auth-rights">© 2026 Cricket Operations Workspace</p>
+      </div>
+    </section>
   </main>
 </body>
 </html>

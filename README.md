@@ -1,3 +1,34 @@
+# Cricket | Demo-ready employee workspace
+
+Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
+
+## Run the presentation demo (Windows)
+
+1. Download or pull the latest `main` branch from GitHub.
+2. Install Node.js 22.13 or newer (Node 24 LTS or Node 26 works for local testing).
+3. In PowerShell, open the Cricket folder. On the first run, set the administrator credentials:
+   ```powershell
+   $env:CRICKET_ADMIN_EMAIL="your-work-email@example.test"
+   $env:CRICKET_ADMIN_PASSWORD="REPLACE-WITH-A-UNIQUE-LONG-PASSWORD"
+   npm.cmd start
+   ```
+4. Subsequent restarts generally only need `npm.cmd start`, because the administrator is already stored in your local SQLite database.
+5. Open `http://127.0.0.1:3000`. Sign in; there is no anonymous dashboard.
+6. As administrator, use **Staff accounts** to create fictional Agent and QC Reviewer accounts for demonstrating role separation.
+7. Sign in as Agent → open Inbound → choose Clinic Information → provide the main phone number → complete documentation → copy the generated **Case ID**. Then open **My cases** to show the stored record.
+8. Sign out, sign in as QC Reviewer → open **Quality Control** → search by Case ID → score and submit the review.
+9. Sign in as Administrator to show both divisions and employee management.
+
+### Employee access matrix
+
+| Role | Inbound | Outbound (planned) | My cases | Quality Control | Staff accounts |
+|---|---|---|---|---|---|
+| Agent | Yes | Preview | Own cases | No | No |
+| QC Reviewer | No | No | No | Yes | No |
+| Administrator | Yes | Preview | All cases | Yes | Yes |
+
+The backend **enforces** these permissions for page resources and APIs. The dashboard's locked cards are informational; removing a link is not an authorization mechanism. Do not use GitHub Pages to host a sensitive app: GitHub Pages cannot enforce these server-side roles.
+
 # Cricket – Quality Control development build
 
 This repository contains Cricket's existing Inbound guided workflows plus a **case-based Quality Control (QC) backend** and reviewer dashboard. It is a development prototype, **not approved for storing patient-identifying information or production clinical use**.

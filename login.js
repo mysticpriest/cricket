@@ -1,38 +1,65 @@
 'use strict';
-const loginForm = document.querySelector('#loginForm');
-const loginMessage = document.querySelector('#loginMessage');
-const loginButton = document.querySelector('#loginButton');
-const destination = (() => {
-  const requested = new URLSearchParams(location.search).get('next');
-  return requested === 'qc.html' || requested === 'inbound.html' ? requested : 'index.html';
-})();
+const form = document.querySelector('#loginForm');
+const message = document.querySelector('#loginMessage');
+const submit = document.querySelector('#loginButton');
+const emailInput = document.querySelector('#email');
+const passwordInput = document.querySelector('#password');
+const nextAllowed = {
+  'index.html': ['agent','qc','admin'],
+  'inbound.html': ['agent','admin'],
+  'outbound.html': ['agent','admin'],
+  'cases.html': ['agent','admin'],
+  'qc.html': ['qc','admin'],
+  'staff.html': ['admin']
+};
+const requested = new URLSearchParams(location.search).get('next');
+const destination = Object.hasOwn(nextAllowed, requested) ? requested : 'index.html';
 async function api(path, options = {}) {
-  const response = await fetch(path, { credentials: 'same-origin', ...options });
-  const data = await response.json();
-  if (!response.ok) throw Error(data.error || 'Request failed');
+  const response = await fetch(path, { credentials:'same-origin', ...options });
+  let data = {};
+  try { data = await response.json(); }
+  catch (_) { throw Error('The Cricket backend is unavailable.'); }
+  if (!response.ok) throw Error(data.error || 'Sign-in request failed.');
   return data;
 }
+function goToAuthorizedDestination(user) {
+  if (!user || !user.role) throw Error('Employee account could not be verified.');
+  const safe = nextAllowed[destination].includes(user.role) ? destination : 'index.html';
+  location.replace(safe);
+}
+document.querySelector('#togglePassword').addEventListener('click', event => {
+  const showing = passwordInput.type === 'text';
+  passwordInput.type = showing ? 'password' : 'text';
+  event.currentTarget.textContent = showing ? 'Show' : 'Hide';
+  event.currentTarget.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+});
 (async () => {
   try {
-    const { user } = await api('/api/auth/me');
-    if (user) location.replace(destination);
+    const data = await api('/api/auth/me');
+    if (data.user) goToAuthorizedDestination(data.user);
   } catch (_) {
-    loginMessage.textContent = 'The Cricket case server is unavailable. Start the backend locally before signing in.';
+    message.textContent = 'Unable to contact the Cricket server. Confirm that npm.cmd start is running.';
   }
 })();
-loginForm.addEventListener('submit', async event => {
+form.addEventListener('submit', async event => {
   event.preventDefault();
-  loginButton.disabled = true;
-  loginMessage.textContent = '';
+  message.textContent = '';
+  if (!emailInput.validity.valid || !passwordInput.value) {
+    message.textContent = 'Enter a valid work email and your password.';
+    return;
+  }
+  submit.disabled = true;
+  submit.textContent = 'Signing in…';
   try {
-    const { user } = await api('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
+    const data = await api('/api/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:emailInput.value.trim(),password:passwordInput.value})
     });
-    location.assign(destination === 'qc.html' && user.role === 'agent' ? 'inbound.html' : destination);
+    goToAuthorizedDestination(data.user);
   } catch (error) {
-    loginMessage.textContent = error.message === 'Failed to fetch' ? 'Cannot reach the Cricket backend.' : error.message;
-    loginButton.disabled = false;
+    message.textContent = error.message === 'Failed to fetch' ? 'Cannot reach the Cricket server.' : error.message;
+    submit.disabled = false;
+    submit.textContent = 'Sign in to Cricket →';
   }
 });

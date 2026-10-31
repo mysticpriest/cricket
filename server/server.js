@@ -177,6 +177,23 @@ function processAPI(req, res, url) {
   const p = url.pathname;
   if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
+  if (p === '/api/dashboard' && req.method === 'GET') {
+    requireRole(user, 'agent', 'qc', 'admin');
+    const where = user.role === 'agent' ? 'WHERE agent_id=?' : '';
+    const args = user.role === 'agent' ? [user.id] : [];
+    const metrics = db.prepare(`SELECT COUNT(*) AS total,
+      SUM(CASE WHEN review_status='pending_review' THEN 1 ELSE 0 END) AS pending,
+      SUM(CASE WHEN review_status='approved' THEN 1 ELSE 0 END) AS approved,
+      SUM(CASE WHEN outcome='resolved' THEN 1 ELSE 0 END) AS resolved
+      FROM cases ${where}`).get(...args);
+    return send(res, 200, {
+      total: metrics.total || 0,
+      pending: metrics.pending || 0,
+      approved: metrics.approved || 0,
+      resolved: metrics.resolved || 0,
+      scope: user.role === 'agent' ? 'my_cases' : 'all_cases'
+    });
+  }
   if (p === '/api/auth/login' && req.method === 'POST') return readBody(req).then(data => {
     const email = clean(data.email, 254).toLowerCase(); const password = data.password;
     rateCheck(email);
@@ -278,19 +295,65 @@ function processAPI(req, res, url) {
   err(404, 'API endpoint not found');
 }
 
+/* Authenticated workspace files are protected on the server.
+   Frontend role cards are only visual hints; this is the access boundary. */
+const PUBLIC_FILES = new Set(['/login.html', '/login.js', '/workspace.css']);
+const PAGE_ROLES = new Map([
+  ['/inbound.html', ['agent', 'admin']],
+  ['/inbound.css', ['agent', 'admin']],
+  ['/inbound.js', ['agent', 'admin']],
+  ['/qc-bridge.js', ['agent', 'admin']],
+  ['/outbound.html', ['agent', 'admin']],
+  ['/cases.html', ['agent', 'admin']],
+  ['/cases.js', ['agent', 'admin']],
+  ['/qc.html', ['qc', 'admin']],
+  ['/qc.js', ['qc', 'admin']],
+  ['/staff.html', ['admin']],
+  ['/staff.js', ['admin']]
+]);
+
+function denyWorkspaceAccess(req, res, decoded) {
+  if (PUBLIC_FILES.has(decoded)) return false;
+  const user = currentUser(req);
+  const isPage = decoded.endsWith('.html');
+  if (!user) {
+    if (isPage) {
+      const next = encodeURIComponent(decoded.slice(1));
+      res.writeHead(302, { Location: '/login.html?next=' + next, 'Cache-Control': 'no-store' });
+      res.end();
+    } else send(res, 401, { error: 'Sign in required' });
+    return true;
+  }
+  const roles = PAGE_ROLES.get(decoded);
+  if (roles && !roles.includes(user.role)) {
+    if (isPage) {
+      res.writeHead(403, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff'
+      });
+      if (req.method === 'HEAD') res.end();
+      else res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Access restricted · Cricket</title><body style="font:16px system-ui;padding:12vh 8vw;background:#f7f9fc;color:#14223d"><p style="color:#2563eb;font-weight:700">CRICKET · ACCESS CONTROL</p><h1>This workspace is restricted.</h1><p>Your account does not have the required role for this division.</p><p><a href="/index.html">Return to your dashboard</a></p></body></html>');
+    } else send(res, 403, { error: 'Insufficient permission' });
+    return true;
+  }
+  return false;
+}
+
 function serveStatic(req, res, pathname) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, { error: 'Method not allowed' });
   let decoded;
   try { decoded = decodeURIComponent(pathname); } catch (_) { return send(res, 400, { error: 'Invalid path' }); }
   if (decoded === '/') decoded = '/index.html';
   if (decoded.includes('\\') || decoded.includes('\0') || decoded.split('/').includes('..')) return send(res, 403, { error: 'Forbidden' });
+  if (denyWorkspaceAccess(req, res, decoded)) return;
   const filename = path.resolve(ROOT, '.' + decoded);
   if (!filename.startsWith(ROOT + path.sep) || filename.startsWith(path.join(ROOT, 'server') + path.sep) || filename.startsWith(path.join(ROOT, 'tests') + path.sep) || filename.startsWith(path.join(ROOT, 'data') + path.sep) || path.basename(filename).startsWith('.')) return send(res, 404, { error: 'Not found' });
   const type = FILE_TYPES[path.extname(filename)];
   if (!type) return send(res, 404, { error: 'Not found' });
   fs.readFile(filename, (error, content) => {
     if (error) return send(res, 404, { error: 'Not found' });
-    res.writeHead(200, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' https://fonts.googleapis.com; connect-src 'self'; object-src 'none'; frame-ancestors 'none'" });
+    res.writeHead(200, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; frame-ancestors 'none'" });
     res.end(req.method === 'HEAD' ? undefined : content);
   });
 }
