@@ -51,7 +51,7 @@ async function openCase(caseId){
     state.selected=caseId;
     els.selected.textContent=caseId;
     els.title.textContent=caseId;
-    els.meta.textContent=item.department+' · '+item.inquiry+' · '+item.outcome+' · '+dateLabel(item.createdAt)+' · QC: '+item.reviewStatus.replaceAll('_',' ');
+    els.meta.textContent='Caller: '+(item.callPhone||'Not captured (older case)')+' · Call started: '+(item.callStartedAt?dateLabel(item.callStartedAt):'Not captured')+' · '+item.department+' · '+item.inquiry+' · '+item.outcome+' · QC: '+item.reviewStatus.replaceAll('_',' ');
     els.note.textContent=item.note;
     els.events.replaceChildren();
     if(!item.events.length)els.events.textContent='No additional workflow outcomes recorded.';
