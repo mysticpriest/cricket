@@ -36,7 +36,7 @@
       banner.replaceChildren();
       if (account && (account.role === 'agent' || account.role === 'admin')) {
         banner.append(document.createTextNode(`QC sync ready · ${account.email}`));
-        banner.append(makeLink('qc.html', 'QC workspace'));
+        banner.append(makeLink(account.role === 'admin' ? 'qc.html' : 'cases.html', account.role === 'admin' ? 'QC workspace' : 'My cases'));
       } else if (account) {
         banner.append(document.createTextNode('Signed in with a QC reviewer account. Sign in as an agent to submit new cases.'));
       } else {
@@ -68,7 +68,7 @@
         body: JSON.stringify(payload)
       });
       output.replaceChildren(document.createTextNode(`Case saved for QC · ${result.caseId}`));
-      output.append(makeLink(`qc.html?case=${encodeURIComponent(result.caseId)}`, 'Open case'));
+      output.append(makeLink(`${account && account.role === 'admin' ? 'qc.html' : 'cases.html'}?case=${encodeURIComponent(result.caseId)}`, 'View saved case'));
       return result;
     } catch (error) {
       output.replaceChildren(document.createTextNode('QC case was NOT saved: ' + error.message + '.'));

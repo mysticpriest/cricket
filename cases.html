@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f8fc"><title>Cricket | My Cases</title>
+<link rel="stylesheet" href="workspace.css"><script defer src="cases.js"></script></head>
+<body>
+  <header class="simple-topbar"><a class="logo" href="index.html"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a><a class="button button-outline small-button" href="index.html">← Dashboard</a></header>
+  <main class="simple-wrap">
+    <span class="eyebrow">CASE ACTIVITY</span>
+    <div class="main-head" style="margin-top:15px"><div><h1 id="caseHeading">My documented cases<span class="logo-period">.</span></h1><p>Trace each completed call using its Case ID. This history is generated from confirmed workflow outcomes.</p></div><span class="pill" id="caseScope">SIGNED IN</span></div>
+    <div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:670px;margin:25px 0"><div class="stat"><div class="stat-top"><span>Cases found</span><span class="stat-icon">▤</span></div><strong id="caseCount">—</strong><small>Based on current search</small></div><div class="stat"><div class="stat-top"><span>Selected Case ID</span></div><strong id="selectedId" style="font-size:17px;word-break:break-all">None</strong><small>Click a case to view its details</small></div></div>
+    <section class="panel">
+      <h3>Case history</h3>
+      <form id="searchForm" class="searchline"><label class="eyebrow" for="searchInput">FIND</label><input id="searchInput" placeholder="Search Case ID or inquiry" autocomplete="off"><button class="button" type="submit">Search</button></form>
+      <p id="caseMessage" class="muted" role="status" style="font-size:12px">Loading your cases…</p>
+      <div class="table-shell"><table class="case-table"><thead><tr><th>Case ID</th><th>Inquiry</th><th>Outcome</th><th>QC status</th><th>Created</th></tr></thead><tbody id="caseRows"><tr><td colspan="5">Loading…</td></tr></tbody></table></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:17px 0 0;gap:10px"><button id="previousPage" type="button" class="button button-outline small-button">← Previous</button><span id="pageInfo" class="muted" style="font-size:11px"></span><button id="nextPage" type="button" class="button button-outline small-button">Next →</button></div>
+    </section>
+    <section class="panel" id="detailPanel" style="margin-top:20px" hidden><div style="display:flex;justify-content:space-between;gap:15px;align-items:center"><h3 id="detailTitle" style="margin:0">Case details</h3><button class="button button-outline small-button" type="button" id="copyCaseId">Copy Case ID</button></div><p id="detailMeta" class="muted" style="font-size:11px;line-height:1.8"></p><div id="detailNote" class="case-detail"></div><h4 style="margin-top:25px;font-size:13px">Confirmed workflow events</h4><div id="detailEvents" class="muted" style="font-size:12px;line-height:1.9"></div></section>
+    <p style="font-size:11px;line-height:1.7;color:#94a3b8;margin-top:24px">Development preview · Do not enter or retain patient-identifying information.</p>
+  </main>
+</body></html>

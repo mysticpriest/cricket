@@ -25,7 +25,14 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
   try {
     await waitReady(url,proc);
     const health=await request(url,'/api/health'); assert.equal(health.status,200);
-    const html=await fetch(url+'/qc.html'); assert.equal(html.status,200); assert.match(await html.text(),/Case review workspace/);
+    // The login shell is public, but workspace HTML is protected.
+    const loginPage=await fetch(url+'/login.html'); assert.equal(loginPage.status,200);
+    const loginStyles=await fetch(url+'/workspace.css'); assert.equal(loginStyles.status,200);
+    for (const page of ['/', '/index.html','/inbound.html','/outbound.html','/cases.html','/qc.html','/staff.html']) {
+      const anonymous=await fetch(url+page, {redirect:'manual'});
+      assert.equal(anonymous.status,302, page+' must redirect anonymous users');
+      assert.match(anonymous.headers.get('location'), /^\/login.html\?next=/);
+    }
     const hidden=await fetch(url+'/server/server.js'); assert.equal(hidden.status,404);
     const unauthorized=await request(url,'/api/cases'); assert.equal(unauthorized.status,401);
     const badLogin=await request(url,'/api/auth/login',json('POST',{email:'admin@example.test',password:'bad'})); assert.equal(badLogin.status,401);
@@ -37,6 +44,28 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     const agentCookie=agentLogin.headers.get('set-cookie').split(';')[0];
     const qcLogin=await request(url,'/api/auth/login',json('POST',{email:'qc@example.test',password:'qc-account-password-12345'}));
     const qcCookie=qcLogin.headers.get('set-cookie').split(';')[0];
+    async function staticStatus(page, cookie) { return (await fetch(url+page, {headers:{Cookie:cookie},redirect:'manual'})).status; }
+    for(const page of ['/index.html','/inbound.html','/outbound.html','/cases.html','/staff.html','/qc.html']){
+      assert.equal(await staticStatus(page,adminCookie),200,'admin should open '+page);
+    }
+    for(const page of ['/index.html','/inbound.html','/outbound.html','/cases.html']){
+      assert.equal(await staticStatus(page,agentCookie),200,'agent should open '+page);
+    }
+    // Percent-encoded path separators must not bypass static role checks.
+    for (const page of ['/%2Fqc.html', '/private%2F..%2Fqc.html']) {
+      assert.equal(await staticStatus(page,agentCookie),403,'noncanonical URL must be blocked');
+    }
+    for(const page of ['/qc.html','/staff.html','/qc.js']){
+      assert.equal(await staticStatus(page,agentCookie),403,'agent must be blocked from '+page);
+    }
+    for(const page of ['/index.html','/qc.html']){
+      assert.equal(await staticStatus(page,qcCookie),200,'qc reviewer should open '+page);
+    }
+    for(const page of ['/inbound.html','/outbound.html','/cases.html','/staff.html','/inbound.js','/qc-bridge.js']){
+      assert.equal(await staticStatus(page,qcCookie),403,'qc reviewer must be blocked from '+page);
+    }
+    const anonMetrics=await request(url,'/api/dashboard');assert.equal(anonMetrics.status,401);
+    const emptyMetrics=await request(url,'/api/dashboard',{headers:{Cookie:agentCookie}});assert.equal(emptyMetrics.status,200);assert.equal(emptyMetrics.data.total,0);assert.equal(emptyMetrics.data.scope,'my_cases');
     const body={department:'Appointment Inquiry',inquiry:'When is my appointment?',route:'timeComplete',outcome:'resolved',note:'Verified caller details and provided confirmed appointment date and time.',events:['Verified identity','Provided appointment information']};
     const created=await request(url,'/api/cases',json('POST',body,agentCookie)); assert.equal(created.status,201); assert.match(created.data.caseId,/^CR-\d{8}-\d{6}$/);
     const repeat=await request(url,'/api/cases',json('POST',{...body,requestId:'12345678-1234-1234-1234-123456789012'},agentCookie));assert.equal(repeat.status,201);
@@ -49,6 +78,11 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     const review=await request(url,`/api/cases/${created.data.caseId}/reviews`,json('POST',{decision:'coaching',criteria:{verification:true,accuracy:true,resolution:false,documentation:true,professionalism:null},feedback:'Review resolution confirmation.'},qcCookie));assert.equal(review.status,201);assert.equal(review.data.score,75);
     const updated=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:qcCookie}});assert.equal(updated.data.case.reviewStatus,'coaching');assert.equal(updated.data.reviews.length,1);assert.equal(updated.data.history.length,2);
     const agentList=await request(url,'/api/cases',{headers:{Cookie:agentCookie}});assert.equal(agentList.data.total,3);
+    const agentMetrics=await request(url,'/api/dashboard',{headers:{Cookie:agentCookie}});
+    assert.equal(agentMetrics.data.total,3);assert.equal(agentMetrics.data.pending,2);
+    const qcMetrics=await request(url,'/api/dashboard',{headers:{Cookie:qcCookie}});
+    assert.equal(qcMetrics.data.total,3);assert.equal(qcMetrics.data.scope,'all_cases');
+    assert.equal(qcMetrics.data.approved,0);
     const crossSite=await request(url,'/api/cases', {...json('POST',body,agentCookie),headers:{...json('POST',body,agentCookie).headers,Origin:'https://not-our-site.invalid'}});assert.equal(crossSite.status,403);
   } finally {
     proc.kill('SIGTERM');

@@ -1,229 +1,110 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#080d0b">
-
-    <title>Cricket | Operations Workspace</title>
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f8fc">
+  <meta name="description" content="Cricket, the operations workspace for guided call handling and quality review.">
+  <title>Cricket | Operations Overview</title>
+  <link rel="stylesheet" href="workspace.css">
+  <script defer src="script.js"></script>
 </head>
 <body>
+  <div id="dashboard" class="app-shell" aria-busy="true">
+    <aside class="sidebar">
+      <a class="logo" href="index.html" aria-label="Cricket dashboard"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
+      <div>
+        <p class="sidebar-section-title">WORKSPACE</p>
+        <nav class="nav" aria-label="Main navigation">
+          <a class="nav-item active" href="index.html" aria-current="page"><span class="nav-icon">▦</span> Overview</a>
+          <a class="nav-item" href="inbound.html" data-access="agent,admin"><span class="nav-icon">↙</span> Inbound</a>
+          <a class="nav-item" href="outbound.html" data-access="agent,admin"><span class="nav-icon">↗</span> Outbound</a>
+          <a class="nav-item" href="cases.html" data-access="agent,admin"><span class="nav-icon">▤</span> My cases</a>
+          <a class="nav-item" href="qc.html" data-access="qc,admin"><span class="nav-icon">◎</span> Quality control</a>
+        </nav>
+        <p class="sidebar-section-title" style="margin-top:34px">MANAGEMENT</p>
+        <nav class="nav"><a class="nav-item" href="staff.html" data-access="admin"><span class="nav-icon">♙</span> Staff accounts</a></nav>
+      </div>
+      <div class="nav-spacer"></div>
+      <div class="sidebar-foot">
+        <span class="eyebrow">DEVELOPMENT BUILD</span>
+        <strong>One workspace. Clearer workflows.</strong>
+        <p>Use fictional call details during demonstrations. Online migration is planned for a later stage.</p>
+      </div>
+    </aside>
 
-    <!-- LOADING SCREEN -->
-    <div id="loader" class="loader" role="status" aria-live="polite">
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-location"><span>Workspace</span><span>›</span><strong>Overview</strong></div>
+        <div class="topbar-actions">
+          <span class="pill"><span class="dot"></span>Local server</span>
+          <div class="identity">
+            <span class="avatar" id="avatar">C</span>
+            <div class="identity-text"><strong id="accountEmail">Loading session…</strong><small id="accountRole">Employee</small></div>
+          </div>
+          <button id="logoutButton" class="button button-outline small-button" type="button">Sign out</button>
+        </div>
+      </header>
 
-        <div class="ambient a"></div>
-        <div class="ambient b"></div>
-
-        <div class="load-content">
-
-            <div class="mark">
-                <span class="mark-inner">C</span>
-                <span class="orbit"></span>
-            </div>
-
-            <div class="wordmark">
-                cricket<span class="period">.</span>
-            </div>
-
-            <div class="subtitle">
-                OPERATIONS WORKSPACE
-            </div>
-
-            <div class="progress-track">
-                <div class="progress-fill" id="progress"></div>
-            </div>
-
-            <div class="loading-row">
-                <span id="status">Initializing workspace</span>
-                <span id="percent">0%</span>
-            </div>
-
+      <main class="workspace-body">
+        <div class="page-kicker"><span class="eyebrow">OPERATIONS OVERVIEW</span><span class="pill" id="dateStamp">Today</span></div>
+        <div class="main-head">
+          <div>
+            <h1 id="greeting">Welcome to Cricket.</h1>
+            <p id="roleIntro">Everything you need for a focused shift — guided calls, clear documentation, and role-based workspaces.</p>
+          </div>
+          <a id="primaryAction" class="button hero-action" href="inbound.html">Open inbound workspace <span aria-hidden="true">→</span></a>
         </div>
 
-        <div class="bottom-note">
-            BUILT FOR BETTER WORKFLOWS
-            <span>•</span>
-            CRICKET v1.0
-        </div>
+        <section class="stats" aria-label="Case overview">
+          <div class="stat"><div class="stat-top"><span id="totalLabel">Documented cases</span><span class="stat-icon">▤</span></div><strong id="caseTotal">—</strong><small>Saved to the local QC database</small></div>
+          <div class="stat"><div class="stat-top"><span>Awaiting QC review</span><span class="stat-icon">◷</span></div><strong id="casePending">—</strong><small>Pending quality evaluation</small></div>
+          <div class="stat"><div class="stat-top"><span id="completedLabel">Resolved inquiries</span><span class="stat-icon">✓</span></div><strong id="caseResolved">—</strong><small id="completedNote">Completed call outcomes</small></div>
+        </section>
 
+        <div class="section-header"><div><h2>Divisions</h2><p>Access is based on your employee role.</p></div><span id="workspaceCount">Role-based access</span></div>
+        <section class="division-grid" aria-label="Available divisions">
+          <a class="division" href="inbound.html" data-access="agent,admin" data-division="inbound">
+            <div class="division-head"><span class="division-icon">↙</span><span class="division-badge ready">LIVE WORKFLOW</span></div>
+            <h3>Inbound</h3>
+            <p>Handle patient calls with interactive guidance, one-time verification, and automatically generated call notes.</p>
+            <div class="division-foot"><span class="division-label">OPEN WORKSPACE</span><span aria-hidden="true">→</span></div>
+          </a>
+          <a class="division" href="outbound.html" data-access="agent,admin" data-division="outbound">
+            <div class="division-head"><span class="division-icon">↗</span><span class="division-badge">IN DEVELOPMENT</span></div>
+            <h3>Outbound</h3>
+            <p>A dedicated space for outreach, appointment follow-ups, and future outbound call procedures.</p>
+            <div class="division-foot"><span class="division-label">VIEW ROADMAP</span><span aria-hidden="true">→</span></div>
+          </a>
+          <a class="division" href="qc.html" data-access="qc,admin" data-division="qc">
+            <div class="division-head"><span class="division-icon">◎</span><span class="division-badge ready">CASE REVIEW</span></div>
+            <h3>Quality Control</h3>
+            <p>Find cases by ID, audit route outcomes, score documentation, and give structured feedback to agents.</p>
+            <div class="division-foot"><span class="division-label">OPEN QC CONSOLE</span><span aria-hidden="true">→</span></div>
+          </a>
+        </section>
+
+        <div class="section-header"><div><h2>Your shift, step by step</h2><p>A simple demonstration of how Cricket fits into daily operations.</p></div></div>
+        <div class="support-grid">
+          <section class="panel" aria-label="Normal shift workflow">
+            <h3>From the first call to quality review</h3>
+            <div class="timeline">
+              <div class="timeline-row"><span class="timeline-index">01</span><div><strong>Sign in securely</strong><p>Cricket identifies your employee role and opens the right workspace.</p></div></div>
+              <div class="timeline-row"><span class="timeline-index">02</span><div><strong>Handle the inquiry</strong><p>Select an inbound route and follow concise, decision-based instructions.</p></div></div>
+              <div class="timeline-row"><span class="timeline-index">03</span><div><strong>Document the outcome</strong><p>Review the generated note. Completed cases receive a unique Case ID.</p></div></div>
+              <div class="timeline-row"><span class="timeline-index">04</span><div><strong>QC evaluates the case</strong><p>Authorized reviewers find the record, score key criteria, and submit feedback.</p></div></div>
+            </div>
+          </section>
+          <section class="panel">
+            <h3 id="quickTitle">Quick access</h3>
+            <div class="info-box"><span class="eyebrow">PRESENTATION MODE</span><h4 id="quickHeading" style="margin-top:14px">Ready for your next call?</h4><p id="quickDescription">Open Inbound to demonstrate a complete guided call and automated case submission using fictional data.</p><a id="quickLink" class="button" href="inbound.html">Start the walkthrough →</a></div>
+            <p style="font-size:11px;color:#94a3b8;line-height:1.8;margin-top:17px">This is a local development prototype, not an approved production medical records platform.</p>
+          </section>
+        </div>
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+        <footer class="footer"><span>© 2026 CRICKET WORKSPACE</span><span>INBOUND · OUTBOUND · QUALITY CONTROL</span></footer>
+      </main>
     </div>
-
-
-    <!-- MAIN APPLICATION -->
-    <main id="app" class="app hidden">
-
-        <!-- HEADER -->
-        <header>
-
-            <div class="brand">
-                <span class="small-mark">C</span>
-                cricket<span class="period">.</span>
-            </div>
-
-            <span class="header-meta">
-                OPERATIONS WORKSPACE
-                <span class="live-dot"></span>
-                SYSTEM READY
-            </span>
-
-            <a href="login.html?next=inbound.html" style="font-size:12px;font-weight:700;color:#2563eb;text-decoration:none;margin-left:12px">Employee sign in</a>
-        </header>
-
-
-        <!-- WELCOME SECTION -->
-        <section class="hero">
-
-            <div class="eyebrow">
-                YOUR WORKSPACE
-            </div>
-
-            <h1>
-                Welcome to <em>Cricket.</em>
-            </h1>
-
-            <p>
-                Everything your scheduling team needs,
-                organized in one place.
-            </p>
-
-        </section>
-
-
-        <!-- DEPARTMENTS -->
-        <section class="departments">
-
-            <!-- INBOUND -->
-            <button
-                class="department"
-                data-name="Inbound"
-                type="button"
-            >
-
-                <div class="dept-icon">↙</div>
-
-                <div class="dept-type">
-                    PRIMARY WORKFLOW
-                </div>
-
-                <h2>
-                    Inbound
-                    <span>↗</span>
-                </h2>
-
-                <p>
-                    Handle incoming requests, scheduling
-                    inquiries, and patient communication.
-                </p>
-
-                <div class="dept-footer">
-                    ENTER WORKSPACE
-                    <span>→</span>
-                </div>
-
-            </button>
-
-
-            <!-- OUTBOUND -->
-            <button
-                class="department"
-                data-name="Outbound"
-                type="button"
-            >
-
-                <div class="dept-icon">↗</div>
-
-                <div class="dept-type">
-                    PRIMARY WORKFLOW
-                </div>
-
-                <h2>
-                    Outbound
-                    <span>↗</span>
-                </h2>
-
-                <p>
-                    Manage outreach, appointment coordination,
-                    and follow-up activities.
-                </p>
-
-                <div class="dept-footer">
-                    ENTER WORKSPACE
-                    <span>→</span>
-                </div>
-
-            </button>
-
-
-            <!-- CASE MANAGEMENT -->
-            <button
-                class="department secondary"
-                data-name="Case Management"
-                type="button"
-            >
-
-                <div class="dept-icon">▤</div>
-
-                <div class="dept-type">
-                    SUPPORT WORKFLOW
-                </div>
-
-                <h2>
-                    Case Management
-                    <span>↗</span>
-                </h2>
-
-                <p>
-                    Keep supporting case information
-                    and coordination resources together.
-                </p>
-
-                <div class="dept-footer">
-                    ENTER WORKSPACE
-                    <span>→</span>
-                </div>
-
-            </button>
-
-            <!-- QUALITY CONTROL -->
-            <button class="department" data-name="Quality Control" type="button">
-                <div class="dept-icon">◎</div>
-                <div class="dept-type">QUALITY ASSURANCE</div>
-                <h2>Quality Control <span>↗</span></h2>
-                <p>Search cases, review agent documentation, and evaluate completed calls by Case ID.</p>
-                <div class="dept-footer"><span>OPEN QC WORKSPACE</span><span>→</span></div>
-            </button>
-        </section>
-
-
-        <!-- NOTIFICATIONS -->
-        <div
-            id="notice"
-            class="notice"
-            aria-live="polite"
-        ></div>
-
-
-        <!-- FOOTER -->
-        <footer>
-
-            <span>
-                CRICKET © 2026
-            </span>
-
-            <span>
-                WORK SMARTER. STAY CONNECTED.
-            </span>
-
-        </footer>
-
-    </main>
-
-
-    <script src="script.js"></script>
-
+  </div>
 </body>
 </html>
