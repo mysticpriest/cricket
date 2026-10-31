@@ -2485,6 +2485,37 @@ function createDocumentationEditor(note, status) {
                 status
             );
 
+            // Save the same approved note centrally for QC review.
+            // The separate local Shift Log is preserved for offline work.
+            const completedEntry = shiftLog[shiftLog.length - 1];
+            if (window.CricketCaseBridge) {
+                const requestId = window.crypto &&
+                    typeof window.crypto.randomUUID === "function"
+                    ? window.crypto.randomUUID() : null;
+                const departmentNames = {
+                    appointment: "Appointment Inquiry",
+                    clinic: "Clinic Information",
+                    scheduling: "Scheduling Inquiry"
+                };
+                const payload = {
+                    requestId,
+                    department: departmentNames[cricketState.department] || "Inbound",
+                    inquiry: cricketState.originalInquiry || "General Inquiry",
+                    route: cricketState.step || "unresolved",
+                    outcome: status === "pending" ? "pending" : "resolved",
+                    note: finalNote,
+                    events: cricketState.events.slice(0, 50)
+                };
+                void window.CricketCaseBridge.submitCase(payload, container)
+                    .then(result => {
+                        if (result && completedEntry) {
+                            completedEntry.caseId = result.caseId;
+                            persistShiftLog();
+                            renderShiftLog();
+                        }
+                    });
+            }
+
             const copied =
                 await copyText(finalNote);
 

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f9fc">
+  <title>Cricket | Sign in</title>
+  <link rel="stylesheet" href="qc.css">
+  <script src="login.js" defer></script>
+</head>
+<body class="qc-login-page">
+  <main class="qc-login-card">
+    <a class="qc-brand" href="index.html"><span class="qc-mark">C</span> cricket<span class="qc-dot">.</span></a>
+    <div class="qc-eyebrow">SECURE OPERATIONS</div>
+    <h1>Welcome back.</h1>
+    <p class="qc-muted">Sign in with your Cricket employee account to submit or review case documentation.</p>
+    <form id="loginForm" class="qc-form">
+      <label for="email">Work email</label>
+      <input id="email" name="email" type="email" autocomplete="username" required placeholder="name@company.com">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="12" placeholder="Your account password">
+      <button class="qc-btn qc-btn-primary" type="submit" id="loginButton">Sign in</button>
+      <p class="qc-message" id="loginMessage" role="alert"></p>
+    </form>
+    <p class="qc-fineprint">Cricket QC requires its backend server. GitHub Pages alone cannot provide shared case storage.</p>
+    <a class="qc-text-link" href="index.html">← Return to workspace</a>
+  </main>
+</body>
+</html>

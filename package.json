@@ -1,0 +1,11 @@
+{
+  "name": "cricket-quality-control",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cricket inbound workflow and QC case review prototype",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test tests/*.test.js"
+  }
+}

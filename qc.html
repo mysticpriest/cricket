@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f9fc">
+  <title>Cricket | Quality Control</title>
+  <link rel="stylesheet" href="qc.css">
+  <script src="qc.js" defer></script>
+</head>
+<body>
+  <header class="qc-topbar">
+    <a class="qc-brand" href="index.html"><span class="qc-mark">C</span> cricket<span class="qc-dot">.</span></a>
+    <span class="qc-header-section">/ Quality Control</span>
+    <span class="qc-spacer"></span>
+    <span id="signedInAs" class="qc-user"></span>
+    <a id="staffLink" class="qc-btn qc-btn-light" href="staff.html" hidden>Staff accounts</a>
+    <button id="logoutButton" class="qc-btn qc-btn-light" type="button">Sign out</button>
+    <a class="qc-btn qc-btn-light" href="index.html">Dashboard</a>
+  </header>
+
+  <main class="qc-page">
+    <div class="qc-page-heading">
+      <div><div class="qc-eyebrow">QUALITY ASSURANCE DIVISION</div><h1>Case review workspace<span class="qc-dot">.</span></h1><p>Search case records, review confirmed call outcomes, and submit quality evaluations.</p></div>
+      <button id="refreshButton" class="qc-btn qc-btn-light" type="button">↻ Refresh cases</button>
+    </div>
+
+    <section class="qc-stats" aria-label="Case overview">
+      <div class="qc-stat"><span>Total matching cases</span><strong id="totalCases">—</strong></div>
+      <div class="qc-stat"><span>Pending review</span><strong id="pendingCases">—</strong></div>
+      <div class="qc-stat"><span>Selected case</span><strong id="selectedCase">None</strong></div>
+    </section>
+
+    <div class="qc-content-grid">
+      <section class="qc-panel qc-cases-panel" aria-label="Cases">
+        <div class="qc-panel-heading"><h2>Case queue</h2><span id="listInfo" class="qc-muted"></span></div>
+        <form id="searchForm" class="qc-filters">
+          <label class="qc-sr-only" for="caseSearch">Case ID, inquiry, or agent</label>
+          <input id="caseSearch" placeholder="Search Case ID, inquiry, agent..." autocomplete="off">
+          <label class="qc-sr-only" for="statusFilter">Review status</label>
+          <select id="statusFilter"><option value="">All statuses</option><option value="pending_review">Pending review</option><option value="approved">Approved</option><option value="coaching">Needs coaching</option><option value="flagged">Flagged</option></select>
+          <button class="qc-btn qc-btn-primary" type="submit">Search</button>
+        </form>
+        <div id="caseList" class="qc-case-list" aria-live="polite"><p class="qc-empty">Loading cases...</p></div>
+        <div class="qc-pagination"><button id="prevPage" class="qc-btn qc-btn-light" type="button">← Previous</button><span id="pageLabel"></span><button id="nextPage" class="qc-btn qc-btn-light" type="button">Next →</button></div>
+      </section>
+
+      <section id="reviewPanel" class="qc-panel qc-review-panel" aria-label="Case details">
+        <div id="caseDetail"><div class="qc-placeholder"><div class="qc-placeholder-icon">▤</div><h2>Select a case</h2><p>Choose a case from the queue to see its documentation, workflow history, and QC evaluation.</p></div></div>
+      </section>
+    </div>
+    <p class="qc-footer-note">Internal development preview. Do not process real patient information until your organization has approved security, hosting, retention, and access controls.</p>
+  </main>
+  <div id="toast" class="qc-toast" role="status" aria-live="polite"></div>
+</body>
+</html>
