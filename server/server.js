@@ -17,6 +17,7 @@ const SECURE = process.env.NODE_ENV === 'production';
 const COOKIE = 'cricket_session';
 const SESSION_AGE_MS = 8 * 60 * 60 * 1000;
 const SESSION_IDLE_MS = 20 * 60 * 1000;
+const PRESENCE_FRESH_MS = 50 * 1000;
 const ROLES = new Set(['agent', 'qc', 'admin']);
 const OUTCOMES = new Set(['resolved', 'pending']);
 const REVIEWS = new Set(['approved', 'coaching', 'flagged']);
@@ -98,6 +99,21 @@ for (const [table, column, definition] of [
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_cases_phone ON cases(call_phone);');
 db.exec(`
+CREATE TABLE IF NOT EXISTS live_presence (
+  token_hash TEXT PRIMARY KEY REFERENCES sessions(token_hash) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  division TEXT NOT NULL,
+  route TEXT NOT NULL DEFAULT '',
+  step TEXT NOT NULL DEFAULT '',
+  stage TEXT NOT NULL,
+  route_started_at INTEGER,
+  last_seen_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_presence_seen ON live_presence(last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_actor_time ON audit_events(actor_id,created_at DESC);
+`);
+
+db.exec(`
 CREATE TABLE IF NOT EXISTS qc_saved_cases (
   reviewer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   case_id INTEGER NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
@@ -167,7 +183,7 @@ function setCookie(token) {
   return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/${SECURE ? '; Secure' : ''}`; // browser-session cookie, no persistent Max-Age
 }
 function clearCookie() { return `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${SECURE ? '; Secure' : ''}`; }
-function currentUser(req) {
+function currentUser(req, touch = true) {
   const token = parseCookie(req);
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
   const timestamp = Date.now();
@@ -176,7 +192,7 @@ function currentUser(req) {
     FROM sessions s JOIN users u ON u.id=s.user_id
     WHERE s.token_hash=? AND s.expires_at>? AND s.last_active_at>?`)
     .get(hash, timestamp, timestamp - SESSION_IDLE_MS);
-  if (row) db.prepare('UPDATE sessions SET last_active_at=? WHERE token_hash=?').run(timestamp, hash);
+  if (row && touch) db.prepare('UPDATE sessions SET last_active_at=? WHERE token_hash=?').run(timestamp, hash);
   return row || null;
 }
 function requireRole(user, ...allowed) {
@@ -254,10 +270,131 @@ function sendXlsx(res, filename, sheets) {
 
 function processAPI(req, res, url) {
   requireOrigin(req);
-  const user = currentUser(req);
   const p = url.pathname;
+  // Polling/monitoring endpoints are read-only and must not extend idle sessions.
+  const user = currentUser(req, req.method !== 'GET' && p !== '/api/presence');
   if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
+  if (p === '/api/presence' && req.method === 'POST') {
+    requireRole(user,'agent','qc','admin');
+    return readBody(req).then(data=>{
+      const divisions = new Set(['overview','inbound','outbound','cases','qc','staff','operations']);
+      const stages = new Set(['idle','intake','selecting','working','verification','documentation','completed']);
+      const routes = new Set(['','appointment','clinic','scheduling']);
+      const division = data.division;
+      const stage = data.stage;
+      const route = typeof data.route === 'string' ? data.route : '';
+      const step = typeof data.step === 'string' ? data.step : '';
+      if(!divisions.has(division) || !stages.has(stage) ||
+         (division==='inbound' && user.role==='qc') ||
+         (['qc','operations','staff'].includes(division) && user.role==='agent') ||
+         (['operations','staff'].includes(division) && user.role!=='admin') ||
+         !routes.has(route) || (route && division !== 'inbound') ||
+         !/^[a-zA-Z0-9_-]{0,64}$/.test(step) ||
+         (division !== 'inbound' && (stage !== 'idle' || step))) {
+        err(400,'Invalid presence state');
+      }
+      // Server derives user identity from the session; no impersonation fields.
+      const token = parseCookie(req);
+      const hash = tokenHash(token);
+      const previous=db.prepare('SELECT * FROM live_presence WHERE token_hash=?').get(hash);
+      const time=Date.now();
+      const routeStarted = route ? (previous && previous.route===route && previous.route_started_at
+        ? previous.route_started_at : time) : null;
+      db.prepare(`INSERT INTO live_presence(token_hash,user_id,division,route,step,stage,route_started_at,last_seen_at)
+        VALUES(?,?,?,?,?,?,?,?)
+        ON CONFLICT(token_hash) DO UPDATE SET user_id=excluded.user_id,division=excluded.division,
+        route=excluded.route,step=excluded.step,stage=excluded.stage,
+        route_started_at=excluded.route_started_at,last_seen_at=excluded.last_seen_at`)
+        .run(hash,user.id,division,route,step,stage,routeStarted,time);
+      // Never log callers, phone numbers, patient details, or freeform inputs.
+      if (!previous || previous.division !== division) {
+        audit(null,user.id,'workspace_opened',division);
+      }
+      if (route && (!previous || previous.route !== route)) {
+        audit(null,user.id,'route_started',route);
+      } else if (previous && previous.route && !route) {
+        audit(null,user.id,'route_left',previous.route);
+      }
+      if (route && previous && previous.route===route && (previous.step!==step || previous.stage!==stage)) {
+        audit(null,user.id,'route_progress',route+' / '+stage+' / '+(step||'—'));
+      }
+      return send(res,200,{ok:true,serverTime:time,routeStartedAt:routeStarted});
+    });
+  }
+  if (p === '/api/active-agents' && req.method === 'GET') {
+    requireRole(user,'agent','qc','admin');
+    const timestamp=Date.now();
+    const rows=db.prepare(`
+      SELECT u.id,u.email,u.display_name AS displayName,p.division,p.route,p.step,p.stage,
+        MIN(p.route_started_at) AS routeStartedAt,MAX(p.last_seen_at) AS lastSeenAt
+      FROM live_presence p
+      JOIN users u ON u.id=p.user_id
+      JOIN sessions s ON s.token_hash=p.token_hash
+      WHERE u.role='agent' AND p.last_seen_at>? AND s.expires_at>? AND s.last_active_at>?
+      GROUP BY u.id,p.division,p.route,p.step,p.stage
+      ORDER BY lastSeenAt DESC LIMIT 100`)
+      .all(timestamp-PRESENCE_FRESH_MS,timestamp,timestamp-SESSION_IDLE_MS);
+    const agents = [];
+    const unique=new Set();
+    for(const row of rows){
+      if(unique.has(row.id)) continue;
+      unique.add(row.id);
+      agents.push({id:row.id,displayName:row.displayName||'Agent',division:row.division,
+        route:row.route,step:row.step,stage:row.stage,
+        routeStartedAt:row.routeStartedAt,lastSeenAt:row.lastSeenAt});
+    }
+    return send(res,200,{agents,total:agents.length,serverTime:timestamp,refreshSeconds:5});
+  }
+  if (p === '/api/admin/operations' && req.method === 'GET') {
+    requireRole(user,'admin');
+    const timestamp=Date.now();
+    const rows=db.prepare(`
+      SELECT u.id,u.display_name AS displayName,u.email,u.role,p.division,p.route,p.step,
+        p.stage,p.route_started_at AS routeStartedAt,p.last_seen_at AS lastSeenAt,
+        s.last_active_at AS lastActiveAt
+      FROM live_presence p JOIN users u ON u.id=p.user_id
+      JOIN sessions s ON s.token_hash=p.token_hash
+      WHERE p.last_seen_at>? AND s.expires_at>? AND s.last_active_at>?
+      ORDER BY p.last_seen_at DESC LIMIT 200`)
+      .all(timestamp-PRESENCE_FRESH_MS,timestamp,timestamp-SESSION_IDLE_MS);
+    const seen=new Set();
+    const people=rows.filter(row=>{if(seen.has(row.id))return false;seen.add(row.id);return true;});
+    return send(res,200,{people,total:people.length,serverTime:timestamp});
+  }
+  if (p === '/api/admin/audit' && req.method === 'GET') {
+    requireRole(user,'admin');
+    const actorRaw=url.searchParams.get('actorId')||'';
+    const actorId=actorRaw && /^\d+$/.test(actorRaw) ? Number(actorRaw) : null;
+    if (actorRaw && (!actorId || !Number.isSafeInteger(actorId))) err(400,'Invalid employee filter');
+    const scope=url.searchParams.get('scope')||'day';
+    if(!['shift','day','week','all'].includes(scope))err(400,'Invalid date filter');
+    if(scope==='shift' && !actorId)err(400,'Select an employee for shift history');
+    const conditions=[];const args=[];
+    if(actorId){conditions.push('a.actor_id=?');args.push(actorId);}
+    let since=null;
+    if(scope==='day') since=new Date(Date.now()-24*60*60*1000).toISOString();
+    if(scope==='week') since=new Date(Date.now()-7*24*60*60*1000).toISOString();
+    if(scope==='shift'){
+      const last=db.prepare("SELECT created_at FROM audit_events WHERE actor_id=? AND action='signed_in' ORDER BY id DESC LIMIT 1").get(actorId);
+      since=last ? last.created_at : new Date(Date.now()-12*60*60*1000).toISOString();
+    }
+    if(since){conditions.push('a.created_at>=?');args.push(since);}
+    const where=conditions.length?'WHERE '+conditions.join(' AND '):'';
+    const limit=Math.min(100,Math.max(1,parseInt(url.searchParams.get('limit'),10)||50));
+    const offset=Math.min(10000,Math.max(0,parseInt(url.searchParams.get('offset'),10)||0));
+    const total=db.prepare(`SELECT count(*) AS n FROM audit_events a ${where}`).get(...args).n;
+    const events=db.prepare(`
+      SELECT a.id,a.action,a.details,a.created_at AS createdAt,
+        c.case_id AS caseId,u.id AS actorId,u.email AS actorEmail,
+        u.display_name AS actorName,u.role AS actorRole
+      FROM audit_events a JOIN users u ON u.id=a.actor_id
+      LEFT JOIN cases c ON c.id=a.case_id
+      ${where} ORDER BY a.id DESC LIMIT ? OFFSET ?`)
+      .all(...args,limit,offset);
+    return send(res,200,{events,total,limit,offset,serverTime:Date.now(),scope,actorId});
+  }
+
   if (p === '/api/dashboard' && req.method === 'GET') {
     requireRole(user, 'agent', 'qc', 'admin');
     const where = user.role === 'agent' ? 'WHERE agent_id=?' : '';
@@ -284,6 +421,7 @@ function processAPI(req, res, url) {
     db.prepare('DELETE FROM sessions WHERE expires_at<? OR last_active_at<?').run(Date.now(), Date.now() - SESSION_IDLE_MS);
     const token = sessionToken();
     db.prepare('INSERT INTO sessions(token_hash,user_id,expires_at,last_active_at) VALUES(?,?,?,?)').run(tokenHash(token), found.id, Date.now() + SESSION_AGE_MS, Date.now());
+    audit(null,found.id,'signed_in','Employee began a session');
     return send(res, 200, { user: { id: found.id, email: found.email, role: found.role, displayName: found.display_name || '' } }, { 'Set-Cookie': setCookie(token) });
   });
   if (p === '/api/auth/activity' && req.method === 'POST') {
@@ -291,6 +429,7 @@ function processAPI(req, res, url) {
     return send(res, 200, { ok: true });
   }
   if (p === '/api/auth/logout' && req.method === 'POST') {
+    if (user) audit(null,user.id,'signed_out','Employee ended their session');
     const token = parseCookie(req); if (token) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(token));
     return send(res, 200, { ok: true }, { 'Set-Cookie': clearCookie() });
   }
@@ -311,7 +450,7 @@ function processAPI(req, res, url) {
       try {
         const result = db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at) VALUES(?,?,?,?,?)')
           .run(email, displayName, role, hashPassword(password), now());
-        return send(res, 201, { user: { id: Number(result.lastInsertRowid), email, displayName, role } });
+        const newId=Number(result.lastInsertRowid); audit(null,user.id,'staff_created',`Account #${newId} · role=${role}`); return send(res, 201, { user: { id: newId, email, displayName, role } });
       }
       catch (e) { if (e.code === 'ERR_SQLITE_ERROR') err(409, 'Account already exists'); throw e; }
     });
@@ -325,6 +464,7 @@ function processAPI(req, res, url) {
       const targetId = Number(employeeMatch[1]);
       const result = db.prepare('UPDATE users SET display_name=? WHERE id=?').run(displayName, targetId);
       if (!result.changes) err(404, 'Employee not found');
+      audit(null,user.id,'staff_name_updated',`Updated display name on account #${targetId}`);
       return send(res, 200, { user: { id: targetId, displayName } });
     });
   }
@@ -342,14 +482,19 @@ function processAPI(req, res, url) {
       const id = typeof data.caseId === 'string' ? data.caseId : '';
       const found = db.prepare('SELECT id FROM cases WHERE case_id=? AND deleted_at IS NULL').get(id);
       if (!found) err(404, 'Case not found');
-      db.prepare('INSERT OR IGNORE INTO qc_saved_cases(reviewer_id,case_id,created_at) VALUES(?,?,?)').run(user.id, found.id, now());
+      const inserted=db.prepare('INSERT OR IGNORE INTO qc_saved_cases(reviewer_id,case_id,created_at) VALUES(?,?,?)').run(user.id, found.id, now());
+      if(inserted.changes) audit(found.id,user.id,'work_later_saved','Saved case to personal work folder');
       return send(res, 200, { ok: true, caseId: id, saved: true });
     });
   }
   const savedMatch = p.match(/^\/api\/qc\/work-later\/(CR-\d{8}-\d{6,})$/);
   if (savedMatch && req.method === 'DELETE') {
     requireRole(user, 'qc', 'admin');
-    db.prepare('DELETE FROM qc_saved_cases WHERE reviewer_id=? AND case_id IN (SELECT id FROM cases WHERE case_id=?)').run(user.id, savedMatch[1]);
+    const found=db.prepare('SELECT id FROM cases WHERE case_id=?').get(savedMatch[1]);
+    if(found) {
+      const result=db.prepare('DELETE FROM qc_saved_cases WHERE reviewer_id=? AND case_id=?').run(user.id,found.id);
+      if(result.changes) audit(found.id,user.id,'work_later_removed','Removed from personal work folder');
+    }
     return send(res, 200, { ok: true, caseId: savedMatch[1], saved: false });
   }
   if (p === '/api/cases' && req.method === 'POST') {
@@ -504,7 +649,10 @@ const PAGE_ROLES = new Map([
   ['/qc.html', ['qc', 'admin']],
   ['/qc.js', ['qc', 'admin']],
   ['/staff.html', ['admin']],
-  ['/staff.js', ['admin']]
+  ['/staff.js', ['admin']],
+  ['/operations.html', ['admin']],
+  ['/operations.js', ['admin']],
+  ['/operations.css', ['admin']]
 ]);
 
 function denyWorkspaceAccess(req, res, decoded) {

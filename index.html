@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="workspace.css">
   <script defer src="script.js"></script>
   <script src="session-guard.js"></script>
+  <script src="presence-client.js"></script>
+  <link rel="stylesheet" href="live-agents.css">
+  <script defer src="live-agents.js"></script>
 </head>
 <body>
   <div id="dashboard" class="app-shell" aria-busy="true">
@@ -22,6 +25,7 @@
           <a class="nav-item" href="outbound.html" data-access="agent,admin"><span class="nav-icon">↗</span> Outbound</a>
           <a class="nav-item" href="cases.html" data-access="agent,admin"><span class="nav-icon">▤</span> My cases</a>
           <a class="nav-item" href="qc.html" data-access="qc,admin"><span class="nav-icon">◎</span> Quality control</a>
+          <a class="nav-item" href="operations.html" data-access="admin"><span class="nav-icon">◉</span> Live operations</a>
         </nav>
         <p class="sidebar-section-title" style="margin-top:34px">MANAGEMENT</p>
         <nav class="nav"><a class="nav-item" href="staff.html" data-access="admin"><span class="nav-icon">♙</span> Staff accounts</a></nav>
@@ -62,6 +66,11 @@
           <div class="stat"><div class="stat-top"><span>Awaiting QC review</span><span class="stat-icon">◷</span></div><strong id="casePending">—</strong><small>Pending quality evaluation</small></div>
           <div class="stat"><div class="stat-top"><span id="completedLabel">Resolved inquiries</span><span class="stat-icon">✓</span></div><strong id="caseResolved">—</strong><small id="completedNote">Completed call outcomes</small></div>
         </section>
+
+        <section class="panel live-agent-panel" aria-label="Live agent presence">
+  <div class="live-agent-heading"><div><h3>Active agents</h3><p>Auto-refreshes every 5 seconds · Route timers update every second</p></div><span class="pill"><span class="dot"></span><span data-live-agent-count>Connecting…</span></span></div>
+  <div data-live-agents aria-live="polite"><p class="live-agents-empty">Connecting to Cricket presence…</p></div>
+</section>
 
         <div class="section-header"><div><h2>Divisions</h2><p>Access is based on your employee role.</p></div><span id="workspaceCount">Role-based access</span></div>
         <section class="division-grid" aria-label="Available divisions">

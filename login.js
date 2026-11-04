@@ -10,7 +10,8 @@ const nextAllowed = {
   'outbound.html': ['agent','admin'],
   'cases.html': ['agent','admin'],
   'qc.html': ['qc','admin'],
-  'staff.html': ['admin']
+  'staff.html': ['admin'],
+  'operations.html': ['admin']
 };
 const requested = new URLSearchParams(location.search).get('next');
 const destination = Object.hasOwn(nextAllowed, requested) ? requested : 'index.html';

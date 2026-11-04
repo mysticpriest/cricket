@@ -2,6 +2,19 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Live operations monitoring (multi-user demo)
+
+Cricket now provides near-real-time status across multiple signed-in devices sharing the same **Node server and SQLite database**:
+
+- Every authenticated employee can see an **Active agents** panel on the main dashboard and QC page. It includes employee display name, current Inbound route/stage and route duration. It never includes caller phone numbers, patient records, notes, or recordings.
+- The administrator-only **Live operations** page shows connected employee sessions, their current workspace, Inbound route, active step and a live-updating route timer. It refreshes about every **4 seconds**, while the visible timer ticks every second.
+- Administrators also get a live **Shift audit log** with employee and time-period filters (last 24 hours, last 7 days, full history, or activity since an employee's most recent sign-in). Events include sign-in/out, workspace changes, route transitions, documented cases, QC reviews, case removal/restoration, staff updates and exports.
+- An Agent's Inbound browser reports route and step status when they change. Its heartbeat refreshes every 10 seconds; inactive or logged-out sessions disappear from the live list after a short timeout.
+- All monitoring routes, permissions and the agent's identity are enforced on the backend. All employees can see basic *agent availability*, but only administrators can view the detailed monitoring and audit endpoints.
+- QC reviewers can already **Remove case** from the opened case detail. Removal is soft-delete with an audit trail; administrators can restore the case from *Removed (admin)*.
+
+**Live means near-real-time polling, not a call-center telephone integration.** A browser tab that closes or loses connectivity is marked offline after its presence heartbeat expires. Reported route duration measures time in the Cricket workflow, not the verified duration of a phone call. Never use this prototype to track real callers or employee productivity without an approved workplace policy.
+
 ## QC review productivity and session safety
 
 - **Work Later**: Every QC reviewer and administrator has a private, persistent saved-case folder. Save or unsave a case from its detail panel. Other QC accounts do **not** see your folder.

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f8fc">
+<title>Cricket | Live Operations</title>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="operations.css">
+<script src="session-guard.js"></script>
+<script src="presence-client.js"></script>
+<script defer src="operations.js"></script>
+</head>
+<body>
+<header class="simple-topbar operations-topbar">
+  <a class="logo" href="index.html" aria-label="Cricket dashboard"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+  <div class="operations-top-actions"><span class="pill"><span class="dot"></span>Live operations</span><a class="button button-outline small-button" href="index.html">← Dashboard</a></div>
+</header>
+<main class="operations-layout">
+  <div class="ops-heading"><div>
+    <span class="eyebrow">ADMINISTRATION / OPERATIONS</span>
+    <h1>Live shift monitoring<span class="logo-period">.</span></h1>
+    <p>Watch active workspaces, route duration, and an audit trail of employee actions. Live data is updated automatically without exposing caller details.</p>
+  </div><button id="opsRefresh" class="button button-outline small-button" type="button">↻ Refresh now</button></div>
+  <div class="ops-stats">
+    <div class="stat"><span>Employees online</span><strong id="opsOnline">—</strong><small>Recently active sessions</small></div>
+    <div class="stat"><span>Agents on routes</span><strong id="opsRoutes">—</strong><small>Currently handling Inbound routes</small></div>
+    <div class="stat"><span>Recent audit events</span><strong id="opsAudits">—</strong><small>Matching the selected history filter</small></div>
+  </div>
+  <section class="ops-section">
+    <div class="ops-section-head">
+      <div><h2>Team activity <span class="ops-live-chip">● LIVE</span></h2><p>Route duration updates every second. Presence refreshes about every 4 seconds.</p></div>
+      <span id="opsLastUpdated" class="ops-timestamp">Connecting…</span>
+    </div>
+    <div id="opsPeople" class="ops-people" aria-live="polite"><p class="ops-empty">Loading employee sessions…</p></div>
+  </section>
+  <section class="ops-section">
+    <div class="ops-section-head">
+      <div><h2>Shift audit log</h2><p>Sign-ins, route transitions, case documentation, QC decisions, and administrative changes.</p></div>
+      <span class="pill">Admin only</span>
+    </div>
+    <form id="opsAuditForm" class="ops-filters">
+      <label>Employee <select id="opsActor"><option value="">All employees</option></select></label>
+      <label>Period <select id="opsScope">
+        <option value="day">Last 24 hours</option>
+        <option value="week">Last 7 days</option>
+        <option value="all">Full history</option>
+        <option value="shift" disabled>Selected employee's current shift</option>
+      </select></label>
+      <button type="submit" class="button small-button">Apply filter</button>
+    </form>
+    <p id="opsAuditInfo" class="ops-audit-info" role="status">Loading audit history…</p>
+    <div id="opsAuditList" class="ops-audit-list" aria-live="polite"><p class="ops-empty">Loading activity…</p></div>
+    <div class="ops-pagination"><button id="opsAuditPrev" type="button" class="button button-outline small-button">← Previous</button><span id="opsAuditPage" class="muted">—</span><button id="opsAuditNext" type="button" class="button button-outline small-button">Next →</button></div>
+  </section>
+  <p class="ops-disclaimer">Local development preview. Live presence reflects connected Cricket sessions, not actual telephone or call-recording system state. Use fictional data only.</p>
+</main>
+</body>
+</html>

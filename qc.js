@@ -356,7 +356,7 @@ els.logoutButton.addEventListener('click', async () => { try { await api('/api/a
     if (!data.user) { location.replace('login.html?next=qc.html'); return; }
     state.user = data.user;
     els.signedInAs.textContent = `${data.user.email} · ${data.user.role.toUpperCase()}`;
-    if (data.user.role === 'admin') document.querySelector('#staffLink').hidden = false;
+    if (data.user.role === 'admin') { document.querySelector('#staffLink').hidden = false; document.querySelector('#operationsLink').hidden = false; }
     if (!['qc','admin'].includes(data.user.role)) {
       els.caseList.replaceChildren(node('p','qc-empty','Your account has no access to the QC review queue.'));
       return;
