@@ -79,6 +79,9 @@ test('additive schema migration preserves older accounts and case history',async
     assert.equal(signedIn.status,200);
     const payload=await signedIn.json();
     assert.equal(payload.user.displayName,'');
+    const firstColor=payload.user.preferences.color;
+    assert.ok(['ocean','violet','emerald','rose','amber','teal','indigo','coral'].includes(firstColor));
+    assert.equal(payload.user.preferences.mode,'personal');
     const cookie=signedIn.headers.get('set-cookie').split(';')[0];
     const caseResp=await fetch(url+'/api/cases/CR-20260901-000001',{headers:{Cookie:cookie}});
     assert.equal(caseResp.status,200);
@@ -93,7 +96,11 @@ test('additive schema migration preserves older accounts and case history',async
     });
     assert.equal(patched.status,200);
     const refreshed=await fetch(url+'/api/auth/me',{headers:{Cookie:cookie}});
-    assert.equal((await refreshed.json()).user.displayName,'Legacy Admin');
+    const refreshedUser=(await refreshed.json()).user;
+    assert.equal(refreshedUser.displayName,'Legacy Admin');
+    assert.equal(refreshedUser.preferences.color,firstColor,'Migrated color remains stable through updates');
+    const prefsResp=await fetch(url+'/api/preferences',{headers:{Cookie:cookie}});
+    assert.equal((await prefsResp.json()).preferences.color,firstColor);
   }finally{
     proc.kill('SIGTERM');
     await new Promise(resolve=>{if(proc.exitCode!==null)resolve();else{proc.once('exit',resolve);setTimeout(resolve,2000);}});

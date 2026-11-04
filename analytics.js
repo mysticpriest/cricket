@@ -100,7 +100,17 @@ function formatLongDate(date){
   return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
 }
 function number(value){return Number(value||0).toLocaleString();}
-function metricColor(){return PALETTE[state.metric]||PALETTE.total;}
+function chartPaletteColor(key){
+  if(key==='total'||key==='inbound'){
+    const theme=document.documentElement.dataset.cricketTheme;
+    if(theme==='personal'){
+      const color=getComputedStyle(document.documentElement).getPropertyValue('--cricket-accent').trim();
+      if(/^#[0-9a-f]{6}$/i.test(color))return color;
+    }
+  }
+  return PALETTE[key]||PALETTE.total;
+}
+function metricColor(){return chartPaletteColor(state.metric);}
 function isQc(){return state.mode==='qc';}
 function metricChoices(){return isQc()?QC_METRICS:AGENT_METRICS;}
 function activeLabel(){return metricChoices().find(x=>x[0]===state.metric)?.[1]||'Total';}
@@ -350,7 +360,7 @@ function drawDonut(data){
     const length=fraction*C;
     if(length){
       const arc=svg('circle',{cx:120,cy:120,r:R,class:'an-donut-ring an-donut-segment',
-        stroke:PALETTE[key], 'stroke-dasharray':length+' '+(C-length),
+        stroke:chartPaletteColor(key), 'stroke-dasharray':length+' '+(C-length),
         'stroke-dashoffset':-offset,'aria-label':label+': '+number(value)});
       A.donut.append(arc);
     }
@@ -358,7 +368,7 @@ function drawDonut(data){
     const row=elt('button','an-legend-row');
     row.type='button';
     row.title='Filter by '+label;
-    const bullet=elt('span','an-legend-bullet');bullet.style.background=PALETTE[key];
+    const bullet=elt('span','an-legend-bullet');bullet.style.background=chartPaletteColor(key);
     row.append(bullet,elt('span','an-legend-name',label),
       elt('span','an-legend-number',number(value)+' · '+(total?Math.round(value/total*100):0)+'%'));
     row.addEventListener('click',()=>{
@@ -488,6 +498,9 @@ A.barView.addEventListener('click',()=>{
   A.barView.classList.add('active');A.lineView.classList.remove('active');
   A.lineView.setAttribute('aria-pressed','false');A.barView.setAttribute('aria-pressed','true');
   if(state.data)drawChart(state.data);
+});
+window.addEventListener('cricket-theme-updated',()=>{
+  if(state.data){drawChart(state.data);drawDonut(state.data);}
 });
 window.setInterval(()=>{if(!document.hidden&&!state.loading)void load();},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!state.loading)void load();});

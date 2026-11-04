@@ -2,6 +2,23 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Personal themes and account settings
+
+Cricket assigns a **random, accessible accent color** to each new employee account (Agent, QC Reviewer, or Administrator). Existing accounts receive a one-time random color during the next additive database migration. The assigned color is **stored in SQLite** and is not randomized again when the employee signs in.
+
+Every authenticated workspace has a **Settings** button in its top-right header. Employees can adjust their **own** preferences, which are saved to their account and take effect across the dashboard, Inbound, Outbound preview, My Cases, QC, Analytics, Staff and Live Operations. Choices persist through sign-outs and different computers connecting to the same Cricket server.
+
+- **Personal color mode:** Use the assigned color, choose from eight accessible themes (Ocean, Violet, Emerald, Rose, Amber, Teal, Indigo, Coral), or click *Surprise me* for a different random color.
+- **Original Cricket mode:** Restore the existing white/blue/black design instantly, without changing the saved personal color. Switch back to *My color* to recover the previous selection.
+- **Layout density:** Comfortable or Compact, reducing panel and list padding.
+- **Text size:** Standard, Large or Extra large (the latter two use browser-supported CSS zoom).
+- **Reduce motion:** Minimize CSS transitions and animations, independently of the operating system's built-in reduced-motion preference.
+- **Reset display preferences:** Restore personal color mode, comfortable density, standard text size, and standard motion while preserving the account's chosen color.
+
+Preference API: `GET /api/preferences` and `PATCH /api/preferences` (signed-in employee only; complete validated payload `{color,mode,density,textSize,reduceMotion}`). The server binds changes to the authenticated user's ID and rejects arbitrary CSS, extra account IDs, unknown colors, and unapproved settings. Preferences are returned on login and `/api/auth/me`; users cannot modify one another's preferences. Staff Accounts shows each person's assigned color for administrators. Settings updates are included in the audit trail without private case data.
+
+**Tip:** In this development prototype, changing visual preferences affects only the display, not workflow permissions or case contents. The original legacy theme remains available at all times.
+
 ## Interactive analytics and role-separated reporting
 
 Open **Analytics** from the main dashboard (available to Agent, QC Reviewer, and Administrator accounts). The page shows animated, clickable SVG charts and statistics from the **shared, saved Cricket database**, not simulated or hardcoded totals.

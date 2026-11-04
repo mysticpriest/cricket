@@ -20,6 +20,12 @@ const SESSION_AGE_MS = 8 * 60 * 60 * 1000;
 const SESSION_IDLE_MS = 20 * 60 * 1000;
 const PRESENCE_FRESH_MS = 50 * 1000;
 const ROLES = new Set(['agent', 'qc', 'admin']);
+const THEME_COLORS = ['ocean','violet','emerald','rose','amber','teal','indigo','coral'];
+const THEME_COLOR_SET = new Set(THEME_COLORS);
+const THEME_MODES = new Set(['personal','legacy']);
+const UI_DENSITIES = new Set(['comfortable','compact']);
+const TEXT_SIZES = new Set(['standard','large','extra-large']);
+function randomThemeColor() { return THEME_COLORS[crypto.randomInt(THEME_COLORS.length)]; }
 const OUTCOMES = new Set(['resolved', 'pending']);
 const REVIEWS = new Set(['approved', 'coaching', 'flagged']);
 const FILE_TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
@@ -87,6 +93,11 @@ CREATE INDEX IF NOT EXISTS idx_audit_case ON audit_events(case_id, id);
 // Additive migrations preserve existing employees, local sessions, and case history.
 for (const [table, column, definition] of [
   ['users', 'display_name', "TEXT NOT NULL DEFAULT ''"],
+  ['users', 'theme_color', "TEXT NOT NULL DEFAULT ''"],
+  ['users', 'theme_mode', "TEXT NOT NULL DEFAULT 'personal'"],
+  ['users', 'ui_density', "TEXT NOT NULL DEFAULT 'comfortable'"],
+  ['users', 'text_size', "TEXT NOT NULL DEFAULT 'standard'"],
+  ['users', 'reduce_motion', "INTEGER NOT NULL DEFAULT 0"],
   ['cases', 'call_phone', "TEXT"],
   ['cases', 'call_started_at', "TEXT"],
   ['cases', 'deleted_at', 'TEXT'],
@@ -97,6 +108,10 @@ for (const [table, column, definition] of [
   if (!columns.some(entry => entry.name === column)) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
+}
+// Each existing account receives a random, persistent color exactly once.
+for (const person of db.prepare("SELECT id FROM users WHERE theme_color IS NULL OR theme_color=''").all()) {
+  db.prepare('UPDATE users SET theme_color=? WHERE id=?').run(randomThemeColor(),person.id);
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_cases_phone ON cases(call_phone);');
 db.exec(`
@@ -146,6 +161,27 @@ function employeeName(v) {
   const name = v.trim().replace(/\s+/g, ' ');
   return name.length >= 2 && /^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u.test(name) ? name : null;
 }
+function safePreferences(row) {
+  const color=row.theme_color ?? row.themeColor;
+  const mode=row.theme_mode ?? row.themeMode;
+  const density=row.ui_density ?? row.uiDensity;
+  const textSize=row.text_size ?? row.textSize;
+  const reduceMotion=row.reduce_motion ?? row.reduceMotion;
+  return {
+    color: THEME_COLOR_SET.has(color) ? color : 'ocean',
+    mode: THEME_MODES.has(mode) ? mode : 'personal',
+    density: UI_DENSITIES.has(density) ? density : 'comfortable',
+    textSize: TEXT_SIZES.has(textSize) ? textSize : 'standard',
+    reduceMotion: reduceMotion===true || reduceMotion===1
+  };
+}
+function publicUser(row) {
+  return {
+    id:row.id,email:row.email,role:row.role,
+    displayName:row.displayName ?? row.display_name ?? '',
+    preferences:safePreferences(row)
+  };
+}
 function normalizeCallPhone(input) {
   if (typeof input !== 'string' || input.length > 40) return null;
   const raw = input.trim();
@@ -189,12 +225,12 @@ function currentUser(req, touch = true) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
   const timestamp = Date.now();
   const hash = tokenHash(token);
-  const row = db.prepare(`SELECT u.id, u.email, u.role, u.display_name AS displayName
+  const row = db.prepare(`SELECT u.id, u.email, u.role, u.display_name AS displayName, u.theme_color,u.theme_mode,u.ui_density,u.text_size,u.reduce_motion
     FROM sessions s JOIN users u ON u.id=s.user_id
     WHERE s.token_hash=? AND s.expires_at>? AND s.last_active_at>?`)
     .get(hash, timestamp, timestamp - SESSION_IDLE_MS);
   if (row && touch) db.prepare('UPDATE sessions SET last_active_at=? WHERE token_hash=?').run(timestamp, hash);
-  return row || null;
+  return row ? publicUser(row) : null;
 }
 function requireRole(user, ...allowed) {
   if (!user) err(401, 'Sign in required');
@@ -433,7 +469,7 @@ function processAPI(req, res, url) {
     const token = sessionToken();
     db.prepare('INSERT INTO sessions(token_hash,user_id,expires_at,last_active_at) VALUES(?,?,?,?)').run(tokenHash(token), found.id, Date.now() + SESSION_AGE_MS, Date.now());
     audit(null,found.id,'signed_in','Employee began a session');
-    return send(res, 200, { user: { id: found.id, email: found.email, role: found.role, displayName: found.display_name || '' } }, { 'Set-Cookie': setCookie(token) });
+    return send(res, 200, { user: publicUser(found) }, { 'Set-Cookie': setCookie(token) });
   });
   if (p === '/api/auth/activity' && req.method === 'POST') {
     requireRole(user, 'agent', 'qc', 'admin');
@@ -444,9 +480,36 @@ function processAPI(req, res, url) {
     const token = parseCookie(req); if (token) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(token));
     return send(res, 200, { ok: true }, { 'Set-Cookie': clearCookie() });
   }
+  if (p === '/api/preferences' && req.method === 'GET') {
+    requireRole(user,'agent','qc','admin');
+    return send(res,200,{preferences:user.preferences});
+  }
+  if (p === '/api/preferences' && req.method === 'PATCH') {
+    requireRole(user,'agent','qc','admin');
+    return readBody(req).then(data => {
+      if(!data || typeof data!=='object' || Array.isArray(data))err(400,'Invalid settings');
+      const keys=['color','mode','density','textSize','reduceMotion'];
+      if(Object.keys(data).length!==keys.length ||
+         !keys.every(key=>Object.hasOwn(data,key)) ||
+         !THEME_COLOR_SET.has(data.color) ||
+         !THEME_MODES.has(data.mode) ||
+         !UI_DENSITIES.has(data.density) ||
+         !TEXT_SIZES.has(data.textSize) ||
+         typeof data.reduceMotion!=='boolean') {
+        err(400,'Invalid theme or display settings');
+      }
+      const previous=user.preferences;
+      const updated={color:data.color,mode:data.mode,density:data.density,textSize:data.textSize,reduceMotion:data.reduceMotion};
+      db.prepare(`UPDATE users SET theme_color=?, theme_mode=?, ui_density=?, text_size=?, reduce_motion=? WHERE id=?`)
+        .run(updated.color,updated.mode,updated.density,updated.textSize,updated.reduceMotion?1:0,user.id);
+      if(JSON.stringify(previous)!==JSON.stringify(updated))
+        audit(null,user.id,'display_preferences_updated','Updated personal theme/display settings');
+      return send(res,200,{preferences:updated});
+    });
+  }
   if (p === '/api/users' && req.method === 'GET') {
     requireRole(user, 'admin');
-    return send(res, 200, { users: db.prepare('SELECT id,email,display_name AS displayName,role,created_at FROM users ORDER BY id').all() });
+    return send(res, 200, { users: db.prepare('SELECT id,email,display_name AS displayName,role,theme_color AS themeColor,created_at FROM users ORDER BY id').all() });
   }
   if (p === '/api/users' && req.method === 'POST') {
     requireRole(user, 'admin');
@@ -459,9 +522,10 @@ function processAPI(req, res, url) {
         err(400, 'Enter an employee name, valid email, role, and password of at least 12 characters');
       }
       try {
-        const result = db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at) VALUES(?,?,?,?,?)')
-          .run(email, displayName, role, hashPassword(password), now());
-        const newId=Number(result.lastInsertRowid); audit(null,user.id,'staff_created',`Account #${newId} · role=${role}`); return send(res, 201, { user: { id: newId, email, displayName, role } });
+        const color=randomThemeColor();
+        const result = db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color) VALUES(?,?,?,?,?,?)')
+          .run(email, displayName, role, hashPassword(password), now(), color);
+        const newId=Number(result.lastInsertRowid); audit(null,user.id,'staff_created',`Account #${newId} · role=${role}`); return send(res, 201, { user: { id: newId, email, displayName, role, themeColor:color } });
       }
       catch (e) { if (e.code === 'ERR_SQLITE_ERROR') err(409, 'Account already exists'); throw e; }
     });
@@ -721,7 +785,7 @@ if (!initialCount) {
   const password = process.env.CRICKET_ADMIN_PASSWORD;
   const adminName = employeeName(process.env.CRICKET_ADMIN_NAME) || 'Administrator';
   if (!validateEmail(email) || !validatePassword(password)) throw Error('First run requires CRICKET_ADMIN_EMAIL and CRICKET_ADMIN_PASSWORD (12+ characters). See README.md.');
-  db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at) VALUES(?,?,?,?,?)').run(email, adminName, 'admin', hashPassword(password), now());
+  db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color) VALUES(?,?,?,?,?,?)').run(email, adminName, 'admin', hashPassword(password), now(), randomThemeColor());
   process.stdout.write('Cricket QC administrator initialized.\n');
 }
 
