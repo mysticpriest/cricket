@@ -58,8 +58,8 @@ function choose(params,key,set){
 }
 function employeeOptions(db,roles){
   const placeholders=roles.map(()=>'?').join(',');
-  return db.prepare(`SELECT id,display_name AS displayName,email FROM users WHERE role IN (${placeholders}) ORDER BY display_name COLLATE NOCASE,email`).all(...roles)
-    .map(row=>({id:row.id,name:row.displayName||'Employee #'+row.id}));
+  return db.prepare(`SELECT id,display_name AS displayName,email,theme_color AS themeColor FROM users WHERE role IN (${placeholders}) ORDER BY display_name COLLATE NOCASE,email`).all(...roles)
+    .map(row=>({id:row.id,name:row.displayName||'Employee #'+row.id,color:row.themeColor||'ocean'}));
 }
 function baseSeries(range,fields){
   return range.labels.map(date=>({date,...fields}));
@@ -85,7 +85,7 @@ function analyticsAgents(db,params){
   const daily=baseSeries(range,zero);
   const byDate=new Map(daily.map(item=>[item.date,item]));
   const byAgent=new Map(agents.filter(a=>agentId===null||a.id===agentId)
-    .map(a=>[a.id,{id:a.id,name:a.name,...zero}]));
+    .map(a=>[a.id,{id:a.id,name:a.name,color:a.color,...zero}]));
   const totals={...zero};
   const apply=(target,row)=>{
     target.total+=row.total;

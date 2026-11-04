@@ -95,7 +95,7 @@ test('random account colors and private server-persisted display preferences',as
     assert.ok(audit.length>=3);
     database.close();
     for(const file of ['/index.html','/inbound.html','/qc.html','/analytics.html','/cases.html','/staff.html','/outbound.html','/operations.html']){
-      const cookie=file==='/qc.html'?qc.cookie:file==='/staff.html'||file==='/operations.html'?admin:agent1.cookie;
+      const cookie=file==='/qc.html'?qc.cookie:file==='/staff.html'||file==='/operations.html'||file==='/cases.html'?admin:agent1.cookie;
       const page=await fetch(url+file,{headers:{Cookie:cookie},redirect:'manual'});
       assert.equal(page.status,200,file+' should be accessible with allowed role');
       const html=await page.text();

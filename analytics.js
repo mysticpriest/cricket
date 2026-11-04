@@ -2,8 +2,6 @@
 // Cricket Analytics: accessible, animated SVG graphs. No external chart service.
 const A={
   account:document.querySelector('#analyticsAccount'),
-  agentTab:document.querySelector('#analyticsAgentsTab'),
-  qcTab:document.querySelector('#analyticsQcTab'),
   status:document.querySelector('#analyticsLiveStatus'),
   refresh:document.querySelector('#analyticsRefresh'),
   clear:document.querySelector('#analyticsClearFilters'),
@@ -38,8 +36,7 @@ const A={
   leaderTitle:document.querySelector('#analyticsLeaderboardTitle'),
   leaderCaption:document.querySelector('#analyticsLeaderboardCaption'),
   teamSearch:document.querySelector('#analyticsTeamSearch'),
-  tableHead:document.querySelector('#analyticsTableHead'),
-  tableRows:document.querySelector('#analyticsTeamRows'),
+  cubeRows:document.querySelector('#analyticsAgentCubes'),
   updated:document.querySelector('#analyticsUpdatedAt')
 };
 const state={
@@ -111,7 +108,7 @@ function chartPaletteColor(key){
   return PALETTE[key]||PALETTE.total;
 }
 function metricColor(){return chartPaletteColor(state.metric);}
-function isQc(){return state.mode==='qc';}
+function isQc(){return false;}
 function metricChoices(){return isQc()?QC_METRICS:AGENT_METRICS;}
 function activeLabel(){return metricChoices().find(x=>x[0]===state.metric)?.[1]||'Total';}
 function setStatus(text,busy=false){
@@ -143,27 +140,20 @@ function buildSelect(select,items,selected,empty){
   }
   select.value=String(selected||'');
 }
-function changeMode(mode){
-  if(mode==='qc'&&!['qc','admin'].includes(state.role))return;
-  state.mode=mode;
+function changeMode() {
+  state.mode='agents';
   state.metric='total';
   state.selectedDay=null;
   state.sort='total';state.descending=true;
-  A.agentTab.classList.toggle('active',!isQc());
-  A.qcTab.classList.toggle('active',isQc());
-  A.agentTab.setAttribute('aria-selected',String(!isQc()));
-  A.qcTab.setAttribute('aria-selected',String(isQc()));
-  A.employeeLabel.textContent=isQc()?'QC reviewer':'Agent';
-  A.departmentField.hidden=isQc();
-  A.outcomeLabel.textContent=isQc()?'QC decision':'Resolution';
+  A.employeeLabel.textContent='Agent';
+  A.departmentField.hidden=false;
+  A.outcomeLabel.textContent='Resolution';
   A.outcome.replaceChildren();
-  const choices=isQc()?[['all','All decisions'],['approved','Approved'],['coaching','Needs coaching'],['flagged','Flagged']]
-    :[['all','All outcomes'],['resolved','Resolved'],['pending','Pending']];
-  for(const [value,text] of choices){
-    const opt=elt('option','',text);opt.value=value;A.outcome.append(opt);
+  for(const [value,label] of [['all','All outcomes'],['resolved','Resolved'],['pending','Pending']]){
+    const option=elt('option','',label);option.value=value;A.outcome.append(option);
   }
-  A.outcome.value=isQc()?state.decision:state.outcome;
-  A.employee.value=isQc()?state.reviewerId:state.agentId;
+  A.outcome.value=state.outcome;
+  A.employee.value=state.agentId;
   A.teamSearch.value='';
   A.error.textContent='';
   void load();
@@ -192,15 +182,10 @@ function applyFilters(){
 function query(){
   const params=new URLSearchParams({range:state.range});
   if(state.range==='custom'){params.set('from',state.from);params.set('to',state.to);}
-  if(isQc()){
-    if(state.reviewerId)params.set('reviewerId',state.reviewerId);
-    params.set('decision',state.decision);
-  }else{
-    if(state.agentId)params.set('agentId',state.agentId);
-    params.set('department',state.department);
-    params.set('outcome',state.outcome);
-  }
-  return '/api/analytics/'+(isQc()?'qc':'agents')+'?'+params;
+  if(state.agentId)params.set('agentId',state.agentId);
+  params.set('department',state.department);
+  params.set('outcome',state.outcome);
+  return '/api/analytics/agents?'+params;
 }
 async function load(){
   const serial=++state.request;
@@ -385,93 +370,64 @@ function drawDonut(data){
     ? 'QC figures count submitted evaluations. One case may receive multiple evaluations.'
     : 'Outbound calls appear only when an actual Outbound case record exists. Outbound workflows are not implemented yet.';
 }
-function tableColumns(){
-  return isQc()?
-    [['name','Reviewer'],['total','QC reviews'],['uniqueCases','Unique cases'],
-      ['approved','Approved'],['coaching','Coaching'],['flagged','Flagged'],['averageScore','Avg. score']]
-    :[['name','Agent'],['total','Documented'],['inbound','Inbound'],
-      ['outbound','Outbound'],['resolved','Resolved'],['pending','Pending'],['contribution','Share']];
-}
-function createHead(){
-  const tr=elt('tr');
-  for(const [key,label] of tableColumns()){
-    const th=elt('th');
-    if(key==='contribution'){th.textContent=label;}
-    else{
-      const button=elt('button','',label+(state.sort===key?(state.descending?' ↓':' ↑'):''));
-      button.type='button';
-      button.addEventListener('click',()=>{
-        if(state.sort===key)state.descending=!state.descending;
-        else{state.sort=key;state.descending=key!=='name';}
-        createLeaderboard(state.data);
-      });
-      th.append(button);
-    }
-    tr.append(th);
-  }
-  A.tableHead.replaceChildren(tr);
-}
+const AGENT_COLORS={
+  ocean:'#0759a6',violet:'#7137b6',emerald:'#147a58',rose:'#b91b65',
+  amber:'#976213',teal:'#08777a',indigo:'#3944a8',coral:'#b74630'
+};
+const CUBE_METRICS=[
+  ['total','Total','#0759a6','#e9f3ff'],
+  ['inbound','Inbound','#3944a8','#edf0ff'],
+  ['outbound','Outbound','#7137b6','#f5edff'],
+  ['resolved','Resolved','#147a58','#e9f8f0'],
+  ['pending','Pending','#976213','#fff5dc']
+];
 function createLeaderboard(data){
-  createHead();
-  A.tableRows.replaceChildren();
-  const rows=isQc()?data.byReviewer:data.byAgent;
-  const search=A.teamSearch.value.trim().toLocaleLowerCase();
-  const shown=rows.filter(x=>x.name.toLocaleLowerCase().includes(search)).slice();
-  const sort=state.sort;
-  shown.sort((a,b)=>{
-    let comparison;
-    if(sort==='name')comparison=a.name.localeCompare(b.name);
-    else comparison=(a[sort]??-1)-(b[sort]??-1);
-    return (state.descending?-comparison:comparison)||a.name.localeCompare(b.name);
-  });
-  if(!shown.length){
-    const tr=elt('tr');
-    const td=elt('td','an-table-empty',search?'No employees match your search.':'No employee records match this selection.');
-    td.colSpan=tableColumns().length;tr.append(td);A.tableRows.append(tr);return;
+  const container=A.cubeRows;
+  container.replaceChildren();
+  const needle=A.teamSearch.value.trim().toLocaleLowerCase();
+  const matching=data.byAgent.filter(row=>row.name.toLocaleLowerCase().includes(needle));
+  if(!matching.length){
+    container.append(elt('p','an-agent-cube-empty',needle?'No agents match that name.':'No agents available for this filter.'));
+    return;
   }
-  for(const row of shown){
-    const tr=elt('tr');
-    for(const [key] of tableColumns()){
-      const td=elt('td');
-      if(key==='name'){
-        const root=elt('div','an-table-employee');
-        root.append(elt('div','an-table-avatar',(row.name||'E').slice(0,1).toUpperCase()),
-          elt('strong','',row.name));
-        td.append(root);
-      }else if(key==='contribution'){
-        const fraction=data.totals.total?row.total/data.totals.total:0;
-        const track=elt('div','an-mini-track');
-        const fill=elt('div','an-mini-fill');fill.style.width=(fraction*100).toFixed(1)+'%';
-        track.append(fill);td.append(track);
-      }else if(key==='averageScore'){
-        td.textContent=row.averageScore===null?'—':row.averageScore+'%';
-      }else{td.textContent=number(row[key]);}
-      if(key==='total')td.classList.add('an-table-num');
-      tr.append(td);
+  const max=Math.max(1,...matching.map(a=>a.total||0));
+  for(const agent of matching){
+    const row=elt('article','an-agent-cube-row');
+    const identity=elt('div','an-agent-cube-name');
+    const initials=elt('span','an-agent-cube-avatar',(agent.name||'A').slice(0,1).toUpperCase());
+    initials.style.setProperty('--cube-employee-accent',AGENT_COLORS[agent.color]||AGENT_COLORS.ocean);
+    const info=elt('div','an-agent-cube-identity');
+    info.append(elt('strong','',agent.name),elt('span','',agent.total
+      ? Math.round(agent.total/max*100)+'% of leading agent'
+      : 'No documented calls in this period'));
+    identity.append(initials,info);
+    const cubes=elt('div','an-agent-cubes');
+    for(const [key,label,color,background] of CUBE_METRICS){
+      const cube=elt('div','an-agent-stat-cube');
+      cube.setAttribute('aria-label',agent.name+' · '+label+': '+number(agent[key]));
+      cube.style.setProperty('--cube-ink',color);
+      cube.style.setProperty('--cube-bg',background);
+      cube.append(elt('strong','',number(agent[key])),elt('small','',label));
+      cubes.append(cube);
     }
-    A.tableRows.append(tr);
+    row.append(identity,cubes);
+    container.append(row);
   }
 }
 function render(data){
-  const names=isQc()?data.options.reviewers:data.options.agents;
-  const saved=isQc()?state.reviewerId:state.agentId;
-  buildSelect(A.employee,names,saved,isQc()?'All QC reviewers':'All agents');
-  A.employee.value=saved;
-  A.scopeLabel.textContent=isQc()?'QUALITY CONTROL PERFORMANCE':'AGENT PERFORMANCE';
-  A.scopeTitle.textContent=isQc()?'Quality review analytics':'Documented call analytics';
-  A.scopeCaption.textContent=isQc()
-    ? 'Count submitted QC evaluations, review decisions and average quality scores.'
-    : 'Track real Cricket case documentation, not unrecorded telephone calls.';
-  A.chartTitle.textContent=isQc()?'Daily quality evaluations':'Daily documented calls';
+  buildSelect(A.employee,data.options.agents,state.agentId,'All agents');
+  A.employee.value=state.agentId;
+  A.scopeLabel.textContent='AGENT PERFORMANCE';
+  A.scopeTitle.textContent='Documented call analytics';
+  A.scopeCaption.textContent='Track real Cricket case documentation, not unrecorded telephone calls.';
+  A.chartTitle.textContent='Daily documented calls';
   A.chartSubtitle.textContent=formatDate(data.range.from)+' – '+formatDate(data.range.to)+' · '+data.range.days+' days · UTC';
-  A.leaderTitle.textContent=isQc()?'QC reviewer comparison':'Agent comparison';
-  A.leaderCaption.textContent=isQc()?'Completed evaluations per reviewer, including unique cases and mean score.':'Documented cases by employee for the selected reporting period.';
+  A.leaderTitle.textContent='Agent statistics';
+  A.leaderCaption.textContent='Compact color-coded totals per employee for the selected period.';
   A.updated.textContent='Last updated '+new Date(data.generatedAt).toLocaleString()+
     ' · Reporting days in UTC · '+data.range.days+' days included';
   drawStats(data);renderMetricButtons();drawChart(data);drawDonut(data);createLeaderboard(data);
 }
-A.agentTab.addEventListener('click',()=>changeMode('agents'));
-A.qcTab.addEventListener('click',()=>changeMode('qc'));
 A.filters.addEventListener('submit',event=>{event.preventDefault();applyFilters();});
 A.presets.forEach(button=>button.addEventListener('click',()=>{
   state.range=button.dataset.range;
@@ -514,7 +470,6 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!state.lo
     }
     state.role=user.role;
     A.account.textContent=(user.displayName||user.email)+' · '+user.role.toUpperCase();
-    A.qcTab.hidden=user.role==='agent';
-    changeMode(user.role==='qc'?'qc':'agents');
+    changeMode();
   }catch(error){A.error.textContent=error.message;setStatus('Connection unavailable');}
 })();

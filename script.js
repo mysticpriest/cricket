@@ -3,7 +3,7 @@
 const dashboard = document.querySelector('#dashboard');
 const notice = document.querySelector('#notice');
 const roleDescriptions = {
-  agent: { title: 'Agent', intro: 'Your inbound call workspace and documented cases, all in one place.', action: 'inbound.html', label: 'Start handling calls', quickHeading: 'Ready for your next call?', quickDescription: 'Open Inbound to handle a fictional patient inquiry, complete the note, and generate a Case ID.' },
+  agent: { title: 'Agent', intro: 'Your inbound call workspace and call documentation, all in one place.', action: 'inbound.html', label: 'Start handling calls', quickHeading: 'Ready for your next call?', quickDescription: 'Open Inbound to handle a fictional patient inquiry and submit documentation directly to QC.' },
   qc: { title: 'QC reviewer', intro: 'Your quality review queue, case histories, and scorecards in one workspace.', action: 'qc.html', label: 'Open review queue', quickHeading: 'Ready to review a case?', quickDescription: 'Open the QC console to search Case IDs, inspect documented actions, and evaluate the outcome.' },
   admin: { title: 'Administrator', intro: 'Manage Cricket operations, employee access, and quality oversight.', action: 'inbound.html', label: 'Explore inbound workflows', quickHeading: 'Present the full call journey', quickDescription: 'Use the Inbound workspace to create a fictional case, then open QC to review the same Case ID.' }
 };

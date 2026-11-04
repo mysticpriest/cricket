@@ -277,7 +277,7 @@ function listQuery(url, user, maxLimit = 100) {
     query += ' AND EXISTS (SELECT 1 FROM qc_saved_cases sc WHERE sc.case_id=c.id AND sc.reviewer_id=?)';
     params.push(user.id);
   }
-  if (user.role === 'agent') { query += ' AND c.agent_id=?'; params.push(user.id); }
+  // Case records are never exposed to Agent accounts; QC and Admin only.
   if (status && ['pending_review','approved','coaching','flagged'].includes(status)) { query += ' AND c.review_status=?'; params.push(status); }
   if (search) {
     const phoneSearch = normalizeCallPhone(search);
@@ -593,7 +593,7 @@ function processAPI(req, res, url) {
       const created = now();
       if (requestId) {
         const existing = db.prepare('SELECT case_id FROM cases WHERE request_id=? AND agent_id=?').get(requestId, user.id);
-        if (existing) return send(res, 200, { caseId: existing.case_id, reviewStatus: 'pending_review', duplicate: true });
+        if (existing) return send(res, 200, user.role==='agent' ? { saved:true, duplicate:true } : { caseId: existing.case_id, reviewStatus:'pending_review', duplicate:true });
       }
       // SQLite autoincrement ID guarantees uniqueness across concurrent requests.
       db.exec('BEGIN IMMEDIATE');
@@ -604,20 +604,20 @@ function processAPI(req, res, url) {
         db.prepare('UPDATE cases SET case_id=? WHERE id=?').run(caseId, id);
         audit(id, user.id, 'case_created', `outcome=${outcome}`);
         db.exec('COMMIT');
-        return send(res, 201, { caseId, reviewStatus: 'pending_review', createdAt: created });
+        return send(res, 201, user.role==='agent' ? { saved:true, createdAt:created } : { caseId, reviewStatus:'pending_review', createdAt: created });
       } catch (e) { db.exec('ROLLBACK'); throw e; }
     });
   }
   if (p === '/api/cases' && req.method === 'GET') {
-    requireRole(user, 'agent', 'qc', 'admin');
+    requireRole(user, 'qc', 'admin');
     return send(res, 200, listQuery(url, user));
   }
   const match = p.match(/^\/api\/cases\/(CR-\d{8}-\d{6,})$/);
   if (match && req.method === 'GET') {
-    requireRole(user, 'agent', 'qc', 'admin');
+    requireRole(user, 'qc', 'admin');
     const row = db.prepare('SELECT c.*, u.email AS agent_email, u.display_name AS agent_name FROM cases c JOIN users u ON u.id=c.agent_id WHERE c.case_id=?').get(match[1]);
     if (!row || (row.deleted_at && user.role !== 'admin')) err(404, 'Case not found');
-    if (user.role === 'agent' && row.agent_id !== user.id) err(403, 'Insufficient permission');
+    // Case detail records, including IDs, are QC/Admin-only.
     const reviews = db.prepare('SELECT r.id,r.decision,r.criteria_json,r.score,r.feedback,r.created_at,u.email AS reviewer FROM reviews r JOIN users u ON u.id=r.reviewer_id WHERE r.case_id=? ORDER BY r.id DESC').all(row.id).map(x => ({ ...x, criteria: JSON.parse(x.criteria_json), criteria_json: undefined }));
     const history = db.prepare('SELECT a.action,a.details,a.created_at,u.email AS actor FROM audit_events a JOIN users u ON u.id=a.actor_id WHERE a.case_id=? ORDER BY a.id ASC').all(row.id);
     return send(res, 200, { case: mapCase(row), reviews, history });
@@ -719,8 +719,9 @@ const PAGE_ROLES = new Map([
   ['/inbound.js', ['agent', 'admin']],
   ['/qc-bridge.js', ['agent', 'admin']],
   ['/outbound.html', ['agent', 'admin']],
-  ['/cases.html', ['agent', 'admin']],
-  ['/cases.js', ['agent', 'admin']],
+  ['/cases.html', ['admin']],
+  ['/cases.js', ['admin']],
+  ['/qc-insights.js', ['qc', 'admin']],
   ['/qc.html', ['qc', 'admin']],
   ['/qc.js', ['qc', 'admin']],
   ['/staff.html', ['admin']],

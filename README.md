@@ -2,6 +2,22 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Agent statistic cubes, QC insights and case privacy
+
+The Analytics page is now **agent-focused for everyone**. The old employee comparison table is replaced by a compact row of five colored statistic cubes **to the right of each agent's name** (Total, Inbound, Outbound, Resolved, Pending). These sit below the graph and are populated by the same filtered, dated saved-case counts as the charts. Each employee's account color is used for their initial avatar. Agent Analytics continues to support 7/30/90-day/custom date filters, call type, outcome, search, interactive graphs and a breakdown.
+
+QC-only analytics have moved **out of the shared Analytics page and into the Quality Control dashboard**:
+- A small QC overview panel in `qc.html` shows evaluations, unique cases reviewed, approvals, average score, daily activity mini-chart and compact reviewer statistic cubes (total/approved/coaching/flagged).
+- A 7/30/90-day picker and reviewer filter provide a quick shift overview without leaving the QC workspace. The panel auto-refreshes every 30 seconds and immediately after reviews are submitted or a case is removed/restored.
+- It relies on the existing backend `GET /api/analytics/qc`, which remains **QC/Admin only** (Agents receive 403). All figures are aggregate and never include caller details.
+
+**Case visibility is now limited to QC and administrators:**
+- The `My cases` link has been removed from Inbound and hidden for Agent accounts in navigation. The old case archive page and script are **admin only**; QC reviewers manage all case records through `qc.html`.
+- Agent accounts cannot read `GET /api/cases` or `GET /api/cases/:id` and receive **403 Forbidden**.
+- Agent case submissions via `POST /api/cases` still work, but their responses contain only a saved flag/timestamp (or duplicate flag) — **never a Case ID**, including idempotent retries. Administrators submitting cases still receive the ID for QC.
+- Inbound submission confirmation for Agents is limited to *Documentation submitted to Quality Control successfully*; no case link or ID. QC and administrators retain full case IDs, search, actions, export, saved folders, and audit history.
+- No data was deleted or migrated away. Existing historic case IDs continue to be available to authorized QC/Admin users.
+
 ## Personal themes and account settings
 
 Cricket assigns a **random, accessible accent color** to each new employee account (Agent, QC Reviewer, or Administrator). Existing accounts receive a one-time random color during the next additive database migration. The assigned color is **stored in SQLite** and is not randomized again when the employee signs in.
@@ -76,11 +92,11 @@ Do not export or enter real patient phone numbers, notes, or recording details i
 
 ### Employee access matrix
 
-| Role | Inbound | Outbound (planned) | My cases | Quality Control | Analytics | QC analytics | Staff accounts |
+| Role | Inbound | Outbound (planned) | Case archive | Quality Control | Agent Analytics | QC insights | Staff accounts |
 |---|---|---|---|---|---|---|---|
-| Agent | Yes | Preview | Own cases | No | Agent stats | No | No |
-| QC Reviewer | No | No | No | Yes | Agent stats | QC stats | No |
-| Administrator | Yes | Preview | All cases | Yes | Agent stats | QC stats | Yes |
+| Agent | Yes | Preview | No | No | Yes | No | No |
+| QC Reviewer | No | No | No (use QC) | Yes | Yes | Yes (QC workspace) | No |
+| Administrator | Yes | Preview | Yes | Yes | Yes | Yes (QC workspace) | Yes |
 
 The backend **enforces** these permissions for page resources and APIs. An Inbound call now starts with a required caller number (7–15 digits with optional formatting) before the route grid is displayed. On **Start New Call** the form is reset; on **Another Inquiry — Same Call** the number stays attached.
 

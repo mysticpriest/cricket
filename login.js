@@ -8,7 +8,7 @@ const nextAllowed = {
   'index.html': ['agent','qc','admin'],
   'inbound.html': ['agent','admin'],
   'outbound.html': ['agent','admin'],
-  'cases.html': ['agent','admin'],
+  'cases.html': ['admin'],
   'qc.html': ['qc','admin'],
   'staff.html': ['admin'],
   'operations.html': ['admin'],

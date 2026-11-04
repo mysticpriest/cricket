@@ -128,3 +128,44 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 button.an-legend-row{appearance:none;border:1px solid transparent;border-radius:8px;background:transparent;width:100%;text-align:left;cursor:pointer;padding:8px 9px;transition:background .16s,border-color .16s}
 button.an-legend-row:hover{background:#eff6ff;border-color:#dbeafe}
 button.an-legend-row:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+
+/* Agent-only reporting header and compact colored statistic cubes. */
+.an-agent-context{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 18px;margin:0 0 24px;border:1px solid #dfe8f5;border-radius:13px;background:white}
+.an-agent-context>div{display:flex;align-items:center;gap:12px}
+.an-agent-context-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:10px;background:var(--cricket-accent-soft,#eff6ff);color:var(--cricket-accent,#2563eb);font-size:20px}
+.an-agent-context strong{display:block;font-size:13px;color:#17243b;font-weight:900}
+.an-agent-context small{display:block;font-size:10px;color:#94a3b8;margin-top:4px}
+.an-agent-board{margin-top:18px;padding:19px 20px}
+.an-agent-board .an-card-header{align-items:center}
+.an-agent-cube-list{display:grid;gap:8px;margin-top:12px}
+.an-agent-cube-row{display:flex;gap:16px;align-items:center;justify-content:space-between;border:1px solid #edf1f7;background:#fcfdff;border-radius:12px;padding:12px 15px;min-width:0;animation:an-card-in .45s both}
+.an-agent-cube-row:hover{border-color:#d4e5fa;box-shadow:0 3px 13px #172a4908}
+.an-agent-cube-name{display:flex;gap:10px;align-items:center;min-width:165px;max-width:220px;flex:1}
+.an-agent-cube-avatar{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;background:var(--cube-employee-accent,#2563eb);color:#fff;border-radius:9px;font-weight:900;font-size:14px}
+.an-agent-cube-identity{min-width:0}
+.an-agent-cube-identity strong{display:block;font-size:12px;color:#17233b;overflow-wrap:anywhere}
+.an-agent-cube-identity span{display:block;font-size:10px;color:#94a3b8;margin-top:4px}
+.an-agent-cubes{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:7px;flex:3}
+.an-agent-stat-cube{width:80px;min-width:68px;height:61px;border-radius:10px;background:var(--cube-bg,#eff6ff);border:1px solid color-mix(in srgb,var(--cube-ink) 18%,white);color:var(--cube-ink,#2563eb);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:transform .2s,box-shadow .2s}
+.an-agent-stat-cube:hover{transform:translateY(-2px);box-shadow:0 6px 12px #172a4912}
+.an-agent-stat-cube strong{font:800 19px/1.1 'Space Grotesk',system-ui;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.an-agent-stat-cube small{font-size:9px;letter-spacing:.1px;font-weight:900}
+.an-cube-board-legend{display:none}
+.an-agent-cube-empty{color:#718096;font-size:12px;text-align:center;padding:25px 12px}
+:root[data-cricket-density="compact"] .an-agent-cube-row{padding:7px 9px;gap:9px}
+:root[data-cricket-density="compact"] .an-agent-stat-cube{height:51px;min-width:61px;width:68px}
+@media(min-width:1200px){.an-agent-cubes{gap:10px}.an-agent-stat-cube{width:90px}}
+@media(max-width:780px){
+.an-agent-cube-row{align-items:flex-start;flex-direction:column}
+.an-agent-cube-name{max-width:100%;width:100%}
+.an-agent-cubes{width:100%;justify-content:flex-start}
+.an-agent-stat-cube{flex:1;max-width:92px}
+}
+@media(max-width:420px){
+.an-agent-context{flex-wrap:wrap;padding:12px}
+.an-agent-cube-row{padding:12px}
+.an-agent-cubes{gap:5px}
+.an-agent-stat-cube{height:53px;min-width:56px;width:auto;max-width:68px;padding:5px}
+.an-agent-stat-cube strong{font-size:16px}
+.an-agent-stat-cube small{font-size:8px}
+}
