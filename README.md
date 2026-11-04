@@ -4,7 +4,7 @@ Cricket is a local-development workflow application with an employee sign-in, ro
 
 ## Agent statistic cubes, QC insights and case privacy
 
-The Analytics page is now **agent-focused for everyone**. The old employee comparison table is replaced by a compact row of five colored statistic cubes **to the right of each agent's name** (Total, Inbound, Outbound, Resolved, Pending). These sit below the graph and are populated by the same filtered, dated saved-case counts as the charts. Each employee's account color is used for their initial avatar. Agent Analytics continues to support 7/30/90-day/custom date filters, call type, outcome, search, interactive graphs and a breakdown.
+The Analytics page is **agent-focused for everyone**. Below the graph, each agent has a compact row consisting of their name, a dot in their assigned account color, and **only three small statistic cubes** (Total, Inbound, Outbound). Resolved and Pending statistics have been removed from the Analytics interface. These figures follow the selected date, call-type and employee filters; the name-search box filters both the compact rows and graph legend.
 
 QC-only analytics have moved **out of the shared Analytics page and into the Quality Control dashboard**:
 - A small QC overview panel in `qc.html` shows evaluations, unique cases reviewed, approvals, average score, daily activity mini-chart and compact reviewer statistic cubes (total/approved/coaching/flagged).
@@ -39,12 +39,15 @@ Preference API: `GET /api/preferences` and `PATCH /api/preferences` (signed-in e
 
 Open **Analytics** from the main dashboard (available to Agent, QC Reviewer, and Administrator accounts). The page shows animated, clickable SVG charts and statistics from the **shared, saved Cricket database**, not simulated or hardcoded totals.
 
-- **Agent analytics (all roles):** Documented-case counts, Inbound vs. explicitly recorded Outbound cases, resolved/pending outcomes, active contributors, per-day line/bar charts, clickable call-type breakdown and sortable/searchable per-agent comparisons. All employees may see aggregated agent statistics.
-- **QC analytics (QC Reviewer + Administrator only):** Completed QC evaluations (not calls taken or case notes created), unique cases reviewed, approved/coaching/flagged decisions, average QC scores, animated trends, clickable breakdown, and a per-reviewer table. The frontend hides this tab for Agents, and the **server returns HTTP 403** for `GET /api/analytics/qc` unless the session has `qc` or `admin` privileges.
-- **Filters:** Past 7 / 30 / 90 UTC calendar days including today; custom date ranges (up to 366 days); employee; call type and outcome for Agents; reviewer and decision for QC. Clicking a chart day shows its exact counts, and clicking the doughnut legend filters the full report.
+- **Agent analytics (all roles):** Documented-case counts (Total, Inbound, Outbound), **one separate animated line for each agent**, assigned account colors, a clickable legend for showing/hiding agents, click-to-inspect daily activity, a clickable call-type breakdown and compact searchable per-agent statistic cubes. All authenticated employees may see these aggregate agent statistics. Agents who have no cases are included with zero-valued daily series. If two agents share a color, different dash patterns distinguish them.
+- **QC analytics (QC Reviewer + Administrator only):** These statistics remain in the compact **QC dashboard**, not in shared Analytics. They include completed evaluations, unique reviewed cases, decisions, average scores, reviewer cubes and a small trend chart. The server returns **403 Forbidden** for `GET /api/analytics/qc` unless the session has `qc` or `admin` privileges.
+- **Filters:** Past 7 / 30 / 90 UTC calendar days including today; custom date ranges (up to 366 days); agent and call type for Agent Analytics. The agent-name search also filters the displayed line series; the legend can hide/show individual agents. Clicking a chart day shows its per-agent counts, and clicking the doughnut legend filters by call type. QC reviewer and period filters remain on the QC dashboard.
 - **Automatic refresh:** Analytics polls every 30 seconds when visible. Viewing a report does not extend Cricket's 20-minute inactivity timeout.
 - **Statistics:** Counts reflect *documented cases* saved to Cricket and *submitted QC review records*. One case can receive multiple QC evaluations. Unique cases reviewed are de-duplicated separately. Soft-deleted cases are not counted. Outbound workflows are currently a preview; do not interpret the Outbound total as a live phone-system call counter. Numbers will normally show zero until Outbound case records actually exist.
 - **Privacy:** Aggregate APIs never include caller phone numbers, notes, full case contents, or personal health information. Server authentication is required for both analytics endpoints and the page. No third-party charting service is needed.
+
+
+Agent analytics API (`GET /api/analytics/agents`) now includes `agentSeries`, an ordered array of `{ id, name, color, daily: [{ date, total, inbound, outbound }] }`. All dates in the chosen UTC range are populated, even for employees with no activity. The series are computed from the same filtered case records as `totals`, `daily`, and `byAgent`; no caller numbers or case IDs are present. Other historic API fields remain available for backwards compatibility.
 
 API routes: `GET /api/analytics/agents` (agent/qc/admin); `GET /api/analytics/qc` (qc/admin). Both use the same reporting filters as the UI.
 

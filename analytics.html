@@ -52,9 +52,6 @@
             <option value="all">All call types</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="other">Other / legacy</option>
           </select>
         </label>
-        <label class="an-filter-field"><span id="outcomeFilterLabel">Resolution</span><select id="analyticsOutcome">
-          <option value="all">All outcomes</option><option value="resolved">Resolved</option><option value="pending">Pending</option>
-        </select></label>
         <button class="button an-apply-filter" type="submit">Apply filters <span aria-hidden="true">→</span></button>
       </form>
       <p class="an-filter-feedback" id="analyticsFilterError" role="alert" aria-live="polite"></p>
@@ -66,12 +63,11 @@
 
       <div class="an-graphs">
         <section class="an-card an-trend-panel">
-          <div class="an-card-header"><div><div class="eyebrow">ACTIVITY OVER TIME</div><h3 id="analyticsChartTitle">Daily call trend</h3><p id="analyticsChartSubtitle">Select a point or bar to inspect that day.</p></div>
-            <div class="an-graph-toolbar"><div class="an-view-switch" role="group" aria-label="Chart display style"><button id="analyticsLineView" type="button" class="active" aria-pressed="true">Line</button><button id="analyticsBarView" type="button" aria-pressed="false">Bars</button></div></div>
-          </div>
+          <div class="an-card-header"><div><div class="eyebrow">ACTIVITY OVER TIME</div><h3 id="analyticsChartTitle">Calls by agent</h3><p id="analyticsChartSubtitle">Each line represents an agent's documented activity.</p></div></div>
           <div id="analyticsMetrics" class="an-metric-switch" role="group" aria-label="Chart metric"></div>
+          <div id="analyticsSeriesLegend" class="an-series-legend" aria-label="Agent chart legend"></div>
           <div class="an-chart-canvas"><svg id="analyticsTrendSvg" viewBox="0 0 920 330" role="img" aria-label="Daily trend chart" preserveAspectRatio="xMidYMid meet"></svg><div class="an-svg-tooltip" id="analyticsGraphTooltip" hidden></div></div>
-          <div id="analyticsDayDetail" class="an-day-detail" aria-live="polite">Click on any day in the chart to inspect its activity.</div>
+          <div id="analyticsDayDetail" class="an-day-detail" aria-live="polite">Select a day to compare agents' documented calls.</div>
         </section>
         <section class="an-card an-breakdown-panel">
           <div class="an-card-header"><div><div class="eyebrow">DISTRIBUTION</div><h3 id="analyticsBreakdownTitle">Call type breakdown</h3><p id="analyticsBreakdownCaption">What makes up the selected total?</p></div></div>
@@ -83,11 +79,10 @@
       <section class="an-card an-agent-board" aria-label="Agent statistics">
         <div class="an-card-header an-leaderboard-header">
           <div><div class="eyebrow">AGENT SNAPSHOT</div><h3 id="analyticsLeaderboardTitle">Statistics by agent</h3>
-            <p id="analyticsLeaderboardCaption">Each colored cube represents a documented-call metric for the selected reporting period.</p></div>
+            <p id="analyticsLeaderboardCaption">Three small metrics per agent, aligned beside their name.</p></div>
           <label class="an-search-label">Find agent <input id="analyticsTeamSearch" type="search" placeholder="Search agents…" autocomplete="off"></label>
         </div>
-        <div class="an-cube-board-legend" aria-hidden="true"><span>Total</span><span>Inbound</span><span>Outbound</span><span>Resolved</span><span>Pending</span></div>
-        <div id="analyticsAgentCubes" class="an-agent-cube-list" aria-live="polite"></div>
+                <div id="analyticsAgentCubes" class="an-agent-cube-list" aria-live="polite"></div>
       </section>
 
       <div class="an-report-footer"><span id="analyticsUpdatedAt">Waiting for analytics…</span><span id="analyticsPrivacyNote">Only aggregate activity is shown. Caller phone numbers and case notes are not included.</span></div>

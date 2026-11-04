@@ -86,6 +86,11 @@ function analyticsAgents(db,params){
   const byDate=new Map(daily.map(item=>[item.date,item]));
   const byAgent=new Map(agents.filter(a=>agentId===null||a.id===agentId)
     .map(a=>[a.id,{id:a.id,name:a.name,color:a.color,...zero}]));
+  // Per-agent UTC daily series use the same filtered records as the summary and cubes.
+  // A complete date range, including zero-call days, makes agent line charts consistent.
+  const agentDays=new Map([...byAgent.keys()].map(id=>[
+    id,new Map(range.labels.map(date=>[date,{date,total:0,inbound:0,outbound:0}]))
+  ]));
   const totals={...zero};
   const apply=(target,row)=>{
     target.total+=row.total;
@@ -98,6 +103,13 @@ function analyticsAgents(db,params){
     const agent=byAgent.get(row.employeeId);
     if(day)apply(day,row);
     if(agent)apply(agent,row);
+    const dailyAgent=agentDays.get(row.employeeId)?.get(row.day);
+    if(dailyAgent){
+      dailyAgent.total+=row.total;
+      if(row.channel==='inbound'||row.channel==='outbound'){
+        dailyAgent[row.channel]+=row.total;
+      }
+    }
   }
   const sorted=Array.from(byAgent.values()).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
   const peak=daily.reduce((best,day)=>day.total>best.total?day:best,{date:null,total:0});
@@ -110,6 +122,10 @@ function analyticsAgents(db,params){
     totals:{...totals,activeAgents:sorted.filter(a=>a.total>0).length,
       averagePerDay:Math.round(totals.total/range.days*10)/10,peakDay:peak.total?peak.date:null},
     daily,byAgent:sorted,
+    agentSeries:sorted.map(agent=>({
+      id:agent.id,name:agent.name,color:agent.color,
+      daily:[...agentDays.get(agent.id).values()]
+    })),
     notes:{outbound:'Outbound route handling is not implemented yet. Outbound totals reflect only saved case records explicitly tagged as Outbound.',deleted:'Soft-deleted cases are excluded from agent analytics.'}
   };
 }
