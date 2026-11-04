@@ -77,6 +77,17 @@ test('Agent Analytics is cube-based while QC insights live exclusively on QC das
   assert.match(qcCode,/\/api\/analytics\/qc/);
   assert.match(agentCode,/an-agent-stat-cube/);
   assert.match(agentCode,/\/api\/analytics\/agents/);
+  assert.match(agentPage,/analyticsSeriesLegend/);
+  assert.doesNotMatch(agentPage,/analyticsBarView|analyticsOutcome|>Resolved<|>Pending</);
+  assert.match(agentCode,/agentSeries/);
+  assert.match(agentCode,/an-agent-chart-line/);
+  assert.match(agentCode,/const CUBE_METRICS=/);
+  const metrics=agentCode.match(/const CUBE_METRICS=\[([\s\S]*?)\];/);
+  assert.ok(metrics,'Compact agent cube definitions must exist');
+  assert.deepEqual([...metrics[1].matchAll(/\['(total|inbound|outbound)'/g)].map(match=>match[1]),
+    ['total','inbound','outbound']);
+  assert.doesNotMatch(metrics[1],/resolved|pending/);
+  assert.doesNotMatch(agentCode,/A\.barView|A\.lineView/);
 });
 test('case records and IDs are hidden from agents by both UI and backend',()=>{
   const dashboard=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
