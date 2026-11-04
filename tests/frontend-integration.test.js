@@ -41,7 +41,8 @@ test('analytics is linked for all roles, with a protected QC reporting scope',()
   assert.match(analytics,/session-guard\.js/);
   assert.match(analytics,/presence-client\.js/);
   assert.match(analytics,/analytics\.js/);
-  assert.match(analytics,/analyticsQcTab/);
+  assert.doesNotMatch(analytics,/analyticsQcTab/);
+  assert.match(qc,/qcInsightsTitle/);
   assert.match(server,/\/api\/analytics\/agents/);
   assert.match(server,/\/api\/analytics\/qc/);
   assert.match(login,/analytics\.html/);
