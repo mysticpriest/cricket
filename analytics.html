@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f8fc">
+  <meta name="description" content="Cricket analytics for documented calls and authorized quality reviews.">
+  <title>Cricket | Analytics</title>
+  <link rel="stylesheet" href="workspace.css">
+  <link rel="stylesheet" href="analytics.css">
+  <script src="session-guard.js"></script>
+  <script src="presence-client.js"></script>
+  <script defer src="analytics.js"></script>
+</head>
+<body>
+  <header class="an-topbar">
+    <a href="index.html" class="logo"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+    <span class="an-breadcrumb">/ Analytics</span>
+    <span class="an-top-spacer"></span>
+    <span class="an-account" id="analyticsAccount">Verifying account…</span>
+    <a href="index.html" class="button button-outline small-button">← Dashboard</a>
+  </header>
+  <main class="an-shell">
+    <section class="an-hero">
+      <div class="an-hero-text">
+        <div class="eyebrow">CRICKET / INSIGHTS AND REPORTING</div>
+        <h1>The numbers behind the work<span class="logo-period">.</span></h1>
+        <p>Explore documented calls and team performance, discover trends, and filter the results by date, employee, workflow, and outcome.</p>
+      </div>
+      <button class="button button-outline small-button" id="analyticsRefresh" type="button"><span aria-hidden="true">↻</span> Refresh analytics</button>
+    </section>
+
+    <nav class="an-tabs" aria-label="Analytics divisions">
+      <button id="analyticsAgentsTab" class="an-tab active" type="button" aria-selected="true"><span class="an-tab-symbol">↙</span><span>Agent analytics<small>Calls &amp; documentation</small></span></button>
+      <button id="analyticsQcTab" class="an-tab" type="button" aria-selected="false" hidden><span class="an-tab-symbol">◎</span><span>QC analytics<small>Reviews &amp; quality scores</small></span></button>
+      <span class="an-tab-spacer"></span><span id="analyticsLiveStatus" class="an-live-status"><span class="an-online-dot"></span> Preparing dashboard…</span>
+    </nav>
+
+    <section class="an-filter-panel" aria-label="Reporting filters">
+      <div class="an-filter-head"><div><strong>Reporting period</strong><span>UTC calendar days · Today's records included</span></div><button id="analyticsClearFilters" type="button" class="an-text-button">Reset all filters</button></div>
+      <div class="an-date-presets" role="group" aria-label="Date range">
+        <button data-range="7" class="an-date-preset active" type="button" aria-pressed="true">Past 7 days</button>
+        <button data-range="30" class="an-date-preset" type="button" aria-pressed="false">Past 30 days</button>
+        <button data-range="90" class="an-date-preset" type="button" aria-pressed="false">Past 90 days</button>
+        <button data-range="custom" class="an-date-preset" type="button" aria-pressed="false">Custom range</button>
+      </div>
+      <form id="analyticsFilters" class="an-filters">
+        <div id="analyticsCustomDates" class="an-custom-dates" hidden>
+          <label>Start date <input type="date" id="analyticsFrom" aria-label="Start date"></label>
+          <label>End date <input type="date" id="analyticsTo" aria-label="End date"></label>
+        </div>
+        <label class="an-filter-field"><span id="employeeFilterLabel">Agent</span><select id="analyticsEmployee"><option value="">All agents</option></select></label>
+        <label class="an-filter-field" id="analyticsDepartmentField"><span>Call type</span>
+          <select id="analyticsDepartment">
+            <option value="all">All call types</option><option value="inbound">Inbound</option><option value="outbound">Outbound</option><option value="other">Other / legacy</option>
+          </select>
+        </label>
+        <label class="an-filter-field"><span id="outcomeFilterLabel">Resolution</span><select id="analyticsOutcome">
+          <option value="all">All outcomes</option><option value="resolved">Resolved</option><option value="pending">Pending</option>
+        </select></label>
+        <button class="button an-apply-filter" type="submit">Apply filters <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="an-filter-feedback" id="analyticsFilterError" role="alert" aria-live="polite"></p>
+    </section>
+
+    <section id="analyticsBody" aria-live="polite">
+      <div class="an-section-heading"><div class="eyebrow" id="analyticsScopeLabel">AGENT PERFORMANCE</div><h2 id="analyticsScopeTitle">Documented calls</h2><p id="analyticsScopeCaption">Loading results…</p></div>
+      <div class="an-stats" id="analyticsStats" aria-label="Key performance indicators"></div>
+
+      <div class="an-graphs">
+        <section class="an-card an-trend-panel">
+          <div class="an-card-header"><div><div class="eyebrow">ACTIVITY OVER TIME</div><h3 id="analyticsChartTitle">Daily call trend</h3><p id="analyticsChartSubtitle">Select a point or bar to inspect that day.</p></div>
+            <div class="an-graph-toolbar"><div class="an-view-switch" role="group" aria-label="Chart display style"><button id="analyticsLineView" type="button" class="active" aria-pressed="true">Line</button><button id="analyticsBarView" type="button" aria-pressed="false">Bars</button></div></div>
+          </div>
+          <div id="analyticsMetrics" class="an-metric-switch" role="group" aria-label="Chart metric"></div>
+          <div class="an-chart-canvas"><svg id="analyticsTrendSvg" viewBox="0 0 920 330" role="img" aria-label="Daily trend chart" preserveAspectRatio="xMidYMid meet"></svg><div class="an-svg-tooltip" id="analyticsGraphTooltip" hidden></div></div>
+          <div id="analyticsDayDetail" class="an-day-detail" aria-live="polite">Click on any day in the chart to inspect its activity.</div>
+        </section>
+        <section class="an-card an-breakdown-panel">
+          <div class="an-card-header"><div><div class="eyebrow">DISTRIBUTION</div><h3 id="analyticsBreakdownTitle">Call type breakdown</h3><p id="analyticsBreakdownCaption">What makes up the selected total?</p></div></div>
+          <div class="an-donut-layout"><svg id="analyticsDonut" viewBox="0 0 240 240" role="img" aria-label="Analytics breakdown"></svg><div id="analyticsLegend" class="an-legend"></div></div>
+          <p id="analyticsBreakdownNote" class="an-breakdown-note"></p>
+        </section>
+      </div>
+
+      <section class="an-card an-leaderboard">
+        <div class="an-card-header an-leaderboard-header"><div><div class="eyebrow">TEAM COMPARISON</div><h3 id="analyticsLeaderboardTitle">Agent performance</h3><p id="analyticsLeaderboardCaption">Statistics reflect the current date and filter selections.</p></div>
+        <label class="an-search-label">Find employee <input id="analyticsTeamSearch" type="search" placeholder="Search by employee name…" autocomplete="off"></label></div>
+        <div class="an-table-scroll"><table class="an-team-table"><thead id="analyticsTableHead"></thead><tbody id="analyticsTeamRows"></tbody></table></div>
+      </section>
+
+      <div class="an-report-footer"><span id="analyticsUpdatedAt">Waiting for analytics…</span><span id="analyticsPrivacyNote">Only aggregate activity is shown. Caller phone numbers and case notes are not included.</span></div>
+    </section>
+    <p class="an-disclaimer">Cricket development preview. The figures come from saved Cricket case and review records, not a connected phone provider or verified call recording system. Use fictional data only.</p>
+  </main>
+</body>
+</html>

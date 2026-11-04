@@ -8,7 +8,7 @@ const fs=require('node:fs');
 const ROOT=path.resolve(__dirname,'..');
 test('all browser scripts parse as JavaScript without execution',()=>{
   const scripts=['script.js','login.js','inbound.js','qc.js','staff.js','cases.js',
-    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js'];
+    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','server/analytics.js'];
   for(const file of scripts){
     assert.ok(fs.existsSync(path.join(ROOT,file)),file+' must exist');
     const result=spawnSync(process.execPath,['--check',path.join(ROOT,file)],{encoding:'utf8'});
@@ -29,4 +29,20 @@ test('live operations and shared dashboards load the presence components',()=>{
   const admin=fs.readFileSync(path.join(ROOT,'operations.html'),'utf8');
   assert.match(admin,/operations\.js/);
   assert.match(admin,/opsAuditList/);
+});
+test('analytics is linked for all roles, with a protected QC reporting scope',()=>{
+  const dashboard=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
+  const qc=fs.readFileSync(path.join(ROOT,'qc.html'),'utf8');
+  const analytics=fs.readFileSync(path.join(ROOT,'analytics.html'),'utf8');
+  const server=fs.readFileSync(path.join(ROOT,'server','server.js'),'utf8');
+  const login=fs.readFileSync(path.join(ROOT,'login.js'),'utf8');
+  assert.match(dashboard,/href="analytics\.html" data-access="agent,qc,admin"/);
+  assert.match(qc,/href="analytics\.html"/);
+  assert.match(analytics,/session-guard\.js/);
+  assert.match(analytics,/presence-client\.js/);
+  assert.match(analytics,/analytics\.js/);
+  assert.match(analytics,/analyticsQcTab/);
+  assert.match(server,/\/api\/analytics\/agents/);
+  assert.match(server,/\/api\/analytics\/qc/);
+  assert.match(login,/analytics\.html/);
 });

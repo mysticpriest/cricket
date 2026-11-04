@@ -2,6 +2,19 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Interactive analytics and role-separated reporting
+
+Open **Analytics** from the main dashboard (available to Agent, QC Reviewer, and Administrator accounts). The page shows animated, clickable SVG charts and statistics from the **shared, saved Cricket database**, not simulated or hardcoded totals.
+
+- **Agent analytics (all roles):** Documented-case counts, Inbound vs. explicitly recorded Outbound cases, resolved/pending outcomes, active contributors, per-day line/bar charts, clickable call-type breakdown and sortable/searchable per-agent comparisons. All employees may see aggregated agent statistics.
+- **QC analytics (QC Reviewer + Administrator only):** Completed QC evaluations (not calls taken or case notes created), unique cases reviewed, approved/coaching/flagged decisions, average QC scores, animated trends, clickable breakdown, and a per-reviewer table. The frontend hides this tab for Agents, and the **server returns HTTP 403** for `GET /api/analytics/qc` unless the session has `qc` or `admin` privileges.
+- **Filters:** Past 7 / 30 / 90 UTC calendar days including today; custom date ranges (up to 366 days); employee; call type and outcome for Agents; reviewer and decision for QC. Clicking a chart day shows its exact counts, and clicking the doughnut legend filters the full report.
+- **Automatic refresh:** Analytics polls every 30 seconds when visible. Viewing a report does not extend Cricket's 20-minute inactivity timeout.
+- **Statistics:** Counts reflect *documented cases* saved to Cricket and *submitted QC review records*. One case can receive multiple QC evaluations. Unique cases reviewed are de-duplicated separately. Soft-deleted cases are not counted. Outbound workflows are currently a preview; do not interpret the Outbound total as a live phone-system call counter. Numbers will normally show zero until Outbound case records actually exist.
+- **Privacy:** Aggregate APIs never include caller phone numbers, notes, full case contents, or personal health information. Server authentication is required for both analytics endpoints and the page. No third-party charting service is needed.
+
+API routes: `GET /api/analytics/agents` (agent/qc/admin); `GET /api/analytics/qc` (qc/admin). Both use the same reporting filters as the UI.
+
 ## Live operations monitoring (multi-user demo)
 
 Cricket now provides near-real-time status across multiple signed-in devices sharing the same **Node server and SQLite database**:
@@ -46,11 +59,11 @@ Do not export or enter real patient phone numbers, notes, or recording details i
 
 ### Employee access matrix
 
-| Role | Inbound | Outbound (planned) | My cases | Quality Control | Staff accounts |
-|---|---|---|---|---|---|
-| Agent | Yes | Preview | Own cases | No | No |
-| QC Reviewer | No | No | No | Yes | No |
-| Administrator | Yes | Preview | All cases | Yes | Yes |
+| Role | Inbound | Outbound (planned) | My cases | Quality Control | Analytics | QC analytics | Staff accounts |
+|---|---|---|---|---|---|---|---|
+| Agent | Yes | Preview | Own cases | No | Agent stats | No | No |
+| QC Reviewer | No | No | No | Yes | Agent stats | QC stats | No |
+| Administrator | Yes | Preview | All cases | Yes | Agent stats | QC stats | Yes |
 
 The backend **enforces** these permissions for page resources and APIs. An Inbound call now starts with a required caller number (7–15 digits with optional formatting) before the route grid is displayed. On **Start New Call** the form is reset; on **Another Inquiry — Same Call** the number stays attached.
 
