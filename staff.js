@@ -28,6 +28,11 @@ function showMessage(text, good) {
   message.textContent = text;
   message.style.color = good ? '#166534' : '#b91c1c';
 }
+const STAFF_COLORS={
+  ocean:['Ocean','#0759a6'],violet:['Violet','#7137b6'],emerald:['Emerald','#147a58'],
+  rose:['Rose','#b91b65'],amber:['Amber','#976213'],teal:['Teal','#08777a'],
+  indigo:['Indigo','#3944a8'],coral:['Coral','#b74630']
+};
 function showEmployee(user) {
   const container = node('div', undefined, 'padding:16px 0;border-bottom:1px solid #e2e8f0;');
   const top = node('div', undefined, 'display:flex;align-items:center;justify-content:space-between;gap:12px;');
@@ -36,7 +41,12 @@ function showEmployee(user) {
   const email = node('span', user.email, 'display:block;margin-top:5px;font-size:11px;color:#64748b;overflow-wrap:anywhere;');
   left.append(name, email);
   const badge = node('span', user.role.toUpperCase(), 'background:#eff6ff;color:#1d4ed8;border-radius:15px;padding:7px 10px;font-weight:800;font-size:10px;white-space:nowrap;');
-  top.append(left, badge);
+  const assigned=STAFF_COLORS[user.themeColor]||STAFF_COLORS.ocean;
+  const themeBadge=node('span',assigned[0],'display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:10px;color:#475569;white-space:nowrap;');
+  const dot=node('span','','width:11px;height:11px;border-radius:4px;display:inline-block;background:'+assigned[1]+';');
+  themeBadge.prepend(dot);
+  themeBadge.title='Assigned theme color (employee can change it under Settings)';
+  top.append(left,themeBadge,badge);
   const edit = node('button', 'Edit name', 'display:inline-flex;margin-top:10px;padding:6px 0;border:0;background:none;color:#2563eb;font-weight:800;font-size:11px;cursor:pointer;');
   edit.type = 'button';
 

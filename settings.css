@@ -1,0 +1,273 @@
+/* Cricket appearance — a single per-account theme layer shared by all workspaces. */
+/* Original blue/white/black styling is untouched when legacy mode is selected. */
+:root[data-cricket-theme="personal"] {
+  --blue:var(--cricket-accent);
+  --blue-dark:var(--cricket-accent-dark);
+  --blue-light:var(--cricket-accent);
+  --blue-soft:var(--cricket-accent-soft);
+  --border-blue:var(--cricket-accent-border);
+  --soft:var(--cricket-canvas);
+  --bg:var(--cricket-canvas);
+  --an-blue:var(--cricket-accent);
+  --an-bg:var(--cricket-canvas);
+}
+:root[data-cricket-theme="personal"] body {background:var(--cricket-canvas)!important;}
+/* Keep paper surfaces legible; tint accents, active controls and navigation. */
+:root[data-cricket-theme="personal"] .logo-mark,
+:root[data-cricket-theme="personal"] .qc-mark,
+:root[data-cricket-theme="personal"] .brand-icon,
+:root[data-cricket-theme="personal"] .button:not(.button-outline),
+:root[data-cricket-theme="personal"] .qc-btn-primary,
+:root[data-cricket-theme="personal"] .an-apply-filter,
+:root[data-cricket-theme="personal"] .cricket-primary-action,
+:root[data-cricket-theme="personal"] .cricket-primary-button {
+  background:var(--cricket-accent)!important;
+  border-color:var(--cricket-accent)!important;
+  color:#fff!important;
+}
+:root[data-cricket-theme="personal"] .button:not(.button-outline):hover,
+:root[data-cricket-theme="personal"] .qc-btn-primary:hover,
+:root[data-cricket-theme="personal"] .cricket-primary-action:hover {
+  background:var(--cricket-accent-dark)!important;
+  border-color:var(--cricket-accent-dark)!important;
+}
+:root[data-cricket-theme="personal"] .logo-period,
+:root[data-cricket-theme="personal"] .brand-dot,
+:root[data-cricket-theme="personal"] .qc-dot,
+:root[data-cricket-theme="personal"] .eyebrow,
+:root[data-cricket-theme="personal"] .qc-eyebrow,
+:root[data-cricket-theme="personal"] .nav-icon,
+:root[data-cricket-theme="personal"] .stat-icon,
+:root[data-cricket-theme="personal"] .division-foot,
+:root[data-cricket-theme="personal"] .an-table-num,
+:root[data-cricket-theme="personal"] .an-chart-label.active,
+:root[data-cricket-theme="personal"] .an-stat-icon,
+:root[data-cricket-theme="personal"] .an-tab.active,
+:root[data-cricket-theme="personal"] .qc-case-id,
+:root[data-cricket-theme="personal"] .qc-review-score,
+:root[data-cricket-theme="personal"] .qc-copy-btn,
+:root[data-cricket-theme="personal"] .qc-case-saved,
+:root[data-cricket-theme="personal"] .ops-timer,
+:root[data-cricket-theme="personal"] .ops-audit-icon,
+:root[data-cricket-theme="personal"] .ops-avatar,
+:root[data-cricket-theme="personal"] .live-agent-avatar,
+:root[data-cricket-theme="personal"] .an-table-avatar,
+:root[data-cricket-theme="personal"] .an-text-button {
+  color:var(--cricket-accent)!important;
+}
+:root[data-cricket-theme="personal"] .nav-item.active,
+:root[data-cricket-theme="personal"] .nav-item:hover,
+:root[data-cricket-theme="personal"] .division-icon,
+:root[data-cricket-theme="personal"] .timeline-index,
+:root[data-cricket-theme="personal"] .avatar,
+:root[data-cricket-theme="personal"] .pill,
+:root[data-cricket-theme="personal"] .qc-folder-tab.active,
+:root[data-cricket-theme="personal"] .qc-folder-tab:hover,
+:root[data-cricket-theme="personal"] .qc-folder-counter,
+:root[data-cricket-theme="personal"] .qc-case:hover,
+:root[data-cricket-theme="personal"] .qc-case.selected,
+:root[data-cricket-theme="personal"] .qc-copy-btn,
+:root[data-cricket-theme="personal"] .an-date-preset.active,
+:root[data-cricket-theme="personal"] .an-metric-button.active,
+:root[data-cricket-theme="personal"] .an-view-switch button.active,
+:root[data-cricket-theme="personal"] .an-tab.active,
+:root[data-cricket-theme="personal"] .an-stat-icon,
+:root[data-cricket-theme="personal"] .an-table-avatar,
+:root[data-cricket-theme="personal"] .ops-audit-icon,
+:root[data-cricket-theme="personal"] .ops-avatar,
+:root[data-cricket-theme="personal"] .live-agent-avatar {
+  background:var(--cricket-accent-soft)!important;
+  color:var(--cricket-accent)!important;
+  border-color:var(--cricket-accent-border)!important;
+}
+:root[data-cricket-theme="personal"] .sidebar-foot,
+:root[data-cricket-theme="personal"] .info-box,
+:root[data-cricket-theme="personal"] .an-day-detail,
+:root[data-cricket-theme="personal"] .qc-note {
+  background:var(--cricket-accent-soft)!important;
+  border-color:var(--cricket-accent-border)!important;
+}
+:root[data-cricket-theme="personal"] .division:hover,
+:root[data-cricket-theme="personal"] .qc-case:hover {
+  border-color:var(--cricket-accent-border)!important;
+}
+:root[data-cricket-theme="personal"] .an-date-preset.active,
+:root[data-cricket-theme="personal"] .an-metric-button.active,
+:root[data-cricket-theme="personal"] .qc-folder-tab.active,
+:root[data-cricket-theme="personal"] .an-tab.active {
+  color:var(--cricket-accent)!important;
+  border-bottom-color:var(--cricket-accent)!important;
+}
+:root[data-cricket-theme="personal"] .dot,
+:root[data-cricket-theme="personal"] .workspace-indicator {background:var(--cricket-accent)!important;}
+:root[data-cricket-theme="personal"] .an-chart-dot {stroke:var(--cricket-accent)!important;}
+:root[data-cricket-theme="personal"] .an-mini-fill {background:var(--cricket-accent)!important;}
+:root[data-cricket-theme="personal"] .qc-btn-light:hover,
+:root[data-cricket-theme="personal"] .button-outline:hover {
+  background:var(--cricket-accent-soft)!important;
+  color:var(--cricket-accent)!important;
+  border-color:var(--cricket-accent-border)!important;
+}
+:root[data-cricket-theme="personal"] .cricket-outcome-button:hover,
+:root[data-cricket-theme="personal"] .cricket-smart-option:hover {
+  border-color:var(--cricket-accent-border)!important;
+}
+:root[data-cricket-theme="personal"] .an-stat-card:after,
+:root[data-cricket-theme="personal"] .stat:after {background:radial-gradient(circle at top right,var(--cricket-accent-soft),transparent 78%)!important;}
+:root[data-cricket-theme="personal"] .an-chart-line.animated {filter:drop-shadow(0 3px 7px var(--cricket-accent-border))!important;}
+:root[data-cricket-theme="personal"] .an-tab.active {background:transparent!important;}
+/* Density is shared across Cricket, not merely in Settings. */
+:root[data-cricket-density="compact"] .panel,
+:root[data-cricket-density="compact"] .qc-panel,
+:root[data-cricket-density="compact"] .an-card,
+:root[data-cricket-density="compact"] .an-filter-panel,
+:root[data-cricket-density="compact"] .ops-section,
+:root[data-cricket-density="compact"] .live-agent-panel {padding:15px!important;}
+:root[data-cricket-density="compact"] .stat,
+:root[data-cricket-density="compact"] .qc-stat,
+:root[data-cricket-density="compact"] .an-stat-card,
+:root[data-cricket-density="compact"] .ops-person {padding:12px!important;}
+:root[data-cricket-density="compact"] .qc-case {padding:11px 15px!important;}
+:root[data-cricket-density="compact"] .live-agent-row,
+:root[data-cricket-density="compact"] .ops-audit-item {padding-top:8px!important;padding-bottom:8px!important;}
+:root[data-cricket-density="compact"] .division {padding:16px!important;}
+:root[data-cricket-density="compact"] .cricket-smart-option {padding:10px!important;}
+:root[data-cricket-text-size="large"] body {zoom:1.075;}
+:root[data-cricket-text-size="extra-large"] body {zoom:1.15;}
+:root[data-cricket-motion="reduce"] *,
+:root[data-cricket-motion="reduce"] *::before,
+:root[data-cricket-motion="reduce"] *::after {
+  animation-duration:.01ms!important;animation-iteration-count:1!important;
+  transition-duration:.01ms!important;scroll-behavior:auto!important;
+}
+/* Persistent top-right settings launcher and accessible panel. */
+.cricket-settings-launcher{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 12px;border:1px solid #dce4ef;background:#fff;color:#42526b;
+  min-height:37px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;
+  white-space:nowrap;line-height:1.2;box-shadow:0 2px 8px rgba(15,23,42,.035);
+}
+.cricket-settings-launcher:hover,
+.cricket-settings-launcher[aria-expanded="true"]{
+  color:var(--cricket-accent,#2563eb);
+  border-color:var(--cricket-accent-border,#bfdbfe);
+  background:var(--cricket-accent-soft,#eff6ff);
+}
+.cricket-settings-launcher svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+.cricket-settings-overlay[hidden],.cricket-settings-drawer[hidden]{display:none!important}
+.cricket-settings-overlay{position:fixed;inset:0;background:rgba(15,23,42,.46);z-index:1200;animation:cricket-overlay-in .17s ease both}
+.cricket-settings-drawer{
+  position:fixed;right:0;top:0;bottom:0;width:min(440px,100vw);max-width:100vw;
+  z-index:1201;background:#fff;color:#17243b;box-shadow:-19px 0 60px rgba(8,21,51,.18);
+  display:flex;flex-direction:column;animation:cricket-drawer-in .24s ease both;
+  font-family:'DM Sans',system-ui,sans-serif;font-size:14px;zoom:1;
+}
+.cricket-settings-drawer *{box-sizing:border-box}
+.cricket-settings-drawer button{font:inherit;cursor:pointer}
+.cricket-settings-head{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:25px 26px 20px;border-bottom:1px solid #edf1f6}
+.cricket-settings-eyebrow{color:var(--cricket-accent,#2563eb);font-size:10px;letter-spacing:1.5px;font-weight:900}
+.cricket-settings-head h2{font:700 27px 'Space Grotesk',system-ui;letter-spacing:-1px;margin:5px 0 0}
+.cricket-settings-dismiss{border:1px solid #dce4ef;border-radius:9px;background:#fff;width:37px;height:37px;color:#475569;font-size:22px;display:grid;place-items:center;flex-shrink:0}
+.cricket-settings-dismiss:hover{background:#f8fafc}
+.cricket-settings-scroll{overflow-y:auto;overscroll-behavior:contain;padding:24px 26px 27px;flex:1}
+.cricket-settings-account{background:#f8fafc;border:1px solid #e2e8f0;border-radius:13px;padding:16px;display:flex;gap:12px;align-items:center;margin-bottom:23px}
+.cricket-settings-avatar{width:43px;height:43px;display:grid;place-items:center;background:var(--cricket-accent-soft,#eff6ff);color:var(--cricket-accent,#2563eb);border-radius:12px;font-size:18px;font-weight:900}
+.cricket-settings-account strong{font-size:13px;display:block;margin-bottom:4px}
+.cricket-settings-account small{font-size:10px;color:#64748b;overflow-wrap:anywhere;display:block}
+.cricket-settings-section{margin:0 0 27px}
+.cricket-settings-section h3{font-size:14px;margin:0 0 6px;color:#1e293b;font-weight:900}
+.cricket-settings-section p{font-size:11px;color:#718096;line-height:1.7;margin:0 0 13px}
+.cricket-settings-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cricket-settings-mode{
+  padding:13px 12px;border:1px solid #dce4ef;background:#fff;border-radius:11px;
+  text-align:left;display:grid;gap:7px;color:#334155;
+}
+.cricket-settings-mode strong{font-size:12px}
+.cricket-settings-mode small{font-size:10px;color:#64748b;line-height:1.5}
+.cricket-settings-mode.active{border-color:var(--cricket-accent,#2563eb);box-shadow:0 0 0 2px var(--cricket-accent-soft,#eff6ff);background:#fbfcff}
+.cricket-settings-preview{height:25px;display:flex;gap:5px}
+.cricket-settings-preview i{height:100%;border-radius:4px;flex:1}
+.cricket-settings-preview.legacy i:first-child{background:#2563eb}
+.cricket-settings-preview.legacy i:last-child{background:#eef4ff}
+.cricket-settings-preview.personal i:first-child{background:var(--cricket-preview-accent,#2563eb)}
+.cricket-settings-preview.personal i:last-child{background:var(--cricket-preview-soft,#eff6ff)}
+.cricket-settings-swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0}
+.cricket-settings-swatch{
+  background:#fff;border:1px solid #dce4ef;border-radius:11px;
+  display:flex;flex-direction:column;align-items:center;gap:7px;min-height:77px;padding:10px 4px;
+}
+.cricket-settings-swatch span{width:27px;height:27px;border-radius:9px;box-shadow:0 0 0 1px rgba(15,23,42,.1)}
+.cricket-settings-swatch small{font-size:10px;font-weight:800;color:#475569}
+.cricket-settings-swatch.active{border-color:var(--cricket-accent,#2563eb);background:var(--cricket-accent-soft,#eff6ff)}
+.cricket-settings-swatch.active small{color:var(--cricket-accent,#2563eb)}
+.cricket-settings-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
+.cricket-settings-surprise,.cricket-settings-reset{color:var(--cricket-accent,#2563eb);background:transparent;border:0;font-size:11px!important;font-weight:900!important;padding:6px 0}
+.cricket-settings-options{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.cricket-settings-option{
+  flex:1;border:1px solid #dce4ef;color:#64748b;background:white;border-radius:9px;
+  padding:10px 8px;font-size:11px!important;font-weight:800!important;white-space:nowrap;
+}
+.cricket-settings-option.active{color:var(--cricket-accent,#2563eb);background:var(--cricket-accent-soft,#eff6ff);border-color:var(--cricket-accent-border,#bfdbfe)}
+.cricket-settings-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:13px 15px;text-align:left}
+.cricket-settings-toggle strong{font-size:12px}
+.cricket-settings-toggle small{display:block;font-size:10px;color:#64748b;margin-top:5px}
+.cricket-settings-switch{width:38px;height:21px;border-radius:20px;background:#d4dfec;position:relative;flex-shrink:0;transition:background .2s}
+.cricket-settings-switch::after{content:'';display:block;background:white;position:absolute;width:15px;height:15px;border-radius:50%;top:3px;left:3px;box-shadow:0 2px 4px #0002;transition:transform .2s}
+.cricket-settings-toggle[aria-pressed="true"] .cricket-settings-switch{background:var(--cricket-accent,#2563eb)}
+.cricket-settings-toggle[aria-pressed="true"] .cricket-settings-switch::after{transform:translateX(17px)}
+.cricket-settings-footer{padding:17px 26px 21px;border-top:1px solid #edf1f6;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff}
+.cricket-settings-save-status{font-size:11px;color:#64748b;line-height:1.5;flex:1}
+.cricket-settings-save-status.error{color:#b91c1c}
+.cricket-settings-done{color:white!important;background:var(--cricket-accent,#2563eb)!important;border:0;border-radius:9px;padding:11px 16px;font-size:11px!important;font-weight:900!important}
+.cricket-settings-done:hover{filter:brightness(.9)}
+body.cricket-settings-open{overflow:hidden}
+@keyframes cricket-overlay-in{from{opacity:0}to{opacity:1}}
+@keyframes cricket-drawer-in{from{transform:translateX(25px);opacity:.6}to{transform:translateX(0);opacity:1}}
+@media(max-width:700px){
+  .cricket-settings-launcher{padding:8px 10px;font-size:0;gap:0;min-height:34px}
+  .cricket-settings-launcher svg{width:17px;height:17px}
+  .cricket-settings-head{padding:18px 19px}
+  .cricket-settings-scroll{padding:17px 19px}
+  .cricket-settings-footer{padding:15px 19px}
+  .topbar-right{flex-wrap:wrap;justify-content:flex-end;gap:5px}
+  .qc-topbar{flex-wrap:wrap;gap:7px}
+}
+@media(prefers-reduced-motion:reduce){
+  .cricket-settings-drawer,.cricket-settings-overlay{animation:none!important}
+}
+
+/* Inbound call-intake elements have hardcoded legacy blues: recolor only in personal mode. */
+:root[data-cricket-theme="personal"] .intake-heading h1 span,
+:root[data-cricket-theme="personal"] .intake-input-wrap>span,
+:root[data-cricket-theme="personal"] .intake-footnote-icon,
+:root[data-cricket-theme="personal"] .active-call-icon,
+:root[data-cricket-theme="personal"] .active-call-banner strong,
+:root[data-cricket-theme="personal"] .active-call-banner button,
+:root[data-cricket-theme="personal"] .intake-tag {
+  color:var(--cricket-accent)!important;
+}
+:root[data-cricket-theme="personal"] .intake-submit {
+  background:var(--cricket-accent)!important;
+  border-color:var(--cricket-accent)!important;
+}
+:root[data-cricket-theme="personal"] .intake-submit:hover:not(:disabled) {
+  background:var(--cricket-accent-dark)!important;
+}
+:root[data-cricket-theme="personal"] .intake-submit:disabled {opacity:.5;}
+:root[data-cricket-theme="personal"] .intake-input-wrap:focus-within{
+  border-color:var(--cricket-accent)!important;
+  box-shadow:0 0 0 4px var(--cricket-accent-soft)!important;
+}
+:root[data-cricket-theme="personal"] .intake-tag,
+:root[data-cricket-theme="personal"] .intake-footnote-icon,
+:root[data-cricket-theme="personal"] .active-call-banner{
+  background:var(--cricket-accent-soft)!important;
+  border-color:var(--cricket-accent-border)!important;
+}
+:root[data-cricket-theme="personal"] .active-call-banner button:hover{
+  background:var(--cricket-accent-soft)!important;
+}
+:root[data-cricket-theme="personal"] .an-line-fill{fill:var(--cricket-accent-soft)!important;}
+/* A user's text-size choice also scales native form controls. */
+:root[data-cricket-text-size="large"] .cricket-settings-drawer,
+:root[data-cricket-text-size="extra-large"] .cricket-settings-drawer {font-size:14px;}

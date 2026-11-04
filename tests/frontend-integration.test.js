@@ -8,7 +8,7 @@ const fs=require('node:fs');
 const ROOT=path.resolve(__dirname,'..');
 test('all browser scripts parse as JavaScript without execution',()=>{
   const scripts=['script.js','login.js','inbound.js','qc.js','staff.js','cases.js',
-    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','server/analytics.js'];
+    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','settings.js','server/analytics.js'];
   for(const file of scripts){
     assert.ok(fs.existsSync(path.join(ROOT,file)),file+' must exist');
     const result=spawnSync(process.execPath,['--check',path.join(ROOT,file)],{encoding:'utf8'});
@@ -45,4 +45,20 @@ test('analytics is linked for all roles, with a protected QC reporting scope',()
   assert.match(server,/\/api\/analytics\/agents/);
   assert.match(server,/\/api\/analytics\/qc/);
   assert.match(login,/analytics\.html/);
+});
+
+test('all protected workspaces have persistent, shared appearance controls',()=>{
+  const pages=['index.html','inbound.html','qc.html','analytics.html','cases.html','staff.html','outbound.html','operations.html'];
+  for(const page of pages){
+    const html=fs.readFileSync(path.join(ROOT,page),'utf8');
+    assert.match(html,/settings\.css/,page+' missing appearance styles');
+    assert.match(html,/settings\.js/,page+' missing settings menu');
+  }
+  const settings=fs.readFileSync(path.join(ROOT,'settings.js'),'utf8');
+  assert.match(settings,/CricketAppearance/);
+  assert.match(settings,/\/api\/preferences/);
+  assert.match(settings,/cricket-theme-updated/);
+  const server=fs.readFileSync(path.join(ROOT,'server','server.js'),'utf8');
+  assert.match(server,/\/api\/preferences/);
+  assert.match(server,/theme_color/);
 });
