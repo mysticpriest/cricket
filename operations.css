@@ -1,0 +1,45 @@
+.operations-topbar{min-height:78px}
+.operations-top-actions{display:flex;gap:14px;align-items:center}
+.operations-layout{width:min(1340px,100%);margin:auto;padding:43px clamp(18px,4vw,56px) 80px}
+.ops-heading{display:flex;justify-content:space-between;align-items:end;gap:22px;margin-bottom:28px}
+.ops-heading h1{font:600 clamp(32px,4vw,47px)/1.12 'Space Grotesk',system-ui;letter-spacing:-2px;margin:14px 0 10px}
+.ops-heading p{font-size:13px;color:#64748b;line-height:1.8;max-width:690px;margin:0}
+.ops-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.ops-section{border:1px solid #e2e8f0;background:white;border-radius:17px;padding:clamp(18px,3vw,27px);margin-top:24px;box-shadow:0 15px 35px rgba(12,34,73,.03)}
+.ops-section-head{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:19px}
+.ops-section-head h2{font:600 22px 'Space Grotesk',system-ui;letter-spacing:-.6px;margin:0 0 8px}
+.ops-section-head p{font-size:11px;color:#64748b;line-height:1.6;margin:0}
+.ops-live-chip{font:800 10px 'DM Sans',system-ui;letter-spacing:1px;color:#15803d;vertical-align:middle;margin-left:12px}
+.ops-timestamp{color:#94a3b8;font-size:11px;font-weight:600}
+.ops-people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.ops-person{border:1px solid #e2e8f0;border-radius:13px;background:#fcfdff;padding:18px 20px;min-width:0}
+.ops-person-head{display:flex;align-items:center;gap:12px}
+.ops-avatar{width:42px;height:42px;display:grid;place-items:center;background:#eaf1ff;border-radius:11px;color:#1d4ed8;font-weight:800;font-size:17px;flex-shrink:0}
+.ops-employee{display:grid;gap:5px;min-width:0;flex:1}
+.ops-employee strong{font-size:13px;color:#14233b;overflow-wrap:anywhere}
+.ops-employee span{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+.ops-role{font-size:9px;font-weight:800;background:#eff6ff;color:#2563eb;border:1px solid #dbeafe;padding:7px 9px;border-radius:20px;text-transform:uppercase}
+.ops-person-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;border-top:1px solid #e9eef6;margin-top:17px;padding-top:15px}
+.ops-fact{display:grid;gap:6px;min-width:0}
+.ops-fact label{font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:1.1px;text-transform:uppercase}
+.ops-fact strong{font-size:12px;line-height:1.6;font-weight:700;overflow-wrap:anywhere}
+.ops-timer{font-variant-numeric:tabular-nums;color:#2563eb!important;font-size:18px!important;font-weight:800!important}
+.ops-empty{font-size:12px;color:#64748b;margin:12px 0;line-height:1.7}
+.ops-filters{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.ops-filters label{display:grid;gap:8px;font-size:10px;color:#64748b;font-weight:800;min-width:180px;flex:1}
+.ops-filters select{width:100%;min-height:42px;border:1px solid #cbd5e1;border-radius:9px;color:#17233b;background:white;padding:9px 13px;font-size:12px}
+.ops-filters .button{min-height:42px}
+.ops-audit-info{font-size:11px;color:#64748b;margin:0 0 13px}
+.ops-audit-list{border:1px solid #e5eaf2;border-radius:12px;overflow:hidden}
+.ops-audit-item{display:flex;align-items:start;gap:13px;background:white;padding:15px 17px;border-bottom:1px solid #eef2f7}
+.ops-audit-item:last-child{border-bottom:0}
+.ops-audit-icon{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:9px;background:#eff6ff;color:#2563eb;font-size:15px;font-weight:800}
+.ops-audit-main{display:grid;gap:6px;min-width:0;flex:1}
+.ops-audit-main strong{font-size:12px;line-height:1.5}
+.ops-audit-main span{font-size:11px;color:#64748b;overflow-wrap:anywhere;line-height:1.6}
+.ops-audit-time{font-size:10px;color:#94a3b8;white-space:nowrap;text-align:right}
+.ops-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:17px}
+.ops-pagination span{font-size:11px}
+.ops-disclaimer{font-size:11px;color:#94a3b8;line-height:1.7;margin-top:22px}
+@media(max-width:900px){.ops-people{grid-template-columns:1fr}}
+@media(max-width:600px){.ops-heading{align-items:start;flex-direction:column}.ops-stats{grid-template-columns:1fr}.ops-people{grid-template-columns:1fr}.ops-person-body{grid-template-columns:1fr 1fr}.ops-audit-item{flex-wrap:wrap}.ops-audit-time{margin-left:42px}}

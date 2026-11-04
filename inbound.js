@@ -1181,6 +1181,16 @@ function showIntakeMessage(message) {
     if (callPhoneMessage) callPhoneMessage.textContent = message;
 }
 
+function reportInboundProgress(stage='working',overrideStep=null) {
+    const step = overrideStep === null ? (cricketState.step || '') : overrideStep;
+    window.CricketPresence?.set({
+        division:'inbound',
+        route:cricketState.department || '',
+        step: /^[a-zA-Z0-9_-]{0,64}$/.test(step) ? step : '',
+        stage
+    });
+}
+
 /* ============================================================
    14. CALL LIFECYCLE
 
@@ -1285,6 +1295,7 @@ function startDepartment(department, sameCall = false) {
     }
 
     updateActiveControls();
+    reportInboundProgress('working');
 
     scrollToTop();
 }
@@ -1315,6 +1326,7 @@ function newCall() {
     showIntakeMessage("");
 
     showScreen("intake");
+    reportInboundProgress('intake');
     updateActiveControls();
     scrollToTop();
 }
@@ -1398,6 +1410,7 @@ function navigateToStep(
     cricketState.step = stepId;
 
     renderWorkflowStep(nextStep);
+    reportInboundProgress(nextStep.type === 'finish' ? 'documentation' : 'working');
 
     updateActiveControls();
     scrollToTop();
@@ -1448,6 +1461,7 @@ function navigateChoice(optionData) {
         destination.type !== "choice"
     ) {
         cricketState.step = "__verification__";
+        reportInboundProgress('verification');
 
         renderVerificationIntro(
             optionData.next
@@ -1488,6 +1502,7 @@ function goBack() {
         }
 
         updateActiveControls();
+        reportInboundProgress('working');
         scrollToTop();
 
         return;
@@ -1514,8 +1529,10 @@ function returnToSelection() {
     if (normalizeCallPhone(cricketState.callPhone)) {
         activeCallPhone.textContent = cricketState.callPhone;
         showScreen("selection");
+        reportInboundProgress('selecting');
     } else {
         showScreen("intake");
+        reportInboundProgress('intake');
     }
 
     updateActiveControls();
@@ -2429,6 +2446,7 @@ function generateDocumentation(step, unresolved = false) {
 ============================================================ */
 
 function createDocumentationEditor(note, status) {
+    reportInboundProgress('documentation');
     const container = createElement(
         "div",
         "cricket-doc-container"
@@ -2514,6 +2532,7 @@ function createDocumentationEditor(note, status) {
             }
 
             cricketState.documentationSaved = true;
+            reportInboundProgress('completed');
 
             complete.disabled = true;
 
@@ -2654,6 +2673,7 @@ function documentUnresolvedCall() {
     if (!cricketState.department) {
         return;
     }
+    reportInboundProgress('documentation');
 
     cancelAnimation();
 
@@ -4049,6 +4069,7 @@ function initializeCricketInbound() {
         cricketState.callStartedAt = new Date().toISOString();
         activeCallPhone.textContent = phone;
         showScreen("selection");
+        reportInboundProgress('selecting');
         scrollToTop();
     });
     changeCallPhone.addEventListener("click", newCall);

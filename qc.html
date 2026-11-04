@@ -7,6 +7,9 @@
   <title>Cricket | Quality Control</title>
   <link rel="stylesheet" href="qc.css">
   <script src="session-guard.js"></script>
+  <script src="presence-client.js"></script>
+  <link rel="stylesheet" href="live-agents.css">
+  <script defer src="live-agents.js"></script>
   <script src="qc.js" defer></script>
 </head>
 <body>
@@ -15,6 +18,7 @@
     <span class="qc-header-section">/ Quality Control</span>
     <span class="qc-spacer"></span>
     <span id="signedInAs" class="qc-user"></span>
+    <a id="operationsLink" class="qc-btn qc-btn-light" href="operations.html" hidden>Live operations</a>
     <a id="staffLink" class="qc-btn qc-btn-light" href="staff.html" hidden>Staff accounts</a>
     <button id="logoutButton" class="qc-btn qc-btn-light" type="button">Sign out</button>
     <a class="qc-btn qc-btn-light" href="index.html">Dashboard</a>
@@ -31,6 +35,11 @@
       <div class="qc-stat"><span>Pending review</span><strong id="pendingCases">—</strong></div>
       <div class="qc-stat"><span>Selected case</span><strong id="selectedCase">None</strong></div>
     </section>
+
+    <section class="panel live-agent-panel" aria-label="Live agent presence">
+  <div class="live-agent-heading"><div><h3>Active agents</h3><p>Auto-refreshes every 5 seconds · Route timers update every second</p></div><span class="pill"><span class="dot"></span><span data-live-agent-count>Connecting…</span></span></div>
+  <div data-live-agents aria-live="polite"><p class="live-agents-empty">Connecting to Cricket presence…</p></div>
+</section>
 
     <div class="qc-content-grid">
       <section class="qc-panel qc-cases-panel" aria-label="Cases">
