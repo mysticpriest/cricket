@@ -106,6 +106,78 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     const qcMetrics=await request(url,'/api/dashboard',{headers:{Cookie:qcCookie}});
     assert.equal(qcMetrics.data.total,3);assert.equal(qcMetrics.data.scope,'all_cases');
     assert.equal(qcMetrics.data.approved,0);
+    // Reviewer-specific Work Later folders must not be shared across accounts.
+    const emptySaved=await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}});
+    assert.equal(emptySaved.status,200);assert.equal(emptySaved.data.total,0);
+    const agentSave=await request(url,'/api/qc/work-later',json('POST',{caseId:created.data.caseId},agentCookie));
+    assert.equal(agentSave.status,403);
+    const saveCase=await request(url,'/api/qc/work-later',json('POST',{caseId:created.data.caseId},qcCookie));
+    assert.equal(saveCase.status,200);
+    const saveAgain=await request(url,'/api/qc/work-later',json('POST',{caseId:created.data.caseId},qcCookie));
+    assert.equal(saveAgain.status,200);
+    const savedList=await request(url,'/api/cases?saved=1',{headers:{Cookie:qcCookie}});
+    assert.equal(savedList.status,200);assert.equal(savedList.data.total,1);
+    const otherReviewer=await request(url,'/api/users',json('POST',{displayName:'Second Reviewer',email:'qc2@example.test',password:'secure-second-password',role:'qc'},adminCookie));
+    assert.equal(otherReviewer.status,201);
+    const otherLogin=await request(url,'/api/auth/login',json('POST',{email:'qc2@example.test',password:'secure-second-password'}));
+    const otherCookie=otherLogin.headers.get('set-cookie').split(';')[0];
+    const otherSaved=await request(url,'/api/qc/work-later',{headers:{Cookie:otherCookie}});
+    assert.equal(otherSaved.data.total,0);
+    const duplicateSave=await request(url,'/api/qc/work-later',json('POST',{caseId:'CR-20260101-000001'},qcCookie));
+    assert.equal(duplicateSave.status,404);
+    const exportSingle=await fetch(url+'/api/cases/'+created.data.caseId+'/export',{headers:{Cookie:qcCookie}});
+    assert.equal(exportSingle.status,200);
+    assert.match(exportSingle.headers.get('content-type'),/spreadsheetml.sheet/);
+    assert.match(exportSingle.headers.get('content-disposition'),/\.xlsx/);
+    const exportBytes=Buffer.from(await exportSingle.arrayBuffer());
+    assert.equal(exportBytes.readUInt32LE(0),0x04034b50);
+    const agentExport=await fetch(url+'/api/cases/'+created.data.caseId+'/export',{headers:{Cookie:agentCookie}});
+    assert.equal(agentExport.status,403);
+    const exportQueue=await fetch(url+'/api/qc/export?saved=1',{headers:{Cookie:qcCookie}});
+    assert.equal(exportQueue.status,200);
+    assert.equal((await exportQueue.arrayBuffer()).byteLength>100,true);
+
+    // Remove is recoverable and audited. No hard delete of evidence.
+    const agentRemove=await request(url,'/api/cases/'+created.data.caseId,json('DELETE',{confirmCaseId:created.data.caseId},agentCookie));
+    assert.equal(agentRemove.status,403);
+    const badConfirmation=await request(url,'/api/cases/'+created.data.caseId,json('DELETE',{confirmCaseId:'WRONG-ID'},qcCookie));
+    assert.equal(badConfirmation.status,400);
+    const remove=await request(url,'/api/cases/'+created.data.caseId,json('DELETE',{confirmCaseId:created.data.caseId},qcCookie));
+    assert.equal(remove.status,200);
+    const activeAfterRemoval=await request(url,'/api/cases',{headers:{Cookie:qcCookie}});
+    assert.equal(activeAfterRemoval.data.total,2);
+    const savedAfterRemoval=await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}});
+    assert.equal(savedAfterRemoval.data.total,0);
+    const removedDetail=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:qcCookie}});
+    assert.equal(removedDetail.status,404);
+    const removedExport=await fetch(url+'/api/cases/'+created.data.caseId+'/export',{headers:{Cookie:qcCookie}});
+    assert.equal(removedExport.status,404);
+    const removedAdmin=await request(url,'/api/cases?deleted=1',{headers:{Cookie:adminCookie}});
+    assert.equal(removedAdmin.status,200);assert.equal(removedAdmin.data.total,1);
+    const removedAdminDetail=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:adminCookie}});
+    assert.ok(removedAdminDetail.data.case.deletedAt);
+    assert.ok(removedAdminDetail.data.history.some(e=>e.action==='case_removed'));
+    const forbiddenRestore=await request(url,'/api/cases/'+created.data.caseId+'/restore',{method:'POST',headers:{Cookie:qcCookie}});
+    assert.equal(forbiddenRestore.status,403);
+    const restored=await request(url,'/api/cases/'+created.data.caseId+'/restore',{method:'POST',headers:{Cookie:adminCookie}});
+    assert.equal(restored.status,200);
+    const savedAfterRestore=await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}});
+    assert.equal(savedAfterRestore.data.total,1);
+    const unSave=await request(url,'/api/qc/work-later/'+created.data.caseId,{method:'DELETE',headers:{Cookie:qcCookie}});
+    assert.equal(unSave.status,200);
+    assert.equal((await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}})).data.total,0);
+
+    // A valid cookie is not sufficient after twenty minutes without activity.
+    const cookieHeader=adminLogin.headers.get('set-cookie');
+    assert.ok(!/Max-Age=/i.test(cookieHeader), 'Session cookie should expire with the browser');
+    assert.match(cookieHeader,/HttpOnly/);
+    const {DatabaseSync}=require('node:sqlite');
+    const maintenance=new DatabaseSync(path.join(dbDir,'cricket.db'));
+    maintenance.prepare('UPDATE sessions SET last_active_at=? WHERE token_hash=?')
+      .run(Date.now()-21*60*1000,require('node:crypto').createHash('sha256').update(agentCookie.split('=')[1]).digest('hex'));
+    maintenance.close();
+    const expiredAgent=await request(url,'/api/cases',{headers:{Cookie:agentCookie}});
+    assert.equal(expiredAgent.status,401);
     const crossSite=await request(url,'/api/cases', {...json('POST',body,agentCookie),headers:{...json('POST',body,agentCookie).headers,Origin:'https://not-our-site.invalid'}});assert.equal(crossSite.status,403);
   } finally {
     proc.kill('SIGTERM');

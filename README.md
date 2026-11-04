@@ -2,6 +2,18 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## QC review productivity and session safety
+
+- **Work Later**: Every QC reviewer and administrator has a private, persistent saved-case folder. Save or unsave a case from its detail panel. Other QC accounts do **not** see your folder.
+- **Excel export (.xlsx)**: Export the selected case (including workflow actions and review history) or the filtered queue / saved folder (maximum 1,000 rows). Exports are generated locally using Node.js with no third-party packages or online spreadsheet services.
+- **Quick copy buttons**: Copy the Case ID, caller number, agent, route, and other details from the QC case panel.
+- **Case removal**: QC reviewers and administrators can remove a case from normal queues by typing the exact Case ID. This is an **audited, recoverable soft delete**, not permanent erasure. Administrators can view the *Removed* folder and restore cases; original notes, evaluation history, and audit evidence remain intact. Deleted cases are excluded from everyday lists and exports.
+- **Sign-in enforcement**: The Node server requires authenticated sessions and proper roles before serving Inbound, QC, or staff pages; it does not trust hidden buttons. There is no guest access.
+- **Idle session expiration**: Backend sessions expire after 20 minutes without a request; the browser also watches actual user interactions and signs out after 20 minutes without activity. Active user input triggers a throttled session heartbeat. The login cookie is a **browser-session cookie**, and the tab has an additional sessionStorage marker.
+- **Closing Cricket**: Closing a normal tab removes its tab-scoped marker, requiring credentials to resume in a new tab. Closing the browser usually discards the session cookie as well. **Browser session restore, crash recovery, or a force-closed process can preserve session data:** browser closure cannot provide guaranteed instant server revocation. The server-side idle timeout remains authoritative; employees should also explicitly click **Sign out** before leaving a shared device.
+
+Do not export or enter real patient phone numbers, notes, or recording details into this proof of concept. Clinical rollout requires approved hosting, policies for downloaded files, data retention, and an independent security review.
+
 ## Run the presentation demo (Windows)
 
 1. Download or pull the latest `main` branch from GitHub.
@@ -31,7 +43,7 @@ The backend **enforces** these permissions for page resources and APIs. An Inbou
 
 ### Existing local databases
 
-The server runs additive SQLite migrations on startup, preserving existing users, sessions, and documented cases. Legacy accounts do not automatically receive a guessed name from their email address; an administrator can use **Staff accounts → Edit name** to set their real display name. Previously documented cases correctly display “Not captured (older case)” because they did not have caller numbers.
+The server runs additive SQLite migrations on startup, preserving existing users and documented cases. **Old login sessions must sign in again** after the 20-minute-idle session security migration. Legacy accounts do not automatically receive a guessed name from their email address; an administrator can use **Staff accounts → Edit name** to set their real display name. Previously documented cases correctly display “Not captured (older case)” because they did not have caller numbers.
 
 ### Recording matching and privacy
 
