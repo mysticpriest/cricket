@@ -2567,7 +2567,7 @@ function createDocumentationEditor(note, status) {
                 void window.CricketCaseBridge.submitCase(payload, container)
                     .then(result => {
                         if (result && completedEntry) {
-                            completedEntry.caseId = result.caseId;
+                            completedEntry.syncedToQc = true;
                             persistShiftLog();
                             renderShiftLog();
                         }

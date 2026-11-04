@@ -66,7 +66,10 @@ test('role-separated analytics, temporal series, filtering, QC reviews and priva
     async function add(agent,details={}){
       const result=await call(url,'/api/cases',body('POST',{...payload,...details},agent.cookie));
       assert.equal(result.status,201);
-      return result.data.caseId;
+      assert.equal(result.data.caseId,undefined,'Agents cannot receive Case IDs');
+      const rows=await call(url,'/api/cases?limit=1',{headers:{Cookie:qcs[0].cookie}});
+      assert.equal(rows.status,200);
+      return rows.data.cases[0].caseId;
     }
     const ids=[];
     ids.push(await add(agents[0]));                           // today

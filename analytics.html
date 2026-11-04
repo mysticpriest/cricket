@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f5f8fc">
-  <meta name="description" content="Cricket analytics for documented calls and authorized quality reviews.">
+  <meta name="description" content="Cricket interactive agent call statistics and documentation trends.">
   <title>Cricket | Analytics</title>
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="analytics.css">
@@ -26,16 +26,12 @@
       <div class="an-hero-text">
         <div class="eyebrow">CRICKET / INSIGHTS AND REPORTING</div>
         <h1>The numbers behind the work<span class="logo-period">.</span></h1>
-        <p>Explore documented calls and team performance, discover trends, and filter the results by date, employee, workflow, and outcome.</p>
+        <p>Explore documented calls and agent performance with animated graphs, daily trends, and interactive filters.</p>
       </div>
       <button class="button button-outline small-button" id="analyticsRefresh" type="button"><span aria-hidden="true">↻</span> Refresh analytics</button>
     </section>
 
-    <nav class="an-tabs" aria-label="Analytics divisions">
-      <button id="analyticsAgentsTab" class="an-tab active" type="button" aria-selected="true"><span class="an-tab-symbol">↙</span><span>Agent analytics<small>Calls &amp; documentation</small></span></button>
-      <button id="analyticsQcTab" class="an-tab" type="button" aria-selected="false" hidden><span class="an-tab-symbol">◎</span><span>QC analytics<small>Reviews &amp; quality scores</small></span></button>
-      <span class="an-tab-spacer"></span><span id="analyticsLiveStatus" class="an-live-status"><span class="an-online-dot"></span> Preparing dashboard…</span>
-    </nav>
+    <div class="an-agent-context"><div><span class="an-agent-context-icon">▥</span><span><strong>Agent statistics</strong><small>Visible to all Cricket employees</small></span></div><span id="analyticsLiveStatus" class="an-live-status"><span class="an-online-dot"></span> Preparing dashboard…</span></div>
 
     <section class="an-filter-panel" aria-label="Reporting filters">
       <div class="an-filter-head"><div><strong>Reporting period</strong><span>UTC calendar days · Today's records included</span></div><button id="analyticsClearFilters" type="button" class="an-text-button">Reset all filters</button></div>
@@ -84,15 +80,19 @@
         </section>
       </div>
 
-      <section class="an-card an-leaderboard">
-        <div class="an-card-header an-leaderboard-header"><div><div class="eyebrow">TEAM COMPARISON</div><h3 id="analyticsLeaderboardTitle">Agent performance</h3><p id="analyticsLeaderboardCaption">Statistics reflect the current date and filter selections.</p></div>
-        <label class="an-search-label">Find employee <input id="analyticsTeamSearch" type="search" placeholder="Search by employee name…" autocomplete="off"></label></div>
-        <div class="an-table-scroll"><table class="an-team-table"><thead id="analyticsTableHead"></thead><tbody id="analyticsTeamRows"></tbody></table></div>
+      <section class="an-card an-agent-board" aria-label="Agent statistics">
+        <div class="an-card-header an-leaderboard-header">
+          <div><div class="eyebrow">AGENT SNAPSHOT</div><h3 id="analyticsLeaderboardTitle">Statistics by agent</h3>
+            <p id="analyticsLeaderboardCaption">Each colored cube represents a documented-call metric for the selected reporting period.</p></div>
+          <label class="an-search-label">Find agent <input id="analyticsTeamSearch" type="search" placeholder="Search agents…" autocomplete="off"></label>
+        </div>
+        <div class="an-cube-board-legend" aria-hidden="true"><span>Total</span><span>Inbound</span><span>Outbound</span><span>Resolved</span><span>Pending</span></div>
+        <div id="analyticsAgentCubes" class="an-agent-cube-list" aria-live="polite"></div>
       </section>
 
       <div class="an-report-footer"><span id="analyticsUpdatedAt">Waiting for analytics…</span><span id="analyticsPrivacyNote">Only aggregate activity is shown. Caller phone numbers and case notes are not included.</span></div>
     </section>
-    <p class="an-disclaimer">Cricket development preview. The figures come from saved Cricket case and review records, not a connected phone provider or verified call recording system. Use fictional data only.</p>
+    <p class="an-disclaimer">Cricket development preview. The figures come from saved Cricket agent documentation records, not a connected phone provider or verified call recording system. Use fictional data only.</p>
   </main>
 </body>
 </html>

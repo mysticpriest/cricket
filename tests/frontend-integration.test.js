@@ -8,7 +8,7 @@ const fs=require('node:fs');
 const ROOT=path.resolve(__dirname,'..');
 test('all browser scripts parse as JavaScript without execution',()=>{
   const scripts=['script.js','login.js','inbound.js','qc.js','staff.js','cases.js',
-    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','settings.js','server/analytics.js'];
+    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','qc-insights.js','settings.js','server/analytics.js'];
   for(const file of scripts){
     assert.ok(fs.existsSync(path.join(ROOT,file)),file+' must exist');
     const result=spawnSync(process.execPath,['--check',path.join(ROOT,file)],{encoding:'utf8'});
@@ -41,7 +41,8 @@ test('analytics is linked for all roles, with a protected QC reporting scope',()
   assert.match(analytics,/session-guard\.js/);
   assert.match(analytics,/presence-client\.js/);
   assert.match(analytics,/analytics\.js/);
-  assert.match(analytics,/analyticsQcTab/);
+  assert.doesNotMatch(analytics,/analyticsQcTab/);
+  assert.match(qc,/qcInsightsTitle/);
   assert.match(server,/\/api\/analytics\/agents/);
   assert.match(server,/\/api\/analytics\/qc/);
   assert.match(login,/analytics\.html/);
@@ -61,4 +62,30 @@ test('all protected workspaces have persistent, shared appearance controls',()=>
   const server=fs.readFileSync(path.join(ROOT,'server','server.js'),'utf8');
   assert.match(server,/\/api\/preferences/);
   assert.match(server,/theme_color/);
+});
+
+test('Agent Analytics is cube-based while QC insights live exclusively on QC dashboard',()=>{
+  const agentPage=fs.readFileSync(path.join(ROOT,'analytics.html'),'utf8');
+  const qcPage=fs.readFileSync(path.join(ROOT,'qc.html'),'utf8');
+  const agentCode=fs.readFileSync(path.join(ROOT,'analytics.js'),'utf8');
+  const qcCode=fs.readFileSync(path.join(ROOT,'qc-insights.js'),'utf8');
+  assert.match(agentPage,/analyticsAgentCubes/);
+  assert.doesNotMatch(agentPage,/analyticsQcTab/);
+  assert.doesNotMatch(agentPage,/analyticsTeamRows/);
+  assert.match(qcPage,/qcInsightsTitle/);
+  assert.match(qcPage,/qc-insights\.js/);
+  assert.match(qcCode,/\/api\/analytics\/qc/);
+  assert.match(agentCode,/an-agent-stat-cube/);
+  assert.match(agentCode,/\/api\/analytics\/agents/);
+});
+test('case records and IDs are hidden from agents by both UI and backend',()=>{
+  const dashboard=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
+  const inbound=fs.readFileSync(path.join(ROOT,'inbound.html'),'utf8');
+  const bridge=fs.readFileSync(path.join(ROOT,'qc-bridge.js'),'utf8');
+  const server=fs.readFileSync(path.join(ROOT,'server/server.js'),'utf8');
+  assert.match(dashboard,/href="cases\.html" data-access="admin"/);
+  assert.doesNotMatch(inbound,/href="cases\.html"/);
+  assert.doesNotMatch(bridge,/My cases/);
+  assert.match(server,/\/cases\.html', \['admin'\]/);
+  assert.match(server,/user\.role==='agent' \? \{ saved:true/);
 });

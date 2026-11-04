@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="live-agents.css">
   <script defer src="live-agents.js"></script>
   <script src="qc.js" defer></script>
+  <script src="qc-insights.js" defer></script>
   <link rel="stylesheet" href="settings.css">
   <script defer src="settings.js"></script>
 </head>
@@ -37,6 +38,29 @@
       <div class="qc-stat"><span>Total matching cases</span><strong id="totalCases">—</strong></div>
       <div class="qc-stat"><span>Pending review</span><strong id="pendingCases">—</strong></div>
       <div class="qc-stat"><span>Selected case</span><strong id="selectedCase">None</strong></div>
+    </section>
+
+    <section class="qc-insights" aria-labelledby="qcInsightsTitle">
+      <div class="qc-insights-top">
+        <div><div class="qc-insights-overline">QUALITY CONTROL / RESULTS</div><h2 id="qcInsightsTitle">QC overview</h2><p>Submitted evaluations and reviewer activity · UTC reporting days</p></div>
+        <div class="qc-insights-controls">
+          <label class="qc-insights-filter">Period <select id="qcInsightsRange"><option value="7">Past 7 days</option><option value="30">Past 30 days</option><option value="90">Past 90 days</option></select></label>
+          <label class="qc-insights-filter">Reviewer <select id="qcInsightsReviewer"><option value="">All reviewers</option></select></label>
+          <button type="button" class="qc-insights-refresh" id="qcInsightsRefresh" aria-label="Refresh QC analytics">↻</button>
+        </div>
+      </div>
+      <div id="qcInsightsStats" class="qc-insights-stats" aria-label="QC performance statistics"><p class="qc-insights-empty">Loading QC insights…</p></div>
+      <div class="qc-insights-secondary">
+        <div class="qc-insights-trend">
+          <div class="qc-insights-label-row"><strong>Daily evaluations</strong><span id="qcInsightsDateSpan">—</span></div>
+          <svg id="qcInsightsChart" viewBox="0 0 560 98" role="img" aria-label="QC evaluations per day" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="qc-insights-reviewers">
+          <div class="qc-insights-label-row"><strong>Reviewer snapshot</strong><span>Evaluations · Approved · Coaching · Flagged</span></div>
+          <div id="qcInsightsReviewers" class="qc-insights-reviewer-list"></div>
+        </div>
+      </div>
+      <p id="qcInsightsStatus" class="qc-insights-status" role="status" aria-live="polite"></p>
     </section>
 
     <section class="panel live-agent-panel" aria-label="Live agent presence">

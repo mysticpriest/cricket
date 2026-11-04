@@ -61,14 +61,14 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     for(const page of ['/index.html','/inbound.html','/outbound.html','/cases.html','/staff.html','/qc.html']){
       assert.equal(await staticStatus(page,adminCookie),200,'admin should open '+page);
     }
-    for(const page of ['/index.html','/inbound.html','/outbound.html','/cases.html']){
+    for(const page of ['/index.html','/inbound.html','/outbound.html']){
       assert.equal(await staticStatus(page,agentCookie),200,'agent should open '+page);
     }
     // Percent-encoded path separators must not bypass static role checks.
     for (const page of ['/%2Fqc.html', '/private%2F..%2Fqc.html']) {
       assert.equal(await staticStatus(page,agentCookie),403,'noncanonical URL must be blocked');
     }
-    for(const page of ['/qc.html','/staff.html','/qc.js']){
+    for(const page of ['/qc.html','/staff.html','/qc.js','/cases.html','/cases.js']){
       assert.equal(await staticStatus(page,agentCookie),403,'agent must be blocked from '+page);
     }
     for(const page of ['/index.html','/qc.html']){
@@ -82,25 +82,44 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     const body={department:'Appointment Inquiry',inquiry:'When is my appointment?',route:'timeComplete',outcome:'resolved',callPhone:'(404) 555-0148',callStartedAt:'2026-10-31T02:58:00.000Z',note:'Verified caller details and provided confirmed appointment date and time.',events:['Verified identity','Provided appointment information']};
     const missingPhone=await request(url,'/api/cases',json('POST',{...body,callPhone:''},agentCookie));assert.equal(missingPhone.status,400);
     const invalidPhone=await request(url,'/api/cases',json('POST',{...body,callPhone:'not-a-phone'},agentCookie));assert.equal(invalidPhone.status,400);
-    const created=await request(url,'/api/cases',json('POST',body,agentCookie)); assert.equal(created.status,201); assert.match(created.data.caseId,/^CR-\d{8}-\d{6}$/);assert.ok(!created.data.caseId.includes('4045550148'));
+    const created=await request(url,'/api/cases',json('POST',body,agentCookie));
+    assert.equal(created.status,201);
+    assert.equal(created.data.saved,true);
+    assert.equal(created.data.caseId,undefined,'Agent POST must not disclose a Case ID');
+    const createdCaseId=(await request(url,'/api/cases?limit=1',{headers:{Cookie:qcCookie}})).data.cases[0].caseId;
+    assert.match(createdCaseId,/^CR-\d{8}-\d{6}$/);
+    assert.ok(!createdCaseId.includes('4045550148'));
     const repeat=await request(url,'/api/cases',json('POST',{...body,requestId:'12345678-1234-1234-1234-123456789012'},agentCookie));assert.equal(repeat.status,201);
-    const repeatAgain=await request(url,'/api/cases',json('POST',{...body,requestId:'12345678-1234-1234-1234-123456789012'},agentCookie));assert.equal(repeatAgain.status,200);assert.equal(repeatAgain.data.caseId,repeat.data.caseId);
-    const created2=await request(url,'/api/cases',json('POST',{...body,inquiry:'Who is my provider?'},agentCookie));assert.equal(created2.status,201);assert.notEqual(created2.data.caseId,created.data.caseId);
-    const agentCannotReview=await request(url,`/api/cases/${created.data.caseId}/reviews`,json('POST',{decision:'approved',criteria:{verification:true,accuracy:true,resolution:true,documentation:true,professionalism:true},feedback:''},agentCookie));assert.equal(agentCannotReview.status,403);
+    const repeatAgain=await request(url,'/api/cases',json('POST',{...body,requestId:'12345678-1234-1234-1234-123456789012'},agentCookie));
+    assert.equal(repeatAgain.status,200);
+    assert.equal(repeatAgain.data.duplicate,true);
+    assert.equal(repeatAgain.data.caseId,undefined);
+    assert.equal(repeat.data.caseId,undefined);
+    const repeatedCases=await request(url,'/api/cases',{headers:{Cookie:qcCookie}});
+    assert.equal(repeatedCases.data.total,2,'Idempotent agent submission must not create a new case');
+    const created2=await request(url,'/api/cases',json('POST',{...body,inquiry:'Who is my provider?'},agentCookie));
+    assert.equal(created2.status,201);
+    assert.equal(created2.data.caseId,undefined);
+    const created2CaseId=(await request(url,'/api/cases?limit=1',{headers:{Cookie:qcCookie}})).data.cases[0].caseId;
+    assert.notEqual(created2CaseId,createdCaseId);
+    const agentCannotReview=await request(url,`/api/cases/${createdCaseId}/reviews`,json('POST',{decision:'approved',criteria:{verification:true,accuracy:true,resolution:true,documentation:true,professionalism:true},feedback:''},agentCookie));assert.equal(agentCannotReview.status,403);
     const qcCannotCreate=await request(url,'/api/cases',json('POST',body,qcCookie));assert.equal(qcCannotCreate.status,403);
-    const list=await request(url,'/api/cases?search='+created.data.caseId,{headers:{Cookie:qcCookie}});assert.equal(list.status,200);assert.equal(list.data.total,1);assert.equal(list.data.cases[0].agent,'agent@example.test');
+    const list=await request(url,'/api/cases?search='+createdCaseId,{headers:{Cookie:qcCookie}});assert.equal(list.status,200);assert.equal(list.data.total,1);assert.equal(list.data.cases[0].agent,'agent@example.test');
     assert.equal(list.data.cases[0].agentName,'Sam Stewart');
     assert.equal(list.data.cases[0].callPhone,'4045550148');
     assert.equal(list.data.cases[0].callStartedAt,'2026-10-31T02:58:00.000Z');
     const phoneSearch=await request(url,'/api/cases?search='+encodeURIComponent('404-555-0148'),{headers:{Cookie:qcCookie}});
     assert.equal(phoneSearch.status,200);assert.equal(phoneSearch.data.total,3);
-    const detail=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:qcCookie}});assert.equal(detail.status,200);assert.equal(detail.data.case.note,body.note);
+    const detail=await request(url,'/api/cases/'+createdCaseId,{headers:{Cookie:qcCookie}});assert.equal(detail.status,200);assert.equal(detail.data.case.note,body.note);
     assert.equal(detail.data.case.callPhone,'4045550148');
     assert.equal(detail.data.case.callStartedAt,'2026-10-31T02:58:00.000Z');
     assert.equal(detail.data.history.length,1);
-    const review=await request(url,`/api/cases/${created.data.caseId}/reviews`,json('POST',{decision:'coaching',criteria:{verification:true,accuracy:true,resolution:false,documentation:true,professionalism:null},feedback:'Review resolution confirmation.'},qcCookie));assert.equal(review.status,201);assert.equal(review.data.score,75);
-    const updated=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:qcCookie}});assert.equal(updated.data.case.reviewStatus,'coaching');assert.equal(updated.data.reviews.length,1);assert.equal(updated.data.history.length,2);
-    const agentList=await request(url,'/api/cases',{headers:{Cookie:agentCookie}});assert.equal(agentList.data.total,3);
+    const review=await request(url,`/api/cases/${createdCaseId}/reviews`,json('POST',{decision:'coaching',criteria:{verification:true,accuracy:true,resolution:false,documentation:true,professionalism:null},feedback:'Review resolution confirmation.'},qcCookie));assert.equal(review.status,201);assert.equal(review.data.score,75);
+    const updated=await request(url,'/api/cases/'+createdCaseId,{headers:{Cookie:qcCookie}});assert.equal(updated.data.case.reviewStatus,'coaching');assert.equal(updated.data.reviews.length,1);assert.equal(updated.data.history.length,2);
+    const agentList=await request(url,'/api/cases',{headers:{Cookie:agentCookie}});
+    assert.equal(agentList.status,403);
+    const agentDetail=await request(url,'/api/cases/'+createdCaseId,{headers:{Cookie:agentCookie}});
+    assert.equal(agentDetail.status,403);
     const agentMetrics=await request(url,'/api/dashboard',{headers:{Cookie:agentCookie}});
     assert.equal(agentMetrics.data.total,3);assert.equal(agentMetrics.data.pending,2);
     const qcMetrics=await request(url,'/api/dashboard',{headers:{Cookie:qcCookie}});
@@ -109,11 +128,11 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     // Reviewer-specific Work Later folders must not be shared across accounts.
     const emptySaved=await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}});
     assert.equal(emptySaved.status,200);assert.equal(emptySaved.data.total,0);
-    const agentSave=await request(url,'/api/qc/work-later',json('POST',{caseId:created.data.caseId},agentCookie));
+    const agentSave=await request(url,'/api/qc/work-later',json('POST',{caseId:createdCaseId},agentCookie));
     assert.equal(agentSave.status,403);
-    const saveCase=await request(url,'/api/qc/work-later',json('POST',{caseId:created.data.caseId},qcCookie));
+    const saveCase=await request(url,'/api/qc/work-later',json('POST',{caseId:createdCaseId},qcCookie));
     assert.equal(saveCase.status,200);
-    const saveAgain=await request(url,'/api/qc/work-later',json('POST',{caseId:created.data.caseId},qcCookie));
+    const saveAgain=await request(url,'/api/qc/work-later',json('POST',{caseId:createdCaseId},qcCookie));
     assert.equal(saveAgain.status,200);
     const savedList=await request(url,'/api/cases?saved=1',{headers:{Cookie:qcCookie}});
     assert.equal(savedList.status,200);assert.equal(savedList.data.total,1);
@@ -125,45 +144,45 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     assert.equal(otherSaved.data.total,0);
     const duplicateSave=await request(url,'/api/qc/work-later',json('POST',{caseId:'CR-20260101-000001'},qcCookie));
     assert.equal(duplicateSave.status,404);
-    const exportSingle=await fetch(url+'/api/cases/'+created.data.caseId+'/export',{headers:{Cookie:qcCookie}});
+    const exportSingle=await fetch(url+'/api/cases/'+createdCaseId+'/export',{headers:{Cookie:qcCookie}});
     assert.equal(exportSingle.status,200);
     assert.match(exportSingle.headers.get('content-type'),/spreadsheetml.sheet/);
     assert.match(exportSingle.headers.get('content-disposition'),/\.xlsx/);
     const exportBytes=Buffer.from(await exportSingle.arrayBuffer());
     assert.equal(exportBytes.readUInt32LE(0),0x04034b50);
-    const agentExport=await fetch(url+'/api/cases/'+created.data.caseId+'/export',{headers:{Cookie:agentCookie}});
+    const agentExport=await fetch(url+'/api/cases/'+createdCaseId+'/export',{headers:{Cookie:agentCookie}});
     assert.equal(agentExport.status,403);
     const exportQueue=await fetch(url+'/api/qc/export?saved=1',{headers:{Cookie:qcCookie}});
     assert.equal(exportQueue.status,200);
     assert.equal((await exportQueue.arrayBuffer()).byteLength>100,true);
 
     // Remove is recoverable and audited. No hard delete of evidence.
-    const agentRemove=await request(url,'/api/cases/'+created.data.caseId,json('DELETE',{confirmCaseId:created.data.caseId},agentCookie));
+    const agentRemove=await request(url,'/api/cases/'+createdCaseId,json('DELETE',{confirmCaseId:createdCaseId},agentCookie));
     assert.equal(agentRemove.status,403);
-    const badConfirmation=await request(url,'/api/cases/'+created.data.caseId,json('DELETE',{confirmCaseId:'WRONG-ID'},qcCookie));
+    const badConfirmation=await request(url,'/api/cases/'+createdCaseId,json('DELETE',{confirmCaseId:'WRONG-ID'},qcCookie));
     assert.equal(badConfirmation.status,400);
-    const remove=await request(url,'/api/cases/'+created.data.caseId,json('DELETE',{confirmCaseId:created.data.caseId},qcCookie));
+    const remove=await request(url,'/api/cases/'+createdCaseId,json('DELETE',{confirmCaseId:createdCaseId},qcCookie));
     assert.equal(remove.status,200);
     const activeAfterRemoval=await request(url,'/api/cases',{headers:{Cookie:qcCookie}});
     assert.equal(activeAfterRemoval.data.total,2);
     const savedAfterRemoval=await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}});
     assert.equal(savedAfterRemoval.data.total,0);
-    const removedDetail=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:qcCookie}});
+    const removedDetail=await request(url,'/api/cases/'+createdCaseId,{headers:{Cookie:qcCookie}});
     assert.equal(removedDetail.status,404);
-    const removedExport=await fetch(url+'/api/cases/'+created.data.caseId+'/export',{headers:{Cookie:qcCookie}});
+    const removedExport=await fetch(url+'/api/cases/'+createdCaseId+'/export',{headers:{Cookie:qcCookie}});
     assert.equal(removedExport.status,404);
     const removedAdmin=await request(url,'/api/cases?deleted=1',{headers:{Cookie:adminCookie}});
     assert.equal(removedAdmin.status,200);assert.equal(removedAdmin.data.total,1);
-    const removedAdminDetail=await request(url,'/api/cases/'+created.data.caseId,{headers:{Cookie:adminCookie}});
+    const removedAdminDetail=await request(url,'/api/cases/'+createdCaseId,{headers:{Cookie:adminCookie}});
     assert.ok(removedAdminDetail.data.case.deletedAt);
     assert.ok(removedAdminDetail.data.history.some(e=>e.action==='case_removed'));
-    const forbiddenRestore=await request(url,'/api/cases/'+created.data.caseId+'/restore',{method:'POST',headers:{Cookie:qcCookie}});
+    const forbiddenRestore=await request(url,'/api/cases/'+createdCaseId+'/restore',{method:'POST',headers:{Cookie:qcCookie}});
     assert.equal(forbiddenRestore.status,403);
-    const restored=await request(url,'/api/cases/'+created.data.caseId+'/restore',{method:'POST',headers:{Cookie:adminCookie}});
+    const restored=await request(url,'/api/cases/'+createdCaseId+'/restore',{method:'POST',headers:{Cookie:adminCookie}});
     assert.equal(restored.status,200);
     const savedAfterRestore=await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}});
     assert.equal(savedAfterRestore.data.total,1);
-    const unSave=await request(url,'/api/qc/work-later/'+created.data.caseId,{method:'DELETE',headers:{Cookie:qcCookie}});
+    const unSave=await request(url,'/api/qc/work-later/'+createdCaseId,{method:'DELETE',headers:{Cookie:qcCookie}});
     assert.equal(unSave.status,200);
     assert.equal((await request(url,'/api/qc/work-later',{headers:{Cookie:qcCookie}})).data.total,0);
 

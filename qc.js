@@ -212,6 +212,7 @@ function renderCase(data) {
           await api('/api/cases/'+encodeURIComponent(item.caseId)+'/restore',{method:'POST'});
           await refreshSaved(); await loadCases(); await selectCase(item.caseId);
           toast('Case restored.');
+      window.dispatchEvent(new Event('cricket-qc-refresh'));
         }catch(error){toast(error.message);restore.disabled=false;}
       });
       actions.append(restore);
@@ -251,6 +252,7 @@ function renderCase(data) {
         els.caseDetail.replaceChildren(node('p','qc-empty','Case removed from the active queue. An administrator can restore it.'));
         await loadCases();
         toast('Case removed. Audit record preserved.');
+      window.dispatchEvent(new Event('cricket-qc-refresh'));
       }catch(error){toast(error.message);remove.disabled=false;}
     });
     actions.append(later,exportCase,remove);
@@ -325,6 +327,7 @@ function createReviewForm(caseId) {
         body: JSON.stringify({ decision: decision.value, feedback: feedback.value, criteria })
       });
       toast('QC evaluation saved.');
+      window.dispatchEvent(new Event('cricket-qc-refresh'));
       await Promise.all([selectCase(caseId), loadCases()]);
     } catch (error) { toast(error.message); submit.disabled = false; }
   });
