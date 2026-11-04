@@ -8,6 +8,7 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
 const { workbookXlsx } = require('./xlsx');
+const { analyticsAgents, analyticsQc } = require('./analytics');
 
 const ROOT = path.resolve(__dirname, '..');
 const DATA = path.resolve(process.env.CRICKET_DATA_DIR || path.join(ROOT, 'data'));
@@ -278,7 +279,7 @@ function processAPI(req, res, url) {
   if (p === '/api/presence' && req.method === 'POST') {
     requireRole(user,'agent','qc','admin');
     return readBody(req).then(data=>{
-      const divisions = new Set(['overview','inbound','outbound','cases','qc','staff','operations']);
+      const divisions = new Set(['overview','inbound','outbound','cases','qc','staff','operations','analytics']);
       const stages = new Set(['idle','intake','selecting','working','verification','documentation','completed']);
       const routes = new Set(['','appointment','clinic','scheduling']);
       const division = data.division;
@@ -395,6 +396,16 @@ function processAPI(req, res, url) {
     return send(res,200,{events,total,limit,offset,serverTime:Date.now(),scope,actorId});
   }
 
+  // Agent analytics are company-wide and available to all authenticated employees.
+  // QC analytics are a separate, server-enforced QC/admin-only reporting scope.
+  if (p === '/api/analytics/agents' && req.method === 'GET') {
+    requireRole(user, 'agent', 'qc', 'admin');
+    return send(res, 200, analyticsAgents(db, url.searchParams));
+  }
+  if (p === '/api/analytics/qc' && req.method === 'GET') {
+    requireRole(user, 'qc', 'admin');
+    return send(res, 200, analyticsQc(db, url.searchParams));
+  }
   if (p === '/api/dashboard' && req.method === 'GET') {
     requireRole(user, 'agent', 'qc', 'admin');
     const where = user.role === 'agent' ? 'WHERE agent_id=?' : '';
@@ -652,7 +663,10 @@ const PAGE_ROLES = new Map([
   ['/staff.js', ['admin']],
   ['/operations.html', ['admin']],
   ['/operations.js', ['admin']],
-  ['/operations.css', ['admin']]
+  ['/operations.css', ['admin']],
+  ['/analytics.html', ['agent', 'qc', 'admin']],
+  ['/analytics.js', ['agent', 'qc', 'admin']],
+  ['/analytics.css', ['agent', 'qc', 'admin']]
 ]);
 
 function denyWorkspaceAccess(req, res, decoded) {

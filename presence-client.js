@@ -4,7 +4,7 @@
   const name = location.pathname.split('/').pop() || 'index.html';
   const pages = {
     'index.html':'overview','inbound.html':'inbound','outbound.html':'outbound',
-    'cases.html':'cases','qc.html':'qc','staff.html':'staff','operations.html':'operations'
+    'cases.html':'cases','qc.html':'qc','staff.html':'staff','operations.html':'operations','analytics.html':'analytics'
   };
   const division = pages[name] || 'overview';
   const state = {division,route:'',step:'',stage:division==='inbound'?'intake':'idle'};
