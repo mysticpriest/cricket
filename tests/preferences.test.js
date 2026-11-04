@@ -90,7 +90,7 @@ test('random account colors and private server-persisted display preferences',as
     // Authoritative storage on disk, not browser-only state.
     const database=new DatabaseSync(path.join(dataDir,'cricket.db'));
     const stored=database.prepare('SELECT theme_color,theme_mode,ui_density,text_size,reduce_motion FROM users WHERE id=?').get(agent1.id);
-    assert.deepEqual(stored,{theme_color:'coral',theme_mode:'personal',ui_density:'compact',text_size:'extra-large',reduce_motion:1});
+    assert.deepEqual({...stored},{theme_color:'coral',theme_mode:'personal',ui_density:'compact',text_size:'extra-large',reduce_motion:1});
     const audit=database.prepare("SELECT action FROM audit_events WHERE actor_id=? AND action='display_preferences_updated'").all(agent1.id);
     assert.ok(audit.length>=3);
     database.close();
