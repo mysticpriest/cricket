@@ -33,16 +33,29 @@ document.querySelector('#togglePassword').addEventListener('click', event => {
   event.currentTarget.textContent = showing ? 'Show' : 'Hide';
   event.currentTarget.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 });
-(async () => {
+const TAB_KEY='cricket_tab_open';
+const ACTIVITY_KEY='cricket_last_activity';
+const sessionInitialization=(async()=>{
   try {
-    const data = await api('/api/auth/me');
-    if (data.user) goToAuthorizedDestination(data.user);
+    const data=await api('/api/auth/me');
+    if (!data.user) return;
+    const tabActive=sessionStorage.getItem(TAB_KEY)==='1';
+    const previous=Number(sessionStorage.getItem(ACTIVITY_KEY))||0;
+    if (tabActive && previous>0 && Date.now()-previous<20*60*1000) {
+      goToAuthorizedDestination(data.user);
+      return;
+    }
+    // A freshly opened tab must not silently reuse a cookie from a closed tab.
+    sessionStorage.removeItem(TAB_KEY);
+    sessionStorage.removeItem(ACTIVITY_KEY);
+    await api('/api/auth/logout',{method:'POST'});
   } catch (_) {
-    message.textContent = 'Unable to contact the Cricket server. Confirm that npm.cmd start is running.';
+    message.textContent='Unable to contact the Cricket server. Confirm that npm.cmd start is running.';
   }
 })();
 form.addEventListener('submit', async event => {
   event.preventDefault();
+  await sessionInitialization;
   message.textContent = '';
   if (!emailInput.validity.valid || !passwordInput.value) {
     message.textContent = 'Enter a valid work email and your password.';
@@ -56,6 +69,8 @@ form.addEventListener('submit', async event => {
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({email:emailInput.value.trim(),password:passwordInput.value})
     });
+    sessionStorage.setItem(TAB_KEY,'1');
+    sessionStorage.setItem(ACTIVITY_KEY,String(Date.now()));
     goToAuthorizedDestination(data.user);
   } catch (error) {
     message.textContent = error.message === 'Failed to fetch' ? 'Cannot reach the Cricket server.' : error.message;

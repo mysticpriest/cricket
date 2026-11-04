@@ -7,6 +7,7 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
+const { workbookXlsx } = require('./xlsx');
 
 const ROOT = path.resolve(__dirname, '..');
 const DATA = path.resolve(process.env.CRICKET_DATA_DIR || path.join(ROOT, 'data'));
@@ -15,6 +16,7 @@ const PORT = Number(process.env.PORT || 3000);
 const SECURE = process.env.NODE_ENV === 'production';
 const COOKIE = 'cricket_session';
 const SESSION_AGE_MS = 8 * 60 * 60 * 1000;
+const SESSION_IDLE_MS = 20 * 60 * 1000;
 const ROLES = new Set(['agent', 'qc', 'admin']);
 const OUTCOMES = new Set(['resolved', 'pending']);
 const REVIEWS = new Set(['approved', 'coaching', 'flagged']);
@@ -84,7 +86,10 @@ CREATE INDEX IF NOT EXISTS idx_audit_case ON audit_events(case_id, id);
 for (const [table, column, definition] of [
   ['users', 'display_name', "TEXT NOT NULL DEFAULT ''"],
   ['cases', 'call_phone', "TEXT"],
-  ['cases', 'call_started_at', "TEXT"]
+  ['cases', 'call_started_at', "TEXT"],
+  ['cases', 'deleted_at', 'TEXT'],
+  ['cases', 'deleted_by', 'INTEGER'],
+  ['sessions', 'last_active_at', 'INTEGER NOT NULL DEFAULT 0']
 ]) {
   const columns = db.prepare(`PRAGMA table_info(${table})`).all();
   if (!columns.some(entry => entry.name === column)) {
@@ -92,6 +97,16 @@ for (const [table, column, definition] of [
   }
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_cases_phone ON cases(call_phone);');
+db.exec(`
+CREATE TABLE IF NOT EXISTS qc_saved_cases (
+  reviewer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  case_id INTEGER NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY(reviewer_id, case_id)
+);
+CREATE INDEX IF NOT EXISTS idx_qc_saved_reviewer ON qc_saved_cases(reviewer_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cases_deleted ON cases(deleted_at, id);
+`);
 
 function now() { return new Date().toISOString(); }
 function hashPassword(password) {
@@ -149,13 +164,19 @@ function parseCookie(req) {
 function sessionToken() { return crypto.randomBytes(32).toString('base64url'); }
 function tokenHash(raw) { return crypto.createHash('sha256').update(raw).digest('hex'); }
 function setCookie(token) {
-  return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(SESSION_AGE_MS / 1000)}${SECURE ? '; Secure' : ''}`;
+  return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/${SECURE ? '; Secure' : ''}`; // browser-session cookie, no persistent Max-Age
 }
 function clearCookie() { return `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${SECURE ? '; Secure' : ''}`; }
 function currentUser(req) {
   const token = parseCookie(req);
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
-  const row = db.prepare(`SELECT u.id, u.email, u.role, u.display_name AS displayName FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?`).get(tokenHash(token), Date.now());
+  const timestamp = Date.now();
+  const hash = tokenHash(token);
+  const row = db.prepare(`SELECT u.id, u.email, u.role, u.display_name AS displayName
+    FROM sessions s JOIN users u ON u.id=s.user_id
+    WHERE s.token_hash=? AND s.expires_at>? AND s.last_active_at>?`)
+    .get(hash, timestamp, timestamp - SESSION_IDLE_MS);
+  if (row) db.prepare('UPDATE sessions SET last_active_at=? WHERE token_hash=?').run(timestamp, hash);
   return row || null;
 }
 function requireRole(user, ...allowed) {
@@ -185,17 +206,24 @@ function mapCase(row) {
     caseId: row.case_id, department: row.department, inquiry: row.inquiry, route: row.route,
     outcome: row.outcome, note: row.note, events: JSON.parse(row.events_json),
     callPhone: row.call_phone || null, callStartedAt: row.call_started_at || null,
-    reviewStatus: row.review_status, createdAt: row.created_at,
+    reviewStatus: row.review_status, createdAt: row.created_at, deletedAt: row.deleted_at || null,
     agent: row.agent_email, agentName: row.agent_name || null
   };
 }
-function listQuery(url, user) {
+function listQuery(url, user, maxLimit = 100) {
   const search = clean(url.searchParams.get('search'), 100);
   const status = clean(url.searchParams.get('status'), 32);
-  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 30));
+  const limit = Math.min(maxLimit, Math.max(1, Number(url.searchParams.get('limit')) || 30));
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
-  let query = `FROM cases c JOIN users u ON u.id=c.agent_id WHERE 1=1`;
+  const savedOnly = url.searchParams.get('saved') === '1';
+  const deletedOnly = url.searchParams.get('deleted') === '1' && user.role === 'admin';
+  if (savedOnly && !['qc','admin'].includes(user.role)) err(403, 'Insufficient permission');
+  let query = `FROM cases c JOIN users u ON u.id=c.agent_id WHERE c.deleted_at IS ${deletedOnly ? 'NOT NULL' : 'NULL'}`;
   const params = [];
+  if (savedOnly) {
+    query += ' AND EXISTS (SELECT 1 FROM qc_saved_cases sc WHERE sc.case_id=c.id AND sc.reviewer_id=?)';
+    params.push(user.id);
+  }
   if (user.role === 'agent') { query += ' AND c.agent_id=?'; params.push(user.id); }
   if (status && ['pending_review','approved','coaching','flagged'].includes(status)) { query += ' AND c.review_status=?'; params.push(status); }
   if (search) {
@@ -212,6 +240,18 @@ function listQuery(url, user) {
   const rows = db.prepare(`SELECT c.*, u.email AS agent_email, u.display_name AS agent_name ${query} ORDER BY c.id DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
   return { total, cases: rows.map(mapCase) };
 }
+function sendXlsx(res, filename, sheets) {
+  const buffer = workbookXlsx(sheets);
+  res.writeHead(200, {
+    'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'Content-Disposition': 'attachment; filename="' + filename + '"',
+    'Content-Length': buffer.length,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  res.end(buffer);
+}
+
 function processAPI(req, res, url) {
   requireOrigin(req);
   const user = currentUser(req);
@@ -226,7 +266,7 @@ function processAPI(req, res, url) {
       SUM(CASE WHEN review_status='pending_review' THEN 1 ELSE 0 END) AS pending,
       SUM(CASE WHEN review_status='approved' THEN 1 ELSE 0 END) AS approved,
       SUM(CASE WHEN outcome='resolved' THEN 1 ELSE 0 END) AS resolved
-      FROM cases ${where}`).get(...args);
+      FROM cases ${where ? where + ' AND deleted_at IS NULL' : 'WHERE deleted_at IS NULL'}`).get(...args);
     return send(res, 200, {
       total: metrics.total || 0,
       pending: metrics.pending || 0,
@@ -241,11 +281,15 @@ function processAPI(req, res, url) {
     const found = db.prepare('SELECT * FROM users WHERE email=?').get(email);
     if (typeof password !== 'string' || !found || !verifyPassword(password, found.password_hash)) err(401, 'Incorrect email or password');
     loginAttempts.delete(email);
-    db.prepare('DELETE FROM sessions WHERE expires_at<?').run(Date.now());
+    db.prepare('DELETE FROM sessions WHERE expires_at<? OR last_active_at<?').run(Date.now(), Date.now() - SESSION_IDLE_MS);
     const token = sessionToken();
-    db.prepare('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES(?,?,?)').run(tokenHash(token), found.id, Date.now() + SESSION_AGE_MS);
+    db.prepare('INSERT INTO sessions(token_hash,user_id,expires_at,last_active_at) VALUES(?,?,?,?)').run(tokenHash(token), found.id, Date.now() + SESSION_AGE_MS, Date.now());
     return send(res, 200, { user: { id: found.id, email: found.email, role: found.role, displayName: found.display_name || '' } }, { 'Set-Cookie': setCookie(token) });
   });
+  if (p === '/api/auth/activity' && req.method === 'POST') {
+    requireRole(user, 'agent', 'qc', 'admin');
+    return send(res, 200, { ok: true });
+  }
   if (p === '/api/auth/logout' && req.method === 'POST') {
     const token = parseCookie(req); if (token) db.prepare('DELETE FROM sessions WHERE token_hash=?').run(tokenHash(token));
     return send(res, 200, { ok: true }, { 'Set-Cookie': clearCookie() });
@@ -283,6 +327,30 @@ function processAPI(req, res, url) {
       if (!result.changes) err(404, 'Employee not found');
       return send(res, 200, { user: { id: targetId, displayName } });
     });
+  }
+  if (p === '/api/qc/work-later' && req.method === 'GET') {
+    requireRole(user, 'qc', 'admin');
+    const rows = db.prepare(`
+      SELECT c.case_id FROM qc_saved_cases s JOIN cases c ON c.id=s.case_id
+      WHERE s.reviewer_id=? AND c.deleted_at IS NULL ORDER BY s.created_at DESC
+    `).all(user.id);
+    return send(res, 200, { caseIds: rows.map(row => row.case_id), total: rows.length });
+  }
+  if (p === '/api/qc/work-later' && req.method === 'POST') {
+    requireRole(user, 'qc', 'admin');
+    return readBody(req).then(data => {
+      const id = typeof data.caseId === 'string' ? data.caseId : '';
+      const found = db.prepare('SELECT id FROM cases WHERE case_id=? AND deleted_at IS NULL').get(id);
+      if (!found) err(404, 'Case not found');
+      db.prepare('INSERT OR IGNORE INTO qc_saved_cases(reviewer_id,case_id,created_at) VALUES(?,?,?)').run(user.id, found.id, now());
+      return send(res, 200, { ok: true, caseId: id, saved: true });
+    });
+  }
+  const savedMatch = p.match(/^\/api\/qc\/work-later\/(CR-\d{8}-\d{6,})$/);
+  if (savedMatch && req.method === 'DELETE') {
+    requireRole(user, 'qc', 'admin');
+    db.prepare('DELETE FROM qc_saved_cases WHERE reviewer_id=? AND case_id IN (SELECT id FROM cases WHERE case_id=?)').run(user.id, savedMatch[1]);
+    return send(res, 200, { ok: true, caseId: savedMatch[1], saved: false });
   }
   if (p === '/api/cases' && req.method === 'POST') {
     requireRole(user, 'agent', 'admin');
@@ -328,17 +396,76 @@ function processAPI(req, res, url) {
   if (match && req.method === 'GET') {
     requireRole(user, 'agent', 'qc', 'admin');
     const row = db.prepare('SELECT c.*, u.email AS agent_email, u.display_name AS agent_name FROM cases c JOIN users u ON u.id=c.agent_id WHERE c.case_id=?').get(match[1]);
-    if (!row) err(404, 'Case not found');
+    if (!row || (row.deleted_at && user.role !== 'admin')) err(404, 'Case not found');
     if (user.role === 'agent' && row.agent_id !== user.id) err(403, 'Insufficient permission');
     const reviews = db.prepare('SELECT r.id,r.decision,r.criteria_json,r.score,r.feedback,r.created_at,u.email AS reviewer FROM reviews r JOIN users u ON u.id=r.reviewer_id WHERE r.case_id=? ORDER BY r.id DESC').all(row.id).map(x => ({ ...x, criteria: JSON.parse(x.criteria_json), criteria_json: undefined }));
     const history = db.prepare('SELECT a.action,a.details,a.created_at,u.email AS actor FROM audit_events a JOIN users u ON u.id=a.actor_id WHERE a.case_id=? ORDER BY a.id ASC').all(row.id);
     return send(res, 200, { case: mapCase(row), reviews, history });
   }
+  const caseAction = p.match(/^\/api\/cases\/(CR-\d{8}-\d{6,})\/(export|restore)$/);
+  if (caseAction && req.method === 'GET' && caseAction[2] === 'export') {
+    requireRole(user, 'qc', 'admin');
+    const row = db.prepare('SELECT c.*, u.email AS agent_email, u.display_name AS agent_name FROM cases c JOIN users u ON u.id=c.agent_id WHERE c.case_id=? AND c.deleted_at IS NULL').get(caseAction[1]);
+    if (!row) err(404, 'Case not found');
+    const caseData = mapCase(row);
+    const reviews = db.prepare('SELECT r.*, u.email AS reviewer_email FROM reviews r JOIN users u ON u.id=r.reviewer_id WHERE case_id=? ORDER BY r.id DESC').all(row.id);
+    const info = [
+      ['Field','Value'], ['Case ID',caseData.caseId], ['Agent',caseData.agentName || caseData.agent],
+      ['Agent email',caseData.agent], ['Caller number',caseData.callPhone || 'Not captured'],
+      ['Call started',caseData.callStartedAt || 'Not captured'], ['Created',caseData.createdAt],
+      ['Department',caseData.department], ['Inquiry',caseData.inquiry], ['Route',caseData.route],
+      ['Outcome',caseData.outcome], ['QC status',caseData.reviewStatus], ['Documentation',caseData.note]
+    ];
+    const sheets = [
+      { name:'Case details', rows:info },
+      { name:'Workflow actions', rows:[['Step','Confirmed action'], ...caseData.events.map((event, i) => [i+1,event])] },
+      { name:'QC reviews', rows:[['Reviewed at','Reviewer','Decision','Score','Feedback'],...reviews.map(review=>[review.created_at,review.reviewer_email,review.decision,review.score,review.feedback])] }
+    ];
+    audit(row.id,user.id,'case_exported','Exported Excel workbook');
+    return sendXlsx(res, 'Cricket-' + caseData.caseId + '.xlsx', sheets);
+  }
+  if (p === '/api/qc/export' && req.method === 'GET') {
+    requireRole(user, 'qc', 'admin');
+    const opts = new URL(url);
+    opts.searchParams.set('limit','1000');
+    opts.searchParams.set('offset','0');
+    if (opts.searchParams.get('deleted') === '1') err(400,'Removed cases cannot be exported');
+    const result = listQuery(opts,user,1000);
+    const head = ['Case ID','Agent name','Agent email','Caller phone','Call started','Department','Inquiry','Route','Outcome','Review status','Created','Documentation','Workflow events'];
+    const rows = result.cases.map(item=>[item.caseId,item.agentName || '',item.agent,item.callPhone || '',item.callStartedAt || '',item.department,item.inquiry,item.route,item.outcome,item.reviewStatus,item.createdAt,item.note,item.events.join(' | ')]);
+    audit(null,user.id,'cases_exported','Exported '+rows.length+' case(s)');
+    return sendXlsx(res,'Cricket-QC-cases-'+new Date().toISOString().slice(0,10)+'.xlsx',[{name:'QC cases',rows:[head,...rows]}]);
+  }
+  if (caseAction && caseAction[2] === 'restore' && req.method === 'POST') {
+    requireRole(user, 'admin');
+    const found=db.prepare('SELECT id FROM cases WHERE case_id=? AND deleted_at IS NOT NULL').get(caseAction[1]);
+    if (!found) err(404,'Removed case not found');
+    db.prepare('UPDATE cases SET deleted_at=NULL, deleted_by=NULL WHERE id=?').run(found.id);
+    audit(found.id,user.id,'case_restored','Restored to QC queue');
+    return send(res, 200, {ok:true,caseId:caseAction[1]});
+  }
+  const caseDelete = p.match(/^\/api\/cases\/(CR-\d{8}-\d{6,})$/);
+  if (caseDelete && req.method === 'DELETE') {
+    requireRole(user,'qc','admin');
+    return readBody(req).then(data=>{
+      if (data.confirmCaseId !== caseDelete[1]) err(400,'Type the exact Case ID to confirm removal');
+      const found=db.prepare('SELECT id FROM cases WHERE case_id=? AND deleted_at IS NULL').get(caseDelete[1]);
+      if (!found) err(404,'Case not found');
+      db.exec('BEGIN IMMEDIATE');
+      try{
+        db.prepare('UPDATE cases SET deleted_at=?,deleted_by=? WHERE id=?').run(now(),user.id,found.id);
+        audit(found.id,user.id,'case_removed','Soft-deleted from active QC queue');
+        db.exec('COMMIT');
+      }catch(e){db.exec('ROLLBACK');throw e;}
+      return send(res,200,{ok:true,caseId:caseDelete[1],removed:true});
+    });
+  }
+
   const reviewMatch = p.match(/^\/api\/cases\/(CR-\d{8}-\d{6,})\/reviews$/);
   if (reviewMatch && req.method === 'POST') {
     requireRole(user, 'qc', 'admin');
     return readBody(req).then(data => {
-      const found = db.prepare('SELECT id FROM cases WHERE case_id=?').get(reviewMatch[1]);
+      const found = db.prepare('SELECT id FROM cases WHERE case_id=? AND deleted_at IS NULL').get(reviewMatch[1]);
       if (!found) err(404, 'Case not found');
       const decision = data.decision;
       const criteria = data.criteria;

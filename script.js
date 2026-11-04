@@ -84,7 +84,7 @@ async function loadMetrics(user) {
 document.querySelector('#logoutButton').addEventListener('click', async () => {
   const button = document.querySelector('#logoutButton');
   button.disabled = true;
-  try { await api('/api/auth/logout', { method: 'POST' }); location.replace('login.html'); }
+  try { await api('/api/auth/logout', { method: 'POST' }); window.CricketSession?.clear(); location.replace('login.html'); }
   catch (error) { button.disabled = false; notice.textContent = error.message; }
 });
 (async () => {

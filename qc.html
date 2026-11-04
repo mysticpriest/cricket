@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#f7f9fc">
   <title>Cricket | Quality Control</title>
   <link rel="stylesheet" href="qc.css">
+  <script src="session-guard.js"></script>
   <script src="qc.js" defer></script>
 </head>
 <body>
@@ -21,7 +22,7 @@
 
   <main class="qc-page">
     <div class="qc-page-heading">
-      <div><div class="qc-eyebrow">QUALITY ASSURANCE DIVISION</div><h1>Case review workspace<span class="qc-dot">.</span></h1><p>Search case records, review confirmed call outcomes, and submit quality evaluations.</p></div>
+      <div><div class="qc-eyebrow">QUALITY ASSURANCE DIVISION</div><h1>Case review workspace<span class="qc-dot">.</span></h1><p>Search cases, save work for later, export records, and complete quality evaluations.</p></div>
       <button id="refreshButton" class="qc-btn qc-btn-light" type="button">↻ Refresh cases</button>
     </div>
 
@@ -33,7 +34,12 @@
 
     <div class="qc-content-grid">
       <section class="qc-panel qc-cases-panel" aria-label="Cases">
-        <div class="qc-panel-heading"><h2>Case queue</h2><span id="listInfo" class="qc-muted"></span></div>
+        <div class="qc-panel-heading"><h2 id="queueTitle">Case queue</h2><span id="listInfo" class="qc-muted"></span></div>
+        <div class="qc-folder-tabs" aria-label="QC folders">
+          <button id="showAllCases" type="button" class="qc-folder-tab active" aria-pressed="true">All cases</button>
+          <button id="showWorkLater" type="button" class="qc-folder-tab" aria-pressed="false">☆ Work later <span id="savedCount" class="qc-folder-counter">0</span></button>
+          <button id="showRemoved" type="button" class="qc-folder-tab" aria-pressed="false" hidden>Removed (admin)</button>
+        </div>
         <form id="searchForm" class="qc-filters">
           <label class="qc-sr-only" for="caseSearch">Case ID, inquiry, or agent</label>
           <input id="caseSearch" placeholder="Search Case ID, caller phone, agent..." autocomplete="off">
@@ -41,6 +47,7 @@
           <select id="statusFilter"><option value="">All statuses</option><option value="pending_review">Pending review</option><option value="approved">Approved</option><option value="coaching">Needs coaching</option><option value="flagged">Flagged</option></select>
           <button class="qc-btn qc-btn-primary" type="submit">Search</button>
         </form>
+        <div class="qc-export-bar"><span>Exports contain case details. Handle downloaded files according to your organization’s data policy.</span><button id="exportQueue" class="qc-btn qc-btn-light" type="button">↓ Export visible queue (.xlsx)</button></div>
         <div id="caseList" class="qc-case-list" aria-live="polite"><p class="qc-empty">Loading cases...</p></div>
         <div class="qc-pagination"><button id="prevPage" class="qc-btn qc-btn-light" type="button">← Previous</button><span id="pageLabel"></span><button id="nextPage" class="qc-btn qc-btn-light" type="button">Next →</button></div>
       </section>
