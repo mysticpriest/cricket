@@ -107,6 +107,33 @@ async function loadMetrics(user) {
     setText('#caseResolved', (user.role === 'qc' ? metrics.approved : metrics.resolved).toLocaleString());
   } catch (error) { notice.textContent = error.message; }
 }
+// Responsive workspace navigation for narrow and portrait displays.
+// Keeps every authorized route reachable when the persistent sidebar becomes a drawer.
+const mobileMenu=document.querySelector('#wsMobileNavToggle');
+const mobileClose=document.querySelector('#wsMobileNavClose');
+const mobileBackdrop=document.querySelector('#wsMobileNavBackdrop');
+const mobileSidebar=document.querySelector('#appSidebar');
+function setMobileNavigation(open){
+  if(!mobileMenu||!mobileBackdrop||!mobileSidebar)return;
+  const shouldOpen=!!open&&window.matchMedia('(max-width: 850px)').matches;
+  dashboard.classList.toggle('ws-nav-open',shouldOpen);
+  mobileBackdrop.hidden=!shouldOpen;
+  mobileMenu.setAttribute('aria-expanded',String(shouldOpen));
+  mobileSidebar.setAttribute('aria-hidden',String(!shouldOpen&&window.matchMedia('(max-width: 850px)').matches));
+  document.body.classList.toggle('ws-mobile-nav-open',shouldOpen);
+  if(shouldOpen)mobileClose?.focus();
+  else if(open===false&&dashboard.classList.contains('ready'))mobileMenu.focus();
+}
+mobileMenu?.addEventListener('click',()=>setMobileNavigation(true));
+mobileClose?.addEventListener('click',()=>setMobileNavigation(false));
+mobileBackdrop?.addEventListener('click',()=>setMobileNavigation(false));
+mobileSidebar?.querySelectorAll('a[href]')?.forEach(a=>a.addEventListener('click',()=>setMobileNavigation(false)));
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&dashboard.classList.contains('ws-nav-open'))setMobileNavigation(false);
+});
+window.addEventListener('resize',()=>{
+  if(window.innerWidth>850&&dashboard.classList.contains('ws-nav-open'))setMobileNavigation(false);
+});
 document.querySelector('#logoutButton').addEventListener('click', async () => {
   const button = document.querySelector('#logoutButton');
   button.disabled = true;
@@ -118,13 +145,32 @@ document.querySelector('#logoutButton').addEventListener('click', async () => {
     const { user } = await api('/api/auth/me');
     if (!user) { location.replace('login.html?next=index.html'); return; }
     renderUser(user);
-    window.dispatchEvent(new CustomEvent('cricket-dashboard-ready',{detail:{user}}));
+    // Show the shell and a clear loading state, not the raw template sections.
     dashboard.classList.add('ready');
-    dashboard.setAttribute('aria-busy', 'false');
+    // Explicitly await the personal workspace before revealing the dashboard.
+    // The previous fire-and-forget event could be missed on a fast auth response.
+    if(!window.CricketPersonalWorkspace?.boot){
+      throw new Error('Personal workspace script did not load. Reload to retry.');
+    }
+    await window.CricketPersonalWorkspace.boot(user);
+    dashboard.classList.add('ready');
+    dashboard.setAttribute('aria-busy','false');
     await loadMetrics(user);
   } catch (error) {
-    notice.textContent = error.message;
+    // Fail visibly rather than showing a misleading uncustomized dashboard.
+    notice.replaceChildren();
+    const text=document.createElement('span');
+    text.textContent='Your workspace did not finish loading: '+error.message+'. ';
+    const retry=document.createElement('button');
+    retry.type='button';
+    retry.className='button button-outline small-button';
+    retry.textContent='Retry loading workspace';
+    retry.addEventListener('click',()=>location.reload());
+    notice.append(text,retry);
+    notice.hidden=false;
+    const loader=document.querySelector('#wsPersonalLoadState');
+    if(loader)loader.hidden=true;
     dashboard.classList.add('ready');
-    dashboard.setAttribute('aria-busy', 'false');
+    dashboard.setAttribute('aria-busy','false');
   }
 })();

@@ -1,0 +1,66 @@
+/* Cricket portrait / vertical-monitor support
+   Covers 1080×1920, 1440×2560 and narrower portrait desktop windows.
+   Width is always fluid; no sideways scrolling caused by rigid split panels. */
+@media (orientation:portrait) and (min-height:800px) and (min-width:851px) and (max-width:1500px){
+  .app-shell{grid-template-columns:215px minmax(0,1fr)}
+  .app-shell .sidebar{padding:25px 14px;gap:27px;min-width:0}
+  .app-shell .workspace{min-width:0}
+  .topbar{padding:0 clamp(18px,2.4vw,36px);gap:12px}
+  .topbar-actions{gap:8px}
+  .topbar-location{min-width:0}
+  .workspace-body{max-width:none;width:100%;min-width:0;padding:30px clamp(20px,2.4vw,40px) 80px}
+  .main-head{align-items:flex-start;flex-wrap:wrap}
+  .main-head .hero-action{margin-top:0}
+  .ws-layout-grid{grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+  .ws-widget[data-size="compact"],.ws-widget[data-size="standard"]{grid-column:span 6}
+  .ws-widget[data-size="wide"]{grid-column:1/-1}
+  .division-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .an-shell{max-width:none;width:100%;padding:34px clamp(20px,3vw,43px) 72px}
+  .an-graphs{grid-template-columns:1fr}
+  .an-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .an-trend-panel,.an-breakdown-panel{min-width:0}
+  .an-chart-canvas svg{max-width:100%}
+  .qc-page{max-width:none;width:100%;padding:33px clamp(20px,3vw,42px)}
+  .qc-content-grid{grid-template-columns:minmax(0,1fr)}
+  .qc-insights-secondary{grid-template-columns:minmax(0,1fr)}
+  .qc-case-list{max-height:440px}
+  .operations-layout{max-width:none;width:100%;padding-inline:clamp(20px,3vw,42px)}
+  .ops-people{grid-template-columns:1fr}
+  .ops-shift-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ops-clock-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ops-clock-identity{grid-column:1/-1}
+  .office-flow-page{max-width:none;width:100%;padding:32px clamp(20px,3vw,42px) 68px}
+  .office-flow-layout{grid-template-columns:minmax(0,1fr)}
+}
+@media (orientation:portrait) and (min-height:750px) and (max-width:850px){
+  .workspace-body{width:100%;min-width:0;padding:24px clamp(14px,3vw,24px) 65px}
+  .ws-layout-grid{grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
+  .ws-widget[data-size="compact"],.ws-widget[data-size="standard"],
+  .ws-widget[data-size="wide"]{grid-column:1/-1}
+  .stats,.division-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+  .an-shell{width:100%;max-width:none;padding-inline:clamp(14px,3vw,28px)}
+  .an-graphs{grid-template-columns:minmax(0,1fr)}
+  .an-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .qc-page{width:100%;max-width:none;padding-inline:clamp(14px,3vw,25px)}
+  .qc-content-grid,.qc-insights-secondary{grid-template-columns:minmax(0,1fr)}
+  .operations-layout{width:100%;max-width:none;padding-inline:clamp(14px,3vw,25px)}
+  .ops-shift-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ops-clock-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .office-flow-layout{grid-template-columns:1fr}
+}
+/* Keep filter bars, headings and long labels inside a portrait viewport. */
+@media (orientation:portrait) and (max-width:1500px){
+  .workspace,.workspace-body,.an-shell,.an-graphs,.an-card,
+  .qc-page,.qc-panel,.qc-content-grid,.ops-section,
+  .office-flow-page,.office-flow-menu,.office-flow-detail,
+  .simple-wrap{box-sizing:border-box;min-width:0}
+  .an-filter-panel,.an-card-header,.an-hero,
+  .qc-page-heading,.qc-insights-top,.ops-section-head{flex-wrap:wrap}
+  .an-filter-field,.an-custom-dates label{min-width:min(100%,150px)}
+  .an-chart-canvas,.an-agent-cube-list{max-width:100%}
+  .an-chart-canvas svg,.qc-insights-chart,.office-flow-detail textarea{max-width:100%}
+  .an-agent-cube-row{min-width:0;max-width:100%}
+  .qc-content-grid > *, .ops-people > *,.office-flow-layout > *{min-width:0}
+  img,video,canvas{max-width:100%;height:auto}
+}

@@ -405,3 +405,70 @@
   .ws-layout-backdrop,.ws-customize-panel,.ws-widget.ws-widget-enter{animation:none}
   .ws-custom-layout-button,.ws-catalog-item,.ws-widget{transition:none}
 }
+
+/* Reliable workspace hydration: raw HTML sections stay hidden until their
+   employee-owned widgets have been mounted from the server response. */
+body:not(.ws-personal-ready) .ws-raw-template{display:none!important}
+.ws-personal-loading{
+  display:flex;align-items:center;gap:12px;
+  margin:16px 0 22px;padding:22px 24px;background:#f3f7fb;
+  border:1px solid #dbe6f0;border-radius:13px;
+  color:#58718a;font-size:12px;font-weight:750;min-height:82px
+}
+.ws-personal-loading::before{
+  content:'';width:19px;height:19px;border-radius:50%;
+  border:2px solid #d7e5f2;border-top-color:#386b9a;
+  animation:ws-loading-spin .8s linear infinite;flex:0 0 19px
+}
+.ws-personal-ready .ws-personal-loading,
+.ws-personal-loading[hidden]{display:none!important}
+@keyframes ws-loading-spin{to{transform:rotate(360deg)}}
+
+/* Accessible drawer navigation replaces the previously hidden sidebar at <=850px. */
+.ws-mobile-nav-toggle,.ws-mobile-nav-close{display:none}
+.ws-mobile-nav-backdrop[hidden]{display:none!important}
+@media(max-width:850px){
+  .app-shell{grid-template-columns:minmax(0,1fr)}
+  .app-shell .sidebar{
+    display:flex;
+    flex-direction:column;
+    position:fixed;inset:0 auto 0 0;z-index:1101;
+    width:min(335px,88vw);height:100dvh;min-height:0;
+    overflow-y:auto;overscroll-behavior:contain;
+    background:#fff;box-shadow:16px 0 45px #10284320;
+    transform:translateX(-110%);visibility:hidden;
+    transition:transform .24s ease,visibility .24s
+  }
+  .app-shell.ws-nav-open .sidebar{transform:translateX(0);visibility:visible}
+  .ws-mobile-nav-backdrop{
+    display:block;position:fixed;inset:0;z-index:1100;
+    background:#0f26395f;backdrop-filter:blur(2px)
+  }
+  body.ws-mobile-nav-open{overflow:hidden}
+  .ws-mobile-nav-toggle{
+    display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;
+    border:1px solid #dbe4ee;border-radius:9px;background:#f9fbfd;
+    color:#38536c;padding:10px 12px;font-size:11px;font-weight:850
+  }
+  .ws-mobile-nav-toggle>span:first-child{font-size:16px}
+  .ws-mobile-nav-close{
+    display:grid;position:absolute;top:18px;right:17px;
+    place-items:center;width:33px;height:33px;background:#f1f5f9;
+    color:#49617a;border:1px solid #d8e2ed;border-radius:8px;
+    font-size:23px;z-index:2
+  }
+  .topbar{gap:10px;padding-inline:clamp(12px,3vw,24px)}
+  .topbar-location{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .topbar-location #officeHeaderName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar-actions{gap:8px;flex:0 0 auto}
+}
+@media(max-width:520px){
+  .ws-mobile-nav-toggle{padding:8px 9px}
+  .ws-mobile-nav-toggle>span:last-child{display:none}
+  .topbar-actions>.pill{display:none}
+  .topbar{padding-inline:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .app-shell .sidebar{transition:none}
+  .ws-personal-loading::before{animation:none}
+}
