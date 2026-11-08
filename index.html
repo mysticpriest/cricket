@@ -67,10 +67,11 @@
         </div>
 
         <div id="workspacePersonalControls" class="ws-personal-controls" hidden>
-          <div><span class="eyebrow">YOUR DESK</span><span id="wsSaveMessage" class="ws-save-message" role="status">Personal layout</span></div>
-          <button type="button" id="wsCustomize" class="button button-outline small-button" aria-pressed="false">Layout & visibility</button>
+          <div><span class="eyebrow">YOUR WORKSPACE</span><span id="wsSaveMessage" class="ws-save-message" role="status">Your layout is saved</span></div>
+          <button type="button" id="wsCustomize" class="button ws-custom-layout-button" aria-controls="wsCustomizePanel" aria-expanded="false"><span aria-hidden="true">✦</span> Custom Layout <span aria-hidden="true">+</span></button>
         </div>
-        <div id="wsCustomizePanel" class="ws-customize-panel" hidden></div>
+        <div id="wsCustomizeBackdrop" class="ws-layout-backdrop" hidden></div>
+        <aside id="wsCustomizePanel" class="ws-customize-panel" role="dialog" aria-modal="true" aria-labelledby="wsDrawerTitle" tabindex="-1" hidden></aside>
         <div id="workspaceTiles" class="ws-layout-grid" aria-label="Your customizable workspace"></div>
 
         <section class="stats" aria-label="Case overview">
@@ -112,17 +113,7 @@
           </a>
         </section>
 
-        <div class="section-header"><div><h2>Your shift, step by step</h2><p>A simple demonstration of how Cricket fits into daily operations.</p></div></div>
         <div class="support-grid">
-          <section class="panel" aria-label="Normal shift workflow">
-            <h3>From the first call to quality review</h3>
-            <div class="timeline">
-              <div class="timeline-row"><span class="timeline-index">01</span><div><strong>Sign in securely</strong><p>Cricket identifies your employee role and opens the right workspace.</p></div></div>
-              <div class="timeline-row"><span class="timeline-index">02</span><div><strong>Handle the inquiry</strong><p>Select an inbound route and follow concise, decision-based instructions.</p></div></div>
-              <div class="timeline-row"><span class="timeline-index">03</span><div><strong>Document the outcome</strong><p>Review the generated note. Completed cases receive a unique Case ID.</p></div></div>
-              <div class="timeline-row"><span class="timeline-index">04</span><div><strong>QC evaluates the case</strong><p>Authorized reviewers find the record, score key criteria, and submit feedback.</p></div></div>
-            </div>
-          </section>
           <section class="panel">
             <h3 id="quickTitle">Quick access</h3>
             <div class="info-box"><span class="eyebrow">PRESENTATION MODE</span><h4 id="quickHeading" style="margin-top:14px">Ready for your next call?</h4><p id="quickDescription">Open Inbound to demonstrate a complete guided call and automated case submission using fictional data.</p><a id="quickLink" class="button" href="inbound.html">Start the walkthrough →</a></div>

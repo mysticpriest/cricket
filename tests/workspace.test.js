@@ -6,6 +6,7 @@ const os=require('node:os');
 const path=require('node:path');
 const net=require('node:net');
 const {spawn}=require('node:child_process');
+const {DatabaseSync}=require('node:sqlite');
 const ROOT=path.resolve(__dirname,'..');
 const NKEY='NEUTRAUMA-PRIVATE-DESK-TEST-2026';
 const PKEY='PLATFORM-PRIVATE-DESK-TEST-2026';
@@ -73,7 +74,10 @@ test('Private employee desk persists, shift clock is auditable, admin sees live 
     assert.equal(initial.data.notes.length,0);
     assert.equal(initial.data.reminders.length,0);
     assert.equal(initial.data.shift,null);
-    assert.equal(initial.data.layout.widgets.length,8);
+    assert.equal(initial.data.layout.version,2);
+    assert.equal(initial.data.layout.widgets.length,7);
+    assert.deepEqual(initial.data.layout.widgets.filter(x=>!x.hidden).map(x=>x.id),['divisions']);
+    assert.ok(!initial.data.layout.widgets.some(x=>x.id==='guide'));
     assert.equal(initial.data.layout.nav.length,8);
 
     const layout=initial.data.layout;
@@ -98,6 +102,18 @@ test('Private employee desk persists, shift clock is auditable, admin sees live 
     const keepOverview=await req(url,'/api/workspace/layout',json('PUT',hideOverview,agent.cookie));
     assert.equal(keepOverview.status,200);
     assert.equal(keepOverview.data.layout.nav.find(x=>x.id==='overview').hidden,false);
+    const noTabs=JSON.parse(JSON.stringify(layout));
+    noTabs.widgets.find(x=>x.id==='divisions').hidden=true;
+    const mustKeepTabs=await req(url,'/api/workspace/layout',json('PUT',noTabs,agent.cookie));
+    assert.equal(mustKeepTabs.status,200);
+    assert.equal(mustKeepTabs.data.layout.widgets.find(x=>x.id==='divisions').hidden,false);
+    const addReminderBlock=JSON.parse(JSON.stringify(layout));
+    addReminderBlock.widgets.find(x=>x.id==='reminders').hidden=false;
+    const addedBlock=await req(url,'/api/workspace/layout',json('PUT',addReminderBlock,agent.cookie));
+    assert.equal(addedBlock.status,200);
+    assert.equal(addedBlock.data.layout.widgets.find(x=>x.id==='reminders').hidden,false);
+    // Restore the personal test layout for the existing session-persistence checks.
+    assert.equal((await req(url,'/api/workspace/layout',json('PUT',layout,agent.cookie))).status,200);
 
     // Each employee keeps their own personal notes even within one office.
     const note=await req(url,'/api/workspace/notes',json('POST',{
@@ -139,6 +155,27 @@ test('Private employee desk persists, shift clock is auditable, admin sees live 
     assert.equal(otherDesk.data.notes.length,0);
     assert.equal(otherDesk.data.reminders.length,0);
     assert.equal(otherDesk.data.layout.widgets[0].id,'metrics');
+    assert.deepEqual(otherDesk.data.layout.widgets.filter(x=>!x.hidden).map(x=>x.id),['divisions']);
+
+    // Legacy saved layout migration: once upgraded, previously visible v1
+    // blocks are hidden, colors/sizes are kept, and walkthrough is removed.
+    const legacy=JSON.parse(JSON.stringify(otherDesk.data.layout));
+    delete legacy.version;
+    legacy.widgets.forEach(item=>{item.hidden=false;});
+    legacy.widgets[0].color='violet';
+    legacy.widgets.splice(3,0,{id:'guide',size:'standard',color:'teal',hidden:false});
+    const db=new DatabaseSync(path.join(dir,'cricket.db'));
+    db.prepare(`INSERT INTO workspace_layouts(user_id,office_id,layout_json,updated_at)
+      VALUES(?,?,?,?)`).run(other.user.id,other.user.office.id,JSON.stringify(legacy),new Date().toISOString());
+    db.close();
+    const upgraded=await req(url,'/api/workspace/me',{headers:auth(other.cookie)});
+    assert.equal(upgraded.data.layout.version,2);
+    assert.equal(upgraded.data.layout.widgets.length,7);
+    assert.equal(upgraded.data.layout.widgets[0].color,'violet');
+    assert.deepEqual(upgraded.data.layout.widgets.filter(item=>!item.hidden).map(item=>item.id),['divisions']);
+    assert.ok(!upgraded.data.layout.widgets.some(item=>item.id==='guide'));
+    const upgradedAgain=await req(url,'/api/workspace/me',{headers:auth(other.cookie)});
+    assert.deepEqual(upgradedAgain.data.layout,upgraded.data.layout);
 
     // The nine-dot drag handle on individual sticky notes persists order
     // on the server. Another employee cannot reorder someone else's notes.

@@ -186,6 +186,33 @@ test('every rearrangeable dashboard block and tab uses nine dots with brush belo
   assert.ok(css.includes('.ws-action-rail{display:flex;flex-direction:column'));
   assert.ok(css.includes('.ws-color-swatches'));
   assert.ok(css.includes('.ws-floating-ghost'));
-  assert.ok(html.includes('Layout & visibility'));
+  assert.ok(html.includes('Custom Layout'));
+  assert.ok(html.includes('wsCustomizeBackdrop'));
+  assert.ok(html.includes('wsCustomizePanel'));
+  assert.ok(!html.includes('Normal shift workflow'));
   assert.match(client,/aria-expanded/);
+});
+
+test('new Custom Layout library starts with Workspace Tabs, supports add/remove and full gradients',()=>{
+  const client=fs.readFileSync(path.join(ROOT,'workspace-personal.js'),'utf8');
+  const css=fs.readFileSync(path.join(ROOT,'workspace-personal.css'),'utf8');
+  const backend=fs.readFileSync(path.join(ROOT,'server','personal-workspace.js'),'utf8');
+  const html=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
+  assert.ok(html.includes('Custom Layout'));
+  assert.ok(!html.includes('Your shift, step by step'));
+  assert.ok(!client.includes('Shift walkthrough'));
+  assert.ok(!backend.includes("'guide'"));
+  assert.ok(client.includes("version:2"));
+  assert.ok(client.includes("hidden:id!=='divisions'"));
+  assert.ok(backend.includes("hidden:id!=='divisions'"));
+  assert.ok(client.includes('function addWidget(id)'));
+  assert.ok(client.includes('function removeWidget(id)'));
+  assert.ok(client.includes('function setLibraryOpen(open)'));
+  assert.ok(client.includes('function renderEditor()'));
+  assert.ok(css.includes('.ws-catalog-item'));
+  assert.ok(css.includes('.ws-customize-panel[hidden]'));
+  assert.ok(css.includes('linear-gradient(135deg,'));
+  assert.ok(css.includes('.ws-division-shell>.division{'));
+  assert.ok(css.includes('.sidebar .ws-nav-row>.nav-item{'));
+  assert.ok(css.includes('.ws-note-card{'));
 });

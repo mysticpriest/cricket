@@ -7,7 +7,7 @@
     ['metrics','Case snapshot'],['presence','Active agents'],
     ['divisions','Workspace tabs'],['shift','My shift clock'],
     ['sticky','Sticky notes'],['reminders','Reminders'],
-    ['guide','Shift walkthrough'],['quick','Quick access']
+    ['quick','Quick access']
   ];
   const TABS=[
     ['overview','Overview'],['analytics','Analytics'],['inbound','Inbound / Office workflows'],
@@ -35,7 +35,8 @@
     saveVersion:0,noteSaveChain:Promise.resolve(),
     serverOffset:0,ready:false,editingNote:null,editingReminder:null};
   const defaultLayout=()=>({
-    widgets:WIDGETS.map(([id])=>({id,size:['metrics','presence','divisions'].includes(id)?'wide':'standard',color:'blue',hidden:false})),
+    version:2,
+    widgets:WIDGETS.map(([id])=>({id,size:id==='divisions'?'wide':'standard',color:'blue',hidden:id!=='divisions'})),
     nav:TABS.map(([id])=>({id,color:'blue',hidden:false}))
   });
   async function api(path,options={}){
@@ -96,7 +97,7 @@
     const row=data.layout[kind].find(x=>x.id===id);
     if(!row)return;
     Object.assign(row,patch);
-    if(kind==='nav'&&id==='overview')row.hidden=false;
+    if((kind==='nav'&&id==='overview')||(kind==='widgets'&&id==='divisions'))row.hidden=false;
     applyLayout();renderEditor();persistLayout();
   }
   function optionSelect(options,value,onChange,title){
@@ -346,13 +347,11 @@
     const divisions=document.querySelector('.workspace-body > .division-grid');
     const divisionHead=divisions?.previousElementSibling;
     const support=document.querySelector('.workspace-body > .support-grid');
-    const guideHead=support?.previousElementSibling;
-    const guide=support?.firstElementChild;
     const quick=support?.lastElementChild;
     const contents={
       metrics:stats?[stats]:[],presence:presence?[presence]:[],
       divisions:[divisionHead,divisions].filter(Boolean),
-      guide:[guideHead,guide].filter(Boolean),quick:quick?[quick]:[]
+      quick:quick?[quick]:[]
     };
     for(const [id,label] of WIDGETS){
       const section=make('section','ws-widget');
@@ -375,13 +374,10 @@
     mountNav();
     mountDivisionTabs();
     byId('workspacePersonalControls').hidden=false;
-    byId('wsCustomize').addEventListener('click',()=>{
-      data.edit=!data.edit;
-      byId('wsCustomize').textContent=data.edit?'Close layout options':'Layout & visibility';
-      byId('wsCustomize').setAttribute('aria-pressed',String(data.edit));
-      document.body.classList.toggle('ws-editing',data.edit);
-      byId('wsCustomizePanel').hidden=!data.edit;
-      applyLayout();renderEditor();
+    byId('wsCustomize').addEventListener('click',()=>setLibraryOpen(!data.edit));
+    byId('wsCustomizeBackdrop').addEventListener('click',()=>setLibraryOpen(false));
+    window.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&data.edit){setLibraryOpen(false);event.preventDefault();}
     });
   }
   function mountNav(){
@@ -431,7 +427,7 @@
       widget.dataset.size=item.size;
       widget.style.setProperty('--ws-accent',COLORS[item.color]);
       widget.dataset.color=item.color;
-      widget.hidden=item.hidden&&!data.edit;
+      widget.hidden=item.hidden;
       widget.classList.toggle('ws-muted-widget',item.hidden);
       grid.append(widget);
     }
@@ -459,43 +455,120 @@
       }
     }
   }
+
+  const WIDGET_DETAILS={
+    divisions:{icon:'◫',description:'Your available routes, dashboards and role-based tools.'},
+    metrics:{icon:'▥',description:'Case totals and quality-control overview at a glance.'},
+    presence:{icon:'◉',description:'See active colleagues and their current workflow.'},
+    quick:{icon:'↗',description:'Fast access to your next route and commonly used actions.'},
+    reminders:{icon:'◷',description:'Track follow-ups, due dates and completed tasks.'},
+    sticky:{icon:'▤',description:'Keep color-coded notes saved to your employee account.'},
+    shift:{icon:'◴',description:'Clock in and switch between the five shift statuses.'}
+  };
+  function setLibraryOpen(open){
+    data.edit=!!open;
+    const drawer=byId('wsCustomizePanel'),backdrop=byId('wsCustomizeBackdrop');
+    drawer.hidden=!open;
+    backdrop.hidden=!open;
+    byId('wsCustomize').setAttribute('aria-expanded',String(open));
+    document.body.classList.toggle('ws-library-open',open);
+    if(open){renderEditor();drawer.focus();}
+    else{closePalettes();byId('wsCustomize').focus();}
+  }
+  function addWidget(id){
+    const index=data.layout.widgets.findIndex(x=>x.id===id);
+    if(index<0||id==='divisions')return;
+    const [item]=data.layout.widgets.splice(index,1);
+    data.layout.widgets.push({...item,hidden:false});
+    applyLayout();
+    const widget=data.widgets.get(id);
+    if(widget){
+      widget.classList.remove('ws-widget-enter');
+      void widget.offsetWidth;
+      widget.classList.add('ws-widget-enter');
+    }
+    persistLayout();renderEditor();
+    feedback(WIDGETS.find(pair=>pair[0]===id)?.[1]+' added ✓');
+  }
+  function removeWidget(id){
+    if(id==='divisions')return;
+    setEntry('widgets',id,{hidden:true});
+  }
   function renderEditor(){
     const host=byId('wsCustomizePanel');
     if(!host||!data.edit)return;
+    const lastScroll=host.scrollTop;
     host.replaceChildren();
-    const intro=make('p','ws-customize-description',
-      'Drag any nine-dot grip to arrange blocks in the grid. The brush below it opens a color palette. Use this panel for sizes, visibility, keyboard rearrangement or resetting your desk; your changes save automatically.');
-    host.append(intro);
-    for(const kind of ['widgets','nav']){
-      const section=make('div','ws-editor-column');
-      section.append(make('h3','',kind==='widgets'?'Dashboard blocks':'Sidebar & division tabs'));
-      for(const [index,item] of data.layout[kind].entries()){
-        const isWidget=kind==='widgets';
-        const name=(isWidget?WIDGETS:TABS).find(x=>x[0]===item.id)?.[1]||item.id;
-        const row=make('div','ws-editor-row');
-        const caption=make('strong','',name);
-        const controls=make('div','ws-editor-controls');
-        const color=optionSelect(Object.keys(COLORS).map(id=>[id,id[0].toUpperCase()+id.slice(1)]),
-          item.color,value=>setEntry(kind,item.id,{color:value}),name+' accent color');
-        controls.append(color);
-        if(isWidget)controls.append(optionSelect(SIZES,item.size,
-          value=>setEntry(kind,item.id,{size:value}),name+' block size'));
-        const visibility=button(item.hidden?'Show':'Hide','ws-editor-toggle',
-          ()=>setEntry(kind,item.id,{hidden:!item.hidden}),item.hidden?'Show '+name:'Hide '+name);
-        visibility.disabled=kind==='nav'&&item.id==='overview';
-        controls.append(visibility);
-        const up=button('↑','ws-editor-move',()=>moveEntry(kind,item.id,-1),'Move '+name+' up');
-        const down=button('↓','ws-editor-move',()=>moveEntry(kind,item.id,1),'Move '+name+' down');
-        up.disabled=index===0;down.disabled=index===data.layout[kind].length-1;
-        controls.append(up,down);
-        row.append(caption,controls);section.append(row);
-      }
-      host.append(section);
+    const top=make('div','ws-library-top');
+    const heading=make('div','ws-library-title');
+    heading.append(make('span','ws-library-eyebrow','PERSONAL WORKSPACE'),
+      make('h2','', 'Custom Layout'),
+      make('p','', 'Create your own desk. Add only the blocks you need. Your changes are saved automatically.'));
+    top.append(heading,button('×','ws-library-close',()=>setLibraryOpen(false),'Close custom layout'));
+    host.append(top);
+    const pinned=make('div','ws-library-featured');
+    pinned.append(make('span','ws-library-featured-icon','◫'));
+    const pinnedText=make('div','');
+    pinnedText.append(make('strong','', 'Workspace Tabs'),
+      make('small','', 'Always visible · Your workspace foundation'));
+    pinned.append(pinnedText,make('span','ws-library-installed','ACTIVE'));
+    host.append(pinned);
+    const addTitle=make('div','ws-library-section-title');
+    const available=data.layout.widgets.filter(item=>item.id!=='divisions'&&item.hidden);
+    addTitle.append(make('h3','', 'Add to your workspace'),
+      make('span','',available.length+' available'));
+    host.append(addTitle);
+    const catalog=make('div','ws-widget-catalog');
+    if(available.length===0){
+      catalog.append(make('p','ws-library-empty','All available blocks have been added. You can remove any below.'));
     }
-    host.append(button('Restore default arrangement','ws-editor-reset',()=>{
-      if(!confirm('Reset your tab order, block visibility, sizes and colors? Notes, reminders and shifts will stay.'))return;
-      data.layout=defaultLayout();applyLayout();renderEditor();persistLayout();
+    for(const item of available){
+      const details=WIDGET_DETAILS[item.id];
+      const card=make('article','ws-catalog-item');
+      const icon=make('span','ws-catalog-icon',details.icon);
+      icon.style.setProperty('--ws-accent',COLORS[item.color]);
+      const copy=make('div','ws-catalog-text');
+      copy.append(make('strong','',WIDGETS.find(x=>x[0]===item.id)?.[1]||item.id),
+        make('p','',details.description));
+      const add=button('+ Add','ws-catalog-add',()=>addWidget(item.id),'Add '+item.id+' block');
+      card.append(icon,copy,add);catalog.append(card);
+    }
+    host.append(catalog);
+    const activeTitle=make('div','ws-library-section-title ws-library-active-title');
+    const active=data.layout.widgets.filter(item=>!item.hidden);
+    activeTitle.append(make('h3','', 'Your active blocks'),
+      make('span','',active.length+' in layout'));
+    host.append(activeTitle);
+    const installed=make('div','ws-library-installed-list');
+    for(const item of active){
+      const id=item.id,label=WIDGETS.find(pair=>pair[0]===id)?.[1]||id;
+      const row=make('div','ws-library-installed-row');
+      const mark=make('span','ws-library-mini-mark',WIDGET_DETAILS[id].icon);
+      mark.style.setProperty('--ws-accent',COLORS[item.color]);
+      const info=make('div','ws-library-installed-info');
+      info.append(make('strong','',label));
+      if(id==='divisions'){
+        info.append(make('small','','Required block'));
+      }else info.append(make('small','','Drag the nine dots on the dashboard to reorder'));
+      const controls=make('div','ws-library-installed-controls');
+      controls.append(optionSelect(SIZES,item.size,
+        value=>setEntry('widgets',id,{size:value}),label+' block size'));
+      if(id!=='divisions'){
+        controls.append(button('Remove','ws-library-remove',
+          ()=>removeWidget(id),'Remove '+label+' from dashboard'));
+      }
+      row.append(mark,info,controls);installed.append(row);
+    }
+    host.append(installed);
+    const foot=make('div','ws-library-footer');
+    foot.append(make('p','', 'Use each card’s nine-dot grip to drag it, or its brush to choose a gradient. Colors, layout and block sizes stay saved for your next shift.'));
+    foot.append(button('Reset to Workspace Tabs only','ws-library-reset',()=>{
+      if(!confirm('Reset your workspace to only Workspace Tabs? Your saved notes, reminders, shift records and office access will not be deleted.'))return;
+      data.layout=defaultLayout();
+      applyLayout();renderEditor();persistLayout();
     }));
+    host.append(foot);
+    host.scrollTop=lastScroll;
   }
   function setupShift(host){
     const current=make('div','ws-shift-current');
