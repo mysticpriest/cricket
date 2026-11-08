@@ -4,7 +4,7 @@
  * are used for authorization, and no platform admin can read private notes.
  */
 const crypto=require('node:crypto');
-const WIDGET_IDS=['metrics','presence','divisions','guide','quick','sticky','reminders','shift'];
+const WIDGET_IDS=['metrics','presence','divisions','quick','sticky','reminders','shift'];
 const NAV_IDS=['overview','analytics','inbound','outbound','cases','qc','operations','staff'];
 const SIZES=new Set(['compact','standard','wide']);
 const COLORS=new Set(['blue','indigo','teal','green','orange','rose','slate','violet']);
@@ -84,14 +84,15 @@ function setup(db){
 }
 function defaultLayout(){
   return {
-    widgets:WIDGET_IDS.map(id=>({id,size:['divisions','presence','metrics'].includes(id)?'wide':'standard',
-      color:'blue',hidden:false})),
+    version:2,
+    widgets:WIDGET_IDS.map(id=>({id,size:id==='divisions'?'wide':'standard',
+      color:'blue',hidden:id!=='divisions'})),
     nav:NAV_IDS.map(id=>({id,color:'blue',hidden:false}))
   };
 }
 function validateLayout(value){
   if(!value||typeof value!=='object'||Array.isArray(value))issue(400,'Invalid workspace layout');
-  const expected=defaultLayout();
+  if(value.version!==2)issue(400,'Unsupported workspace layout version');
   const normalize=(items,ids,widget)=>{
     if(!Array.isArray(items)||items.length!==ids.length)issue(400,'Invalid workspace layout sections');
     const seen=new Set();
@@ -103,17 +104,39 @@ function validateLayout(value){
     });
   };
   const widgets=normalize(value.widgets,WIDGET_IDS,true);
+  // Workspace Tabs is the permanent foundation of every dashboard.
+  // Client-side hide requests must never remove the last route entry.
+  widgets.find(item=>item.id==='divisions').hidden=false;
   const nav=normalize(value.nav,NAV_IDS,false);
   // The Overview link is permanently available so navigation cannot lock out the account.
   const overview=nav.find(x=>x.id==='overview');overview.hidden=false;
-  return {widgets,nav};
+  return {version:2,widgets,nav};
+}
+function upgradeLegacyLayout(value){
+  // Existing v1 accounts had all blocks visible. Migrate once so each user
+  // starts from Workspace Tabs only while preserving their chosen colors,
+  // sizes, and ordering if they add a hidden block back later.
+  const defaults=defaultLayout();
+  if(!value||!Array.isArray(value.widgets)||!Array.isArray(value.nav))return defaults;
+  const allowed=new Set(WIDGET_IDS);
+  const filtered=value.widgets.filter(x=>allowed.has(x?.id));
+  const byId=new Map(filtered.map(x=>[x.id,x]));
+  const widgets=[...filtered,...defaults.widgets.filter(x=>!byId.has(x.id))]
+    .map(x=>({...x,hidden:x.id!=='divisions'}));
+  return validateLayout({version:2,widgets,nav:value.nav});
 }
 function getLayout(db,user){
   const row=db.prepare('SELECT layout_json FROM workspace_layouts WHERE user_id=? AND office_id=?')
     .get(user.id,user.office.id);
   if(!row)return defaultLayout();
-  try{return validateLayout(JSON.parse(row.layout_json));}
-  catch(_){return defaultLayout();}
+  try{
+    const parsed=JSON.parse(row.layout_json);
+    if(parsed.version===2)return validateLayout(parsed);
+    const upgraded=upgradeLegacyLayout(parsed);
+    db.prepare('UPDATE workspace_layouts SET layout_json=?,updated_at=? WHERE user_id=? AND office_id=?')
+      .run(JSON.stringify(upgraded),stamp(),user.id,user.office.id);
+    return upgraded;
+  }catch(_){return defaultLayout();}
 }
 function getNotes(db,user){
   return db.prepare(`SELECT id,title,body,color,pinned,created_at AS createdAt,updated_at AS updatedAt

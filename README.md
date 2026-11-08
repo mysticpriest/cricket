@@ -2,33 +2,39 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
-## Personal Desk, sticky notes, reminders and live shift clock
+## Custom Layout — personal dashboard widget library
 
-The Cricket **Overview dashboard** is now a persistent, per-employee workspace.
-After sign-in, click **Customize workspace** to arrange these movable blocks:
+The Cricket **Overview** dashboard now starts with one required block:
+**Workspace Tabs**. Every other dashboard block is optional.
 
-- Case snapshot, Active agents, Workspace tabs, My shift clock
-- Sticky notes, Reminders, Shift walkthrough and Quick access
+Click **Custom Layout** to open a smooth slide-in widget library. The library
+shows available widgets with descriptions and **+ Add** actions:
 
-**Direct card controls:** Every dashboard block has a **nine-dot drag grip**
-at its **top-right**, with a **paintbrush immediately beneath** it. Press and
-hold the nine dots, then drag the block **up, down, left or right** to reorder
-it inside the responsive grid. Release to save the new arrangement. The brush
-opens an eight-color swatch palette on that same card: no settings panel is
-needed to recolor it. The same paired controls appear on **sidebar tabs**,
-**division/shortcut cards**, and **individual sticky notes**. Sidebar links
-reorder vertically; cards rearrange in their respective CSS grids.
+- **Case Snapshot** — documented cases and outcome counts
+- **Active Agents** — presence and live workflow activity
+- **Quick Access** — links to common workflow actions
+- **Reminders** — personal due dates and completed items
+- **Sticky Notes** — personal color-coded notes
+- **My Shift Clock** — Start Shift, Break, Meeting, System Issues, End Shift
 
-The **Layout & visibility** panel is still available for advanced settings:
-**Small / Medium / Full width** sizing, hide/show, keyboard reordering and
-restoring defaults without deleting notes or reminders. The nine-dot grip also
-supports **Arrow keys** for keyboard rearrangement. Pointer dragging supports
-mouse, touch and pen. Overview navigation remains permanently available, and
-office/role restrictions always override personal visual settings.
+The **Shift Walkthrough** block has been removed completely.
 
-Individual sticky-note colors can be changed using the brush directly on a
-note, and their grid order is now also saved per employee. Existing notes get
-stable positions in an additive migration; no note text is reset.
+Every installed block can be resized (Small / Medium / Full width) or removed
+from the dashboard in **Custom Layout**. Removing a block hides it; it **does
+not delete** any saved notes, reminders, time-clock history or account data.
+Use **Reset to Workspace Tabs only** to return to the default dashboard.
+
+Blocks, sidebar tabs, workspace shortcut cards and individual sticky notes
+retain their **nine-dot drag grip** (mouse/touch/pen and keyboard arrows) and
+their **paintbrush palette**. Choosing a color now applies a **soft, layered
+gradient to the entire card surface**, rather than changing its outer border
+color. Borders remain neutral for a cleaner appearance.
+
+Existing personal layouts are migrated once to the new version: Workspace
+Tabs stays visible, while other blocks start hidden in the widget library.
+Their previous sizes, colors and order remain available when added back.
+The upgrade removes only the obsolete Shift Walkthrough configuration.
+Existing employee notes and reminders are preserved.
 
 **Preferences persist on the Cricket server** in a per-user database row, so the
 same employee can sign out, return for another shift, or sign in from a different
