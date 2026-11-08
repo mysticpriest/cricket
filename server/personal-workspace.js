@@ -73,6 +73,14 @@ function setup(db){
     CREATE INDEX IF NOT EXISTS idx_work_shift_events_office
       ON work_shift_events(office_id,created_at DESC,id DESC);
   `);
+  // Existing notes are assigned a stable position once; never overwrite order
+  // in later startups. User's historic notes and text remain untouched.
+  if(!db.prepare('PRAGMA table_info(workspace_notes)').all().some(x=>x.name==='sort_index')){
+    db.exec('ALTER TABLE workspace_notes ADD COLUMN sort_index INTEGER NOT NULL DEFAULT 0');
+    const rows=db.prepare('SELECT id FROM workspace_notes ORDER BY pinned DESC,updated_at DESC,id').all();
+    const update=db.prepare('UPDATE workspace_notes SET sort_index=? WHERE id=?');
+    rows.forEach((row,index)=>update.run(index+1,row.id));
+  }
 }
 function defaultLayout(){
   return {
@@ -109,7 +117,7 @@ function getLayout(db,user){
 }
 function getNotes(db,user){
   return db.prepare(`SELECT id,title,body,color,pinned,created_at AS createdAt,updated_at AS updatedAt
-    FROM workspace_notes WHERE user_id=? AND office_id=? ORDER BY pinned DESC,updated_at DESC`)
+    FROM workspace_notes WHERE user_id=? AND office_id=? ORDER BY sort_index ASC,created_at ASC`)
     .all(user.id,user.office.id).map(row=>({...row,pinned:!!row.pinned}));
 }
 function getReminders(db,user){
@@ -201,14 +209,34 @@ function route(ctx){
       .run(id,office,JSON.stringify(layout),stamp());
     send(res,200,{layout});return true;
   });
+  if(p==='/api/workspace/notes/order'&&req.method==='PUT')return readBody(req).then(data=>{
+    const ids=data?.ids;
+    if(!Array.isArray(ids)||ids.length>60||new Set(ids).size!==ids.length||
+       !ids.every(value=>typeof value==='string'&&/^[a-f0-9-]{36}$/i.test(value)))
+      issue(400,'Invalid note arrangement');
+    const existing=db.prepare('SELECT id FROM workspace_notes WHERE user_id=? AND office_id=?')
+      .all(id,office).map(row=>row.id);
+    if(ids.length!==existing.length||ids.some(noteId=>!existing.includes(noteId)))
+      issue(400,'Note arrangement does not match your saved notes');
+    db.exec('BEGIN IMMEDIATE');
+    try{
+      const update=db.prepare('UPDATE workspace_notes SET sort_index=? WHERE id=? AND user_id=? AND office_id=?');
+      ids.forEach((noteId,index)=>update.run(index+1,noteId,id,office));
+      db.exec('COMMIT');
+    }catch(error){db.exec('ROLLBACK');throw error;}
+    send(res,200,{notes:getNotes(db,user)});return true;
+  });
   if(p==='/api/workspace/notes'&&req.method==='POST')return readBody(req).then(data=>{
     const value=jsonNote(data);
     if(db.prepare('SELECT count(*) AS n FROM workspace_notes WHERE user_id=? AND office_id=?').get(id,office).n>=60)
       issue(409,'Maximum 60 personal notes');
     const uuid=crypto.randomUUID(),now=stamp();
+    const position=db.prepare(`SELECT COALESCE(MAX(sort_index),0)+1 AS next
+      FROM workspace_notes WHERE user_id=? AND office_id=?`).get(id,office).next;
     db.prepare(`INSERT INTO workspace_notes
-      (id,user_id,office_id,title,body,color,pinned,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?)`).run(uuid,id,office,value.title,value.body,value.color,value.pinned,now,now);
+      (id,user_id,office_id,title,body,color,pinned,created_at,updated_at,sort_index)
+      VALUES(?,?,?,?,?,?,?,?,?,?)`)
+      .run(uuid,id,office,value.title,value.body,value.color,value.pinned,now,now,position);
     send(res,201,{notes:getNotes(db,user)});return true;
   });
   const noteMatch=p.match(/^\/api\/workspace\/notes\/([a-f0-9-]{36})$/i);

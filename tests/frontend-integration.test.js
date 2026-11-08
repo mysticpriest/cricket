@@ -169,3 +169,23 @@ test('personal workspace controls and admin time clocks are included with role-b
   assert.match(personal,/idx_work_shifts_one_open/);
   assert.ok(personal.includes('/api/admin/shifts'));
 });
+test('every rearrangeable dashboard block and tab uses nine dots with brush below',()=>{
+  const client=fs.readFileSync(path.join(ROOT,'workspace-personal.js'),'utf8');
+  const css=fs.readFileSync(path.join(ROOT,'workspace-personal.css'),'utf8');
+  const html=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
+  assert.ok(client.includes('for(let i=0;i<9;i++)grid.append(make'));
+  assert.ok(client.includes("function beginPointerDrag("));
+  assert.ok(client.includes("window.addEventListener('pointermove',move"));
+  assert.ok(client.includes("window.addEventListener('pointerup',end"));
+  assert.ok(client.includes("function toolRail(kind,id,name,host,container,selector)"));
+  assert.ok(client.includes("toolRail('widgets'"));
+  assert.ok(client.includes("toolRail('nav'"));
+  assert.ok(client.includes("toolRail('notes'"));
+  assert.ok(client.includes("persistNoteOrder()"));
+  assert.ok(client.includes("setEntry(kind,id,{color})"));
+  assert.ok(css.includes('.ws-action-rail{display:flex;flex-direction:column'));
+  assert.ok(css.includes('.ws-color-swatches'));
+  assert.ok(css.includes('.ws-floating-ghost'));
+  assert.ok(html.includes('Layout & visibility'));
+  assert.match(client,/aria-expanded/);
+});
