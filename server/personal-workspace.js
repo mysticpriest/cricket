@@ -104,6 +104,9 @@ function validateLayout(value){
     });
   };
   const widgets=normalize(value.widgets,WIDGET_IDS,true);
+  // Workspace Tabs is the permanent foundation of every dashboard.
+  // Client-side hide requests must never remove the last route entry.
+  widgets.find(item=>item.id==='divisions').hidden=false;
   const nav=normalize(value.nav,NAV_IDS,false);
   // The Overview link is permanently available so navigation cannot lock out the account.
   const overview=nav.find(x=>x.id==='overview');overview.hidden=false;
