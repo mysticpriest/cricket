@@ -10,12 +10,25 @@ After sign-in, click **Customize workspace** to arrange these movable blocks:
 - Case snapshot, Active agents, Workspace tabs, My shift clock
 - Sticky notes, Reminders, Shift walkthrough and Quick access
 
-You can drag block headers on desktop, or use the **Move Up / Move Down** controls
-on desktop, tablet and mobile. Select **Small / Medium / Full width**, change each
-block's accent color, hide or reveal blocks, and reorder/change the accent of
-sidebar and division tabs. You can restore the default layout without deleting
-any notes or reminders. Overview navigation remains permanently available, and
-role restrictions always override personal visual settings.
+**Direct card controls:** Every dashboard block has a **nine-dot drag grip**
+at its **top-right**, with a **paintbrush immediately beneath** it. Press and
+hold the nine dots, then drag the block **up, down, left or right** to reorder
+it inside the responsive grid. Release to save the new arrangement. The brush
+opens an eight-color swatch palette on that same card: no settings panel is
+needed to recolor it. The same paired controls appear on **sidebar tabs**,
+**division/shortcut cards**, and **individual sticky notes**. Sidebar links
+reorder vertically; cards rearrange in their respective CSS grids.
+
+The **Layout & visibility** panel is still available for advanced settings:
+**Small / Medium / Full width** sizing, hide/show, keyboard reordering and
+restoring defaults without deleting notes or reminders. The nine-dot grip also
+supports **Arrow keys** for keyboard rearrangement. Pointer dragging supports
+mouse, touch and pen. Overview navigation remains permanently available, and
+office/role restrictions always override personal visual settings.
+
+Individual sticky-note colors can be changed using the brush directly on a
+note, and their grid order is now also saved per employee. Existing notes get
+stable positions in an additive migration; no note text is reset.
 
 **Preferences persist on the Cricket server** in a per-user database row, so the
 same employee can sign out, return for another shift, or sign in from a different

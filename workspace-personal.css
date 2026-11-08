@@ -131,3 +131,100 @@
 @media(max-width:1070px){.ws-widget[data-size="compact"]{grid-column:span 6}.ws-editor-row{flex-direction:column;align-items:flex-start}.ws-editor-controls{justify-content:flex-start}}
 @media(max-width:750px){.ws-layout-grid{gap:12px}.ws-widget,.ws-widget[data-size="compact"],.ws-widget[data-size="standard"]{grid-column:1/-1}.ws-customize-panel{grid-template-columns:1fr}.ws-widget-content{padding:13px}.ws-widget-header{padding:12px}.ws-personal-controls{flex-wrap:wrap}.ws-shift-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.ws-widget,.ws-shift-action{transition:none}}
+
+
+/* Direct-manipulation controls: nine-dot grip above brush / palette.
+   Reordering follows actual responsive CSS-grid slots, not an edit-only dropdown. */
+.ws-widget{overflow:visible;position:relative}
+.ws-widget-header{position:relative;min-height:88px;border-top:3px solid var(--ws-accent);
+  border-radius:13px 13px 0 0;padding:12px 15px 12px 18px}
+.ws-widget-heading{align-self:center}
+.ws-action-rail{display:flex;flex-direction:column;align-items:center;gap:4px;
+  flex:0 0 32px;position:relative;z-index:6;--ws-control-bg:#f4f8fb}
+.ws-action-rail>button{width:30px;height:29px;display:grid;place-items:center;
+  background:var(--ws-control-bg);color:#697e91;border:1px solid transparent;
+  border-radius:7px;padding:4px;touch-action:none}
+.ws-action-rail>button:hover,.ws-action-rail>button:focus-visible{
+  background:color-mix(in srgb,var(--ws-accent) 10%,white);
+  color:var(--ws-accent);border-color:color-mix(in srgb,var(--ws-accent) 25%,white)}
+.ws-action-rail .ws-grip-trigger{cursor:grab}
+.ws-pointer-sorting,.ws-pointer-sorting *{cursor:grabbing!important}
+.ws-nine-dots{display:grid;grid-template-columns:repeat(3,3px);grid-template-rows:repeat(3,3px);
+  column-gap:3px;row-gap:3px;pointer-events:none;place-items:center}
+.ws-nine-dots i{display:block;width:3px;height:3px;border-radius:50%;background:currentColor}
+.ws-brush-trigger svg{pointer-events:none}
+.ws-color-popover{position:absolute;right:38px;top:24px;width:190px;z-index:50;
+  padding:13px;background:#fff;border:1px solid #dce7f1;border-radius:11px;
+  box-shadow:0 13px 36px #1a2d4540}
+.ws-color-caption{display:block;color:#8191a1;font-size:9px;letter-spacing:.12em;
+  font-weight:850;margin-bottom:12px}
+.ws-color-swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.ws-color-swatch{position:relative;width:31px;height:31px;padding:0;
+  background:var(--swatch-color);border:3px solid #fff;outline:1px solid #dde4ec;
+  border-radius:50%;cursor:pointer;transition:transform .15s}
+.ws-color-swatch:hover{transform:scale(1.12)}
+.ws-color-swatch.selected{outline:2px solid var(--swatch-color);outline-offset:2px}
+.ws-color-swatch.selected:after{content:'✓';position:absolute;inset:0;
+  display:grid;place-items:center;color:#fff;font-size:15px;font-weight:900;text-shadow:0 1px 3px #0007}
+.ws-widget:has(.ws-color-popover:not([hidden])),
+.ws-division-shell:has(.ws-color-popover:not([hidden])),
+.ws-nav-row:has(.ws-color-popover:not([hidden])){z-index:20}
+.ws-widget.ws-drag-source,.ws-division-shell.ws-drag-source,.ws-nav-row.ws-drag-source{
+  opacity:.33;outline:2px dashed var(--ws-accent);outline-offset:-2px;
+  transition:none;pointer-events:none}
+.ws-floating-ghost{position:fixed;z-index:9999;pointer-events:none;
+  display:flex;align-items:center;gap:12px;max-width:min(380px,75vw);min-width:155px;
+  border:1px solid color-mix(in srgb,var(--ws-accent) 45%,white);
+  background:#fff;color:#34485f;box-shadow:0 14px 38px #142b4d35;
+  border-radius:11px;padding:13px 16px;font-size:12px;font-weight:850;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-floating-ghost .ws-nine-dots{color:var(--ws-accent)}
+.ws-widget:has(.ws-color-popover:not([hidden])){box-shadow:0 12px 40px #15243c14}
+/* Sidebar tabs: controls sit beside the link, never nested inside an anchor. */
+.ws-nav-row{position:relative;min-width:0;--ws-accent:#2563eb}
+.ws-nav-row>.nav-item{min-height:60px;padding-right:42px;width:100%}
+.ws-nav-row>.ws-action-rail{position:absolute;top:3px;right:3px;gap:2px}
+.ws-nav-row>.ws-action-rail>button{width:27px;height:25px;padding:3px}
+.ws-nav-row .ws-nine-dots{grid-template-columns:repeat(3,2.5px);
+  grid-template-rows:repeat(3,2.5px);column-gap:3px;row-gap:3px}
+.ws-nav-row .ws-nine-dots i{width:2.5px;height:2.5px}
+.ws-nav-row .ws-color-popover{top:18px;right:34px}
+.sidebar .ws-nav-row>.nav-item.active{
+  color:var(--ws-accent)!important;
+  background:color-mix(in srgb,var(--ws-accent) 9%,white)!important}
+.sidebar .ws-nav-row>.nav-item:hover{color:var(--ws-accent)}
+/* Division tabs use the same drag/brush rail while preserving ordinary link activation. */
+.ws-division-shell{position:relative;min-width:0;--ws-accent:#2563eb}
+.ws-division-shell>.division{height:100%;padding-right:62px;
+  border-top:3px solid var(--ws-accent);width:100%;min-width:0}
+.ws-division-shell>.ws-action-rail{position:absolute;top:14px;right:14px;gap:4px}
+.ws-division-shell .ws-color-popover{top:24px;right:38px}
+.ws-division-shell .division-icon{color:var(--ws-accent);
+  background:color-mix(in srgb,var(--ws-accent) 9%,white)}
+.ws-division-shell .division-foot{color:var(--ws-accent)}
+.ws-division-shell .division:hover:not(.restricted){
+  border-color:var(--ws-accent);border-top:3px solid var(--ws-accent)}
+@media(max-width:750px){
+  .ws-widget-header{padding:10px 12px;min-height:83px}
+  .ws-widget-heading h2{font-size:12px}
+  .ws-widget .ws-color-popover{right:36px;width:178px}
+  .ws-division-shell>.division{padding-right:57px}
+  .ws-division-shell>.ws-action-rail{top:10px;right:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ws-color-swatch{transition:none}
+  .ws-floating-ghost{transition:none}
+}
+
+
+/* Individual sticky notes also use the same nine-dot / brush pairing.
+   Their custom order is stored in workspace_notes.sort_index. */
+.ws-note-card{position:relative;padding-right:52px;overflow:visible;--ws-accent:var(--ws-note-color)}
+.ws-note-card>.ws-action-rail{position:absolute;right:8px;top:8px;gap:3px}
+.ws-note-card>.ws-action-rail>button{width:27px;height:26px;padding:3px;
+  background:color-mix(in srgb,var(--ws-note-color) 10%,white)}
+.ws-note-card .ws-color-popover{right:34px;top:22px}
+.ws-note-card:has(.ws-color-popover:not([hidden])){z-index:20}
+.ws-note-card.ws-drag-source{opacity:.35;outline:2px dashed var(--ws-note-color);pointer-events:none}
+.ws-note-card .ws-note-header{min-height:28px}
+@media(max-width:480px){.ws-note-card .ws-color-popover{width:173px;right:31px}}

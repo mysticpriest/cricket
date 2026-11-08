@@ -1,7 +1,7 @@
 'use strict';
 /* Cricket employee workspace — account-persisted personal desk. All mutations
    require an authenticated office account; never store content in localStorage.
-   Handles desktop drag/drop and keyboard/touch Move Up / Move Down controls. */
+   Nine-dot direct drag and brush palette work with mouse, touch and pen. */
 (()=>{
   const WIDGETS=[
     ['metrics','Case snapshot'],['presence','Active agents'],
@@ -32,7 +32,8 @@
   };
   const data={user:null,layout:null,notes:[],reminders:[],shift:null,
     edit:false,widgets:new Map(),nav:new Map(),busy:false,saveChain:Promise.resolve(),
-    saveVersion:0,serverOffset:0,ready:false,editingNote:null,editingReminder:null};
+    saveVersion:0,noteSaveChain:Promise.resolve(),
+    serverOffset:0,ready:false,editingNote:null,editingReminder:null};
   const defaultLayout=()=>({
     widgets:WIDGETS.map(([id])=>({id,size:['metrics','presence','divisions'].includes(id)?'wide':'standard',color:'blue',hidden:false})),
     nav:TABS.map(([id])=>({id,color:'blue',hidden:false}))
@@ -73,6 +74,24 @@
     const [entry]=items.splice(old,1);items.splice(pos,0,entry);
     applyLayout();renderEditor();persistLayout();
   }
+  function persistNoteOrder(){
+    const ids=data.notes.map(note=>note.id);
+    data.noteSaveChain=data.noteSaveChain.catch(()=>{}).then(async()=>{
+      try{
+        const response=await api('/api/workspace/notes/order',json('PUT',{ids}));
+        // Preserve the current order if the employee is making another drag.
+        if(ids.join(',')===data.notes.map(note=>note.id).join(','))data.notes=response.notes;
+        feedback('Sticky note order saved ✓');
+      }catch(error){byId('wsNoteMessage').textContent=error.message;}
+    });
+  }
+  function moveNote(id,direction){
+    const index=data.notes.findIndex(x=>x.id===id),target=index+direction;
+    if(index<0||target<0||target>=data.notes.length)return;
+    const [note]=data.notes.splice(index,1);
+    data.notes.splice(target,0,note);
+    drawNotes();persistNoteOrder();
+  }
   function setEntry(kind,id,patch){
     const row=data.layout[kind].find(x=>x.id===id);
     if(!row)return;
@@ -94,6 +113,230 @@
     if(title)b.title=title;
     b.addEventListener('click',click);
     return b;
+  }
+
+  // Direct-manipulation controls are visible on every movable block and tab.
+  // Pointer events (not HTML5 drag/drop) work with a mouse, pen and touch.
+  function dots(){
+    const grid=make('span','ws-nine-dots');
+    grid.setAttribute('aria-hidden','true');
+    for(let i=0;i<9;i++)grid.append(make('i'));
+    return grid;
+  }
+  function paintIcon(){
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('width','17');svg.setAttribute('height','17');
+    svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');
+    svg.setAttribute('stroke-width','1.8');svg.setAttribute('stroke-linecap','round');
+    svg.setAttribute('stroke-linejoin','round');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','m14.5 6.5 3 3M3 21c3 0 6-2 6-6l8-8-3-3-8 8c-1 1-2 3-2 9Z');
+    svg.append(path);svg.setAttribute('aria-hidden','true');
+    return svg;
+  }
+  function closePalettes(except){
+    document.querySelectorAll('.ws-color-popover').forEach(menu=>{
+      if(menu===except)return;
+      menu.hidden=true;
+      const trigger=menu.parentElement?.querySelector('.ws-brush-trigger');
+      if(trigger)trigger.setAttribute('aria-expanded','false');
+    });
+  }
+  function toolRail(kind,id,name,host,container,selector){
+    const rail=make('div','ws-action-rail');
+    const grip=make('button','ws-grip-trigger');
+    grip.type='button';grip.title='Drag '+name+' to move around the grid';
+    grip.setAttribute('aria-label','Drag '+name+' to rearrange. Press arrow keys to move.');
+    grip.append(dots());
+    grip.addEventListener('pointerdown',event=>{
+      beginPointerDrag(event,{kind,id,source:host,container,selector});
+    });
+    grip.addEventListener('keydown',event=>{
+      if(event.key==='ArrowUp'||event.key==='ArrowLeft'){
+        event.preventDefault();
+        if(kind==='notes')moveNote(id,-1);
+        else moveEntry(kind,id,-1);
+      }else if(event.key==='ArrowDown'||event.key==='ArrowRight'){
+        event.preventDefault();
+        if(kind==='notes')moveNote(id,1);
+        else moveEntry(kind,id,1);
+      }
+    });
+    const brush=make('button','ws-brush-trigger');
+    brush.type='button';brush.title='Change '+name+' color';
+    brush.setAttribute('aria-label','Change '+name+' color');
+    brush.setAttribute('aria-haspopup','true');
+    brush.setAttribute('aria-expanded','false');
+    brush.append(paintIcon());
+    const popover=make('div','ws-color-popover');
+    popover.hidden=true;
+    popover.setAttribute('role','group');
+    popover.setAttribute('aria-label','Choose '+name+' color');
+    const heading=make('span','ws-color-caption','ACCENT COLOR');
+    const swatches=make('div','ws-color-swatches');
+    for(const [color,hex] of Object.entries(COLORS)){
+      const swatch=make('button','ws-color-swatch');
+      swatch.type='button';swatch.style.setProperty('--swatch-color',hex);
+      swatch.dataset.swatch=color;
+      swatch.title=color[0].toUpperCase()+color.slice(1);
+      swatch.setAttribute('aria-label','Set '+name+' to '+color);
+      swatch.addEventListener('click',event=>{
+        event.preventDefault();event.stopPropagation();
+        if(kind==='notes'){
+          const note=data.notes.find(item=>item.id===id);
+          if(!note)return;
+          const oldColor=note.color;
+          note.color=color;
+          host.style.setProperty('--ws-note-color',COLORS[color]);
+          host.style.setProperty('--ws-accent',COLORS[color]);
+          api('/api/workspace/notes/'+encodeURIComponent(id),
+            json('PATCH',{title:note.title,body:note.body,color,pinned:note.pinned}))
+            .then(response=>{data.notes=response.notes;drawNotes();})
+            .catch(error=>{
+              note.color=oldColor;
+              host.style.setProperty('--ws-note-color',COLORS[oldColor]);
+              byId('wsNoteMessage').textContent=error.message;
+            });
+        }else setEntry(kind,id,{color});
+        closePalettes();
+      });
+      swatches.append(swatch);
+    }
+    popover.append(heading,swatches);
+    brush.addEventListener('click',event=>{
+      event.preventDefault();event.stopPropagation();
+      const willOpen=popover.hidden;
+      closePalettes();
+      popover.hidden=!willOpen;
+      brush.setAttribute('aria-expanded',String(willOpen));
+      if(willOpen)updateSwatches();
+    });
+    function updateSwatches(){
+      const selected=kind==='notes'?
+        data.notes.find(item=>item.id===id)?.color:
+        data.layout[kind].find(item=>item.id===id)?.color;
+      for(const swatch of swatches.children){
+        const chosen=swatch.dataset.swatch===selected;
+        swatch.classList.toggle('selected',chosen);
+        swatch.setAttribute('aria-pressed',String(chosen));
+      }
+    }
+    rail.append(grip,brush,popover);
+    return rail;
+  }
+  document.addEventListener('pointerdown',event=>{
+    if(!event.target.closest('.ws-action-rail'))closePalettes();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape')closePalettes();
+  });
+  function reorderFromDom(kind,container,selector){
+    const ids=[...container.children].filter(node=>node.matches(selector))
+      .map(node=>kind==='widgets'?node.dataset.widget:
+        kind==='notes'?node.dataset.note:node.dataset.wsTab||node.dataset.wsNav);
+    if(!ids.length)return;
+    if(kind==='notes'){
+      const lookup=new Map(data.notes.map(item=>[item.id,item]));
+      data.notes=ids.filter(id=>lookup.has(id)).map(id=>lookup.get(id));
+      drawNotes();persistNoteOrder();
+      return;
+    }
+    const original=data.layout[kind];
+    const lookup=new Map(original.map(item=>[item.id,item]));
+    const validIds=ids.filter(id=>lookup.has(id));
+    if(kind==='widgets'){
+      // Hidden widgets stay in the list but visible cards can occupy any grid slot.
+      const rest=original.filter(item=>!validIds.includes(item.id));
+      data.layout.widgets=[...validIds.map(id=>lookup.get(id)),...rest];
+    }else{
+      // Keep inaccessible / hidden office-specific entries in their original slots.
+      let position=0;
+      const set=new Set(validIds);
+      data.layout.nav=original.map(item=>set.has(item.id)?lookup.get(validIds[position++]):item);
+    }
+    applyLayout();renderEditor();persistLayout();
+  }
+  function beginPointerDrag(event,{kind,id,source,container,selector}){
+    if(event.button!==undefined&&event.button!==0)return;
+    if(event.isPrimary===false)return;
+    event.preventDefault();
+    closePalettes();
+    const pointerId=event.pointerId,startX=event.clientX,startY=event.clientY;
+    const containerNode=typeof container==='function'?container():container;
+    if(!containerNode)return;
+    let active=false,ghost=null,lastMoved=null;
+    const label=kind==='notes'?data.notes.find(item=>item.id===id)?.title||'Sticky note':
+      (kind==='widgets'?WIDGETS:TABS).find(pair=>pair[0]===id)?.[1]||id;
+    const move=next=>{
+      if(next.pointerId!==pointerId)return;
+      const distance=Math.hypot(next.clientX-startX,next.clientY-startY);
+      if(!active&&distance<7)return;
+      if(!active){
+        active=true;
+        document.body.classList.add('ws-pointer-sorting');
+        source.classList.add('ws-drag-source');
+        ghost=make('div','ws-floating-ghost');
+        ghost.append(dots(),make('span','',label));
+        const accent=kind==='notes'?data.notes.find(item=>item.id===id)?.color:
+          data.layout[kind].find(item=>item.id===id)?.color;
+        ghost.style.setProperty('--ws-accent',COLORS[accent]||COLORS.blue);
+        document.body.append(ghost);
+        feedback('Move to a new position…');
+      }
+      next.preventDefault();
+      ghost.style.left=(next.clientX+14)+'px';
+      ghost.style.top=(next.clientY+14)+'px';
+      const under=document.elementFromPoint(next.clientX,next.clientY);
+      const candidate=under?.closest(selector);
+      if(candidate&&candidate!==source&&candidate.parentElement===containerNode){
+        const rect=candidate.getBoundingClientRect();
+        const horizontal=kind==='widgets'||kind==='nav'&&selector==='.ws-division-shell';
+        const before=horizontal
+          ?(Math.abs(next.clientY-(rect.top+rect.height/2))<rect.height*.30
+              ?next.clientX<rect.left+rect.width/2
+              :next.clientY<rect.top+rect.height/2)
+          :next.clientY<rect.top+rect.height/2;
+        if(before){
+          if(candidate.previousElementSibling!==source)containerNode.insertBefore(source,candidate);
+        }else if(candidate.nextElementSibling!==source){
+          containerNode.insertBefore(source,candidate.nextSibling);
+        }
+        lastMoved=candidate;
+      }else if(containerNode.contains(under)){
+        const items=[...containerNode.children].filter(node=>node.matches(selector)&&node!==source&&!node.hidden);
+        const tail=items.at(-1);
+        if(tail){
+          const rect=tail.getBoundingClientRect();
+          if(next.clientY>rect.bottom+12)containerNode.append(source);
+        }
+      }
+      if(next.clientY<45)window.scrollBy(0,-16);
+      if(next.clientY>window.innerHeight-45)window.scrollBy(0,16);
+    };
+    const end=final=>{
+      if(final.pointerId!==pointerId)return;
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',end);
+      window.removeEventListener('pointercancel',cancel);
+      if(!active)return;
+      ghost?.remove();
+      source.classList.remove('ws-drag-source');
+      document.body.classList.remove('ws-pointer-sorting');
+      reorderFromDom(kind,containerNode,selector);
+    };
+    const cancel=final=>{
+      if(final.pointerId!==pointerId)return;
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',end);
+      window.removeEventListener('pointercancel',cancel);
+      ghost?.remove();source.classList.remove('ws-drag-source');
+      document.body.classList.remove('ws-pointer-sorting');
+      applyLayout();
+    };
+    window.addEventListener('pointermove',move,{passive:false});
+    window.addEventListener('pointerup',end);
+    window.addEventListener('pointercancel',cancel);
   }
   function mountDashboard(){
     const grid=byId('workspaceTiles');
@@ -117,70 +360,27 @@
       const header=make('header','ws-widget-header');
       const identity=make('div','ws-widget-heading');
       identity.append(make('span','ws-widget-accent'),make('h2','',label));
-      const tools=make('div','ws-widget-tools');
-      const drag=button('⋮⋮','ws-drag-handle',()=>{},'Drag to rearrange this block');
-      drag.draggable=false;drag.setAttribute('aria-label','Drag '+label+' to rearrange');
-      tools.append(drag);
-      const up=button('↑','ws-move-button',()=>moveEntry('widgets',id,-1),'Move '+label+' up');
-      const down=button('↓','ws-move-button',()=>moveEntry('widgets',id,1),'Move '+label+' down');
-      tools.append(up,down);
-      header.append(identity,tools);
+      const rail=toolRail('widgets',id,label,section,grid,'.ws-widget');
+      header.append(identity,rail);
       const content=make('div','ws-widget-content');
       for(const el of contents[id]||[])content.append(el);
       section.append(header,content);
       if(id==='shift')setupShift(content);
       if(id==='sticky')setupNotes(content);
       if(id==='reminders')setupReminders(content);
-      section.addEventListener('dragstart',event=>{
-        if(!data.edit){event.preventDefault();return;}
-        const originated=event.target.closest('.ws-drag-handle');
-        if(!originated){event.preventDefault();return;}
-        event.dataTransfer.effectAllowed='move';
-        event.dataTransfer.setData('text/plain',id);
-        section.classList.add('ws-is-dragging');
-      });
-      section.addEventListener('dragend',()=>section.classList.remove('ws-is-dragging'));
-      section.addEventListener('dragover',event=>{
-        if(!data.edit)return;
-        event.preventDefault();event.dataTransfer.dropEffect='move';
-        section.classList.add('ws-drag-target');
-      });
-      section.addEventListener('dragleave',()=>section.classList.remove('ws-drag-target'));
-      section.addEventListener('drop',event=>{
-        if(!data.edit)return;
-        event.preventDefault();
-        section.classList.remove('ws-drag-target');
-        const dragged=event.dataTransfer.getData('text/plain');
-        if(dragged&&dragged!==id){
-          const from=data.layout.widgets.findIndex(x=>x.id===dragged);
-          const to=data.layout.widgets.findIndex(x=>x.id===id);
-          if(from>=0&&to>=0){
-            const [item]=data.layout.widgets.splice(from,1);
-            data.layout.widgets.splice(to,0,item);
-            applyLayout();renderEditor();persistLayout();
-          }
-        }
-      });
-      // Native drag originates from the draggable handle, never textareas or cards.
-      // Touch and keyboard users get the adjacent Move Up / Down controls.
-      drag.addEventListener('dragstart',event=>{
-        if(!data.edit)event.preventDefault();
-      });
-      data.widgets.set(id,section);grid.append(section);
+      data.widgets.set(id,section);
+      grid.append(section);
     }
     support?.remove();
     mountNav();
+    mountDivisionTabs();
     byId('workspacePersonalControls').hidden=false;
     byId('wsCustomize').addEventListener('click',()=>{
       data.edit=!data.edit;
-      byId('wsCustomize').textContent=data.edit?'Finish customizing':'Customize workspace';
+      byId('wsCustomize').textContent=data.edit?'Close layout options':'Layout & visibility';
       byId('wsCustomize').setAttribute('aria-pressed',String(data.edit));
       document.body.classList.toggle('ws-editing',data.edit);
       byId('wsCustomizePanel').hidden=!data.edit;
-      for(const section of data.widgets.values()){
-        section.draggable=false;
-        section.querySelector('.ws-drag-handle').draggable=data.edit;
-      }
       applyLayout();renderEditor();
     });
   }
@@ -196,17 +396,38 @@
         'outbound.html':'outbound','cases.html':'cases','qc.html':'qc',
         'operations.html':'operations','staff.html':'staff'
       }[href];
-      if(id){a.dataset.wsNav=id;data.nav.set(id,a);primary.append(a);}
+      if(!id)continue;
+      a.dataset.wsNav=id;
+      const wrapper=make('div','ws-nav-row');
+      wrapper.dataset.wsNav=id;
+      wrapper.append(a);
+      wrapper.append(toolRail('nav',id,a.textContent.trim(),wrapper,primary,'.ws-nav-row'));
+      data.nav.set(id,wrapper);
+      primary.append(wrapper);
     }
-    if(secondary){const heading=secondary.previousElementSibling;
+    if(secondary){
+      const heading=secondary.previousElementSibling;
       if(heading?.classList.contains('sidebar-section-title'))heading.hidden=true;
       secondary.hidden=true;
+    }
+  }
+  function mountDivisionTabs(){
+    const grid=document.querySelector('.division-grid');
+    if(!grid)return;
+    for(const tile of [...grid.querySelectorAll(':scope > .division[data-division]')]){
+      const id=tile.dataset.division;
+      const wrapper=make('div','ws-division-shell');
+      wrapper.dataset.wsTab=id;
+      grid.replaceChild(wrapper,tile);
+      wrapper.append(tile,toolRail('nav',id,tile.querySelector('h3')?.textContent||id,
+        wrapper,grid,'.ws-division-shell'));
     }
   }
   function applyLayout(){
     const grid=byId('workspaceTiles');
     for(const item of data.layout.widgets){
-      const widget=data.widgets.get(item.id);if(!widget)continue;
+      const widget=data.widgets.get(item.id);
+      if(!widget)continue;
       widget.dataset.size=item.size;
       widget.style.setProperty('--ws-accent',COLORS[item.color]);
       widget.dataset.color=item.color;
@@ -216,25 +437,26 @@
     }
     const navHost=document.querySelector('.sidebar .nav');
     for(const item of data.layout.nav){
-      const el=data.nav.get(item.id);if(!el)continue;
+      const wrapper=data.nav.get(item.id);
+      if(!wrapper)continue;
+      const el=wrapper.querySelector('a.nav-item');
+      if(!el)continue;
       const roleAllowed=!el.dataset.access||el.dataset.access.split(',').includes(data.user.role);
       const productAllowed=!(data.user.office?.workflowTemplate==='starter'&&item.id==='outbound');
-      el.hidden=!roleAllowed||!productAllowed||item.hidden;
-      el.style.setProperty('--ws-accent',COLORS[item.color]);
-      el.dataset.wsColor=item.color;
+      wrapper.hidden=!roleAllowed||!productAllowed||item.hidden;
+      wrapper.style.setProperty('--ws-accent',COLORS[item.color]);
+      el.hidden=false;
       if(el.classList.contains('active'))el.style.setProperty('--ws-active',COLORS[item.color]);
-      navHost?.append(el);
-      const tile=document.querySelector('.division[data-division="'+item.id+'"]');
-      if(tile){
-        tile.style.setProperty('--ws-accent',COLORS[item.color]);
-        tile.hidden=item.hidden;
-      }
+      navHost?.append(wrapper);
     }
-    // Division cards are also tabs: move them into the employee's chosen order.
     const tileHost=document.querySelector('.division-grid');
     if(tileHost)for(const tab of data.layout.nav){
-      const tile=tileHost.querySelector('.division[data-division="'+tab.id+'"]');
-      if(tile){tileHost.append(tile);tile.style.setProperty('--ws-accent',COLORS[tab.color]);}
+      const tile=tileHost.querySelector('.ws-division-shell[data-ws-tab="'+tab.id+'"]');
+      if(tile){
+        tileHost.append(tile);
+        tile.hidden=tab.hidden||!!tile.querySelector('a.division')?.hidden;
+        tile.style.setProperty('--ws-accent',COLORS[tab.color]);
+      }
     }
   }
   function renderEditor(){
@@ -242,7 +464,7 @@
     if(!host||!data.edit)return;
     host.replaceChildren();
     const intro=make('p','ws-customize-description',
-      'Move blocks using drag handles or the arrows. Choose size and accent colors, and hide blocks you do not need. Changes save to your account automatically.');
+      'Drag any nine-dot grip to arrange blocks in the grid. The brush below it opens a color palette. Use this panel for sizes, visibility, keyboard rearrangement or resetting your desk; your changes save automatically.');
     host.append(intro);
     for(const kind of ['widgets','nav']){
       const section=make('div','ws-editor-column');
@@ -364,7 +586,10 @@
     if(!data.notes.length){list.append(make('p','ws-empty','No notes yet. Add one below to keep it for your next shift.'));return;}
     for(const note of data.notes){
       const card=make('article','ws-note-card');
+      card.dataset.note=note.id;
       card.style.setProperty('--ws-note-color',COLORS[note.color]||COLORS.blue);
+      card.style.setProperty('--ws-accent',COLORS[note.color]||COLORS.blue);
+      card.append(toolRail('notes',note.id,note.title,card,list,'.ws-note-card'));
       const head=make('div','ws-note-header');
       const title=make('strong','',note.title);
       head.append(title);

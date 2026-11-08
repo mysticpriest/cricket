@@ -140,6 +140,24 @@ test('Private employee desk persists, shift clock is auditable, admin sees live 
     assert.equal(otherDesk.data.reminders.length,0);
     assert.equal(otherDesk.data.layout.widgets[0].id,'metrics');
 
+    // The nine-dot drag handle on individual sticky notes persists order
+    // on the server. Another employee cannot reorder someone else's notes.
+    const secondNote=await req(url,'/api/workspace/notes',json('POST',{
+      title:'Another demo note',body:'Separate fictional sticky note',color:'teal',pinned:false
+    },agent.cookie));
+    assert.equal(secondNote.status,201);
+    const secondNoteId=secondNote.data.notes.find(n=>n.title==='Another demo note').id;
+    const order=await req(url,'/api/workspace/notes/order',json('PUT',{
+      ids:[secondNoteId,noteId]
+    },agent.cookie));
+    assert.equal(order.status,200);
+    assert.deepEqual(order.data.notes.map(n=>n.id),[secondNoteId,noteId]);
+    assert.equal((await req(url,'/api/workspace/notes/order',json('PUT',{
+      ids:[secondNoteId,noteId]
+    },other.cookie))).status,400);
+    const savedOrder=await req(url,'/api/workspace/me',{headers:auth(secondLogin.cookie)});
+    assert.deepEqual(savedOrder.data.notes.map(n=>n.id),[secondNoteId,noteId]);
+
     assert.equal((await req(url,'/api/workspace/shift',json('POST',{action:'break'},agent.cookie))).status,409);
     const actions=['start_shift','break','meeting','system_issues','start_shift','end_shift'];
     for(const action of actions){
@@ -192,10 +210,14 @@ test('Private employee desk persists, shift clock is auditable, admin sees live 
     assert.equal((await req(url,'/api/workspace/reminders/'+reminderId,{method:'DELETE',headers:auth(b.cookie)})).status,404);
 
     const removeNote=await req(url,'/api/workspace/notes/'+noteId,{method:'DELETE',headers:auth(agent.cookie)});
+    const removeSecondNote=await req(url,'/api/workspace/notes/'+secondNoteId,
+      {method:'DELETE',headers:auth(agent.cookie)});
     const removeReminder=await req(url,'/api/workspace/reminders/'+reminderId,{method:'DELETE',headers:auth(agent.cookie)});
     assert.equal(removeNote.status,200);
     assert.equal(removeReminder.status,200);
-    assert.equal(removeNote.data.notes.length,0);
+    assert.equal(removeNote.data.notes.length,1);
+    assert.equal(removeSecondNote.status,200);
+    assert.equal(removeSecondNote.data.notes.length,0);
     assert.equal(removeReminder.data.reminders.length,0);
     assert.ok(!stderr.includes('Error:'),stderr);
   }finally{
