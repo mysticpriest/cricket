@@ -1,0 +1,20 @@
+body{background:#f5f8fc;color:#17243b}.office-flow-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(18px,4vw,55px);background:white;border-bottom:1px solid #e2e8f0}
+.office-flow-header>div{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.office-flow-page{max-width:1250px;margin:0 auto;padding:45px 26px 80px}
+.office-flow-page h1{font:700 clamp(30px,4vw,45px) 'Space Grotesk',system-ui;letter-spacing:-1.5px;margin:14px 0}
+.office-flow-lead{font-size:13px;line-height:1.8;color:#64748b;margin:0 0 29px}
+.office-flow-layout{display:grid;grid-template-columns:330px 1fr;gap:20px}
+.office-flow-menu,.office-flow-detail{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:22px;min-width:0}
+.office-flow-section-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.office-flow-section-heading h2{font-size:16px;margin:0}
+.office-flow-section-heading span{color:#94a3b8;font-size:11px}
+.office-route-list{display:grid;gap:8px;margin-top:15px}
+.office-route-card{border:1px solid #e1e8f2;background:#fafcff;color:#334155;border-radius:9px;text-align:left;padding:13px 14px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.office-route-card:hover,.office-route-card.active{border-color:#93c5fd;background:#eff6ff;color:#1d4ed8}
+.office-flow-detail h2{font:700 24px 'Space Grotesk',system-ui;margin:12px 0 16px}
+.office-route-instructions{white-space:pre-wrap;line-height:1.85;font-size:13px;color:#475569;background:#f8fafc;padding:19px;border:1px solid #e2e8f0;border-radius:11px}
+#officeRouteDraft{margin-top:24px}#officeRouteDraft label{display:block;font-weight:800;font-size:12px;margin-bottom:9px}
+#officeDraftNote{resize:vertical;width:100%;min-height:130px;background:#fff;border:1px solid #d4deeb;border-radius:9px;padding:13px;font-size:12px;line-height:1.7}
+#officeCopyDraft{margin-top:13px}#officeDraftMessage{font-size:11px;color:#16a34a}
+.office-flow-disclaimer{color:#94a3b8;font-size:11px;line-height:1.8;margin-top:24px}
+@media(max-width:790px){.office-flow-layout{grid-template-columns:1fr}.office-flow-page{padding:24px 15px}.office-flow-menu,.office-flow-detail{padding:16px}}

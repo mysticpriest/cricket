@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cricket | Platform Administration</title>
+<link rel="stylesheet" href="workspace.css"><link rel="stylesheet" href="platform.css">
+<script src="session-guard.js"></script><script defer src="platform.js"></script>
+</head><body>
+<header class="platform-bar"><a class="logo" href="platform.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a><span class="pill">PLATFORM ADMIN</span><button id="platformLogout" class="button button-outline small-button" type="button">Sign out</button></header>
+<main class="platform-content">
+  <div class="platform-header"><div><span class="eyebrow">CRICKET PLATFORM / ADMINISTRATION</span><h1>Office management<span class="logo-period">.</span></h1><p>Create independent client offices, issue keys, and configure their starter workflows.</p></div><span class="pill"><span class="dot"></span>Multi-office preview</span></div>
+  <section class="platform-grid">
+    <div class="platform-card">
+      <div class="platform-card-heading"><h2>Add a new office</h2><p>Create the workspace and its first local office administrator.</p></div>
+      <form id="platformCreateForm" class="platform-form">
+        <label>Office / client name<input id="platformOfficeName" maxlength="80" placeholder="Example: Northstar Support" required></label>
+        <label>Office administrator's name<input id="platformAdminName" maxlength="80" placeholder="Office manager" required></label>
+        <label>Office administrator's email<input id="platformAdminEmail" type="email" placeholder="manager@example.com" required></label>
+        <label>Temporary administrator password<input id="platformAdminPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" placeholder="12 characters minimum" required></label>
+        <label>Starter routes <small>(one per line: Route name | Instructions)</small>
+          <textarea id="platformRoutes" rows="5" placeholder="Order inquiry | Verify the order number and explain the status&#10;Refund request | Review the customer's return information"></textarea>
+        </label>
+        <button id="platformCreateButton" class="button" type="submit">Create office + generate key →</button>
+        <p id="platformCreateStatus" role="status"></p>
+      </form>
+      <div id="platformNewKey" class="platform-key-result" hidden>
+        <strong>New Office Key — copy it now</strong>
+        <p>Only the key's hash is stored. This key will not be shown again.</p>
+        <code id="platformKeyValue"></code>
+        <button id="platformKeyCopy" class="button button-outline small-button" type="button">Copy Office Key</button>
+      </div>
+    </div>
+    <div class="platform-card">
+      <div class="platform-card-heading"><h2>Client offices</h2><p>Each office has isolated employees, cases, reviews and analytics.</p></div>
+      <div id="platformOfficeList" class="platform-list"><p>Loading offices…</p></div>
+      <p id="platformListStatus" class="platform-status" role="status"></p>
+    </div>
+  </section>
+  <p class="platform-disclaimer">Development prototype. Starter workflows are guidance-only; production onboarding requires security, compliance and infrastructure review. Platform admins manage office configuration, not private case records.</p>
+</main></body></html>

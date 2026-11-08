@@ -20,7 +20,7 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
   const dbDir = fs.mkdtempSync(path.join(os.tmpdir(),'cricket-qc-'));
   const port = await openPort();
   const url = `http://127.0.0.1:${port}`;
-  const proc=spawn(process.execPath,['server/server.js'],{cwd:ROOT,env:{...process.env,CRICKET_DATA_DIR:dbDir,PORT:String(port),HOST:'127.0.0.1',CRICKET_ADMIN_EMAIL:'admin@example.test',CRICKET_ADMIN_PASSWORD:'secure-admin-password-123'},stdio:['ignore','pipe','pipe']});
+  const proc=spawn(process.execPath,['server/server.js'],{cwd:ROOT,env:{...process.env,CRICKET_NEUTRAUMA_OFFICE_KEY:'NEUTRAUMA-TEST-KEY-2026',CRICKET_DATA_DIR:dbDir,PORT:String(port),HOST:'127.0.0.1',CRICKET_ADMIN_EMAIL:'admin@example.test',CRICKET_ADMIN_PASSWORD:'secure-admin-password-123'},stdio:['ignore','pipe','pipe']});
   let stderr=''; proc.stderr.on('data',x=>{stderr+=x.toString()});
   try {
     await waitReady(url,proc);
@@ -35,14 +35,14 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     }
     const hidden=await fetch(url+'/server/server.js'); assert.equal(hidden.status,404);
     const unauthorized=await request(url,'/api/cases'); assert.equal(unauthorized.status,401);
-    const badLogin=await request(url,'/api/auth/login',json('POST',{email:'admin@example.test',password:'bad'})); assert.equal(badLogin.status,401);
-    const adminLogin=await request(url,'/api/auth/login',json('POST',{email:'admin@example.test',password:'secure-admin-password-123'})); assert.equal(adminLogin.status,200);
+    const badLogin=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'admin@example.test',password:'bad'})); assert.equal(badLogin.status,401);
+    const adminLogin=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'admin@example.test',password:'secure-admin-password-123'})); assert.equal(adminLogin.status,200);
     const adminCookie=adminLogin.headers.get('set-cookie').split(';')[0]; assert.match(adminCookie,/cricket_session=/);
     assert.equal(adminLogin.data.user.displayName, 'Administrator');
     const missingName=await request(url,'/api/users',json('POST',{email:'nameless@example.test',password:'long-test-password-123',role:'agent'},adminCookie));assert.equal(missingName.status,400);
     const addAgent=await request(url,'/api/users',json('POST',{displayName:'Samantha Stewart',email:'agent@example.test',password:'agent-account-password-123',role:'agent'},adminCookie));assert.equal(addAgent.status,201);
     const addQc=await request(url,'/api/users',json('POST',{displayName:'Jordan Reviewer',email:'qc@example.test',password:'qc-account-password-12345',role:'qc'},adminCookie));assert.equal(addQc.status,201);
-    const agentLogin=await request(url,'/api/auth/login',json('POST',{email:'agent@example.test',password:'agent-account-password-123'}));
+    const agentLogin=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'agent@example.test',password:'agent-account-password-123'}));
     const agentCookie=agentLogin.headers.get('set-cookie').split(';')[0];
     assert.equal(agentLogin.data.user.displayName,'Samantha Stewart');
     const listedUsers=await request(url,'/api/users',{headers:{Cookie:adminCookie}});
@@ -55,7 +55,7 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     assert.equal(corrected.status,200);
     const refreshed=await request(url,'/api/auth/me',{headers:{Cookie:agentCookie}});
     assert.equal(refreshed.data.user.displayName,'Sam Stewart');
-    const qcLogin=await request(url,'/api/auth/login',json('POST',{email:'qc@example.test',password:'qc-account-password-12345'}));
+    const qcLogin=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'qc@example.test',password:'qc-account-password-12345'}));
     const qcCookie=qcLogin.headers.get('set-cookie').split(';')[0];
     async function staticStatus(page, cookie) { return (await fetch(url+page, {headers:{Cookie:cookie},redirect:'manual'})).status; }
     for(const page of ['/index.html','/inbound.html','/outbound.html','/cases.html','/staff.html','/qc.html']){
@@ -138,7 +138,7 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
     assert.equal(savedList.status,200);assert.equal(savedList.data.total,1);
     const otherReviewer=await request(url,'/api/users',json('POST',{displayName:'Second Reviewer',email:'qc2@example.test',password:'secure-second-password',role:'qc'},adminCookie));
     assert.equal(otherReviewer.status,201);
-    const otherLogin=await request(url,'/api/auth/login',json('POST',{email:'qc2@example.test',password:'secure-second-password'}));
+    const otherLogin=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'qc2@example.test',password:'secure-second-password'}));
     const otherCookie=otherLogin.headers.get('set-cookie').split(';')[0];
     const otherSaved=await request(url,'/api/qc/work-later',{headers:{Cookie:otherCookie}});
     assert.equal(otherSaved.data.total,0);

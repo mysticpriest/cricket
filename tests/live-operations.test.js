@@ -41,7 +41,7 @@ test('live presence, route duration, shift audit and role isolation',async()=>{
   const serverPort=await port();
   const url='http://127.0.0.1:'+serverPort;
   const proc=spawn(process.execPath,['server/server.js'],{
-    cwd:ROOT,env:{...process.env,CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(serverPort),
+    cwd:ROOT,env:{...process.env,CRICKET_NEUTRAUMA_OFFICE_KEY:'NEUTRAUMA-TEST-KEY-2026',CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(serverPort),
       CRICKET_ADMIN_EMAIL:'admin-live@example.test',CRICKET_ADMIN_PASSWORD:'secure-admin-live-pass'},
     stdio:['ignore','pipe','pipe']
   });
@@ -50,16 +50,16 @@ test('live presence, route duration, shift audit and role isolation',async()=>{
     await ready(url,proc);
     const anonymous=await call(url,'/api/active-agents');
     assert.equal(anonymous.status,401);
-    const adminLogin=await call(url,'/api/auth/login',json('POST',{email:'admin-live@example.test',password:'secure-admin-live-pass'}));
+    const adminLogin=await call(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'admin-live@example.test',password:'secure-admin-live-pass'}));
     assert.equal(adminLogin.status,200);
     const adminCookie=cookie(adminLogin);
     const a=await call(url,'/api/users',json('POST',{displayName:'Demo Agent',email:'agent-live@example.test',role:'agent',password:'long-agent-live-pass'},adminCookie));
     assert.equal(a.status,201);
     const q=await call(url,'/api/users',json('POST',{displayName:'QC Teammate',email:'qc-live@example.test',role:'qc',password:'long-qc-live-pass123'},adminCookie));
     assert.equal(q.status,201);
-    const agentLogin=await call(url,'/api/auth/login',json('POST',{email:'agent-live@example.test',password:'long-agent-live-pass'}));
+    const agentLogin=await call(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'agent-live@example.test',password:'long-agent-live-pass'}));
     const agentCookie=cookie(agentLogin);
-    const qcLogin=await call(url,'/api/auth/login',json('POST',{email:'qc-live@example.test',password:'long-qc-live-pass123'}));
+    const qcLogin=await call(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'qc-live@example.test',password:'long-qc-live-pass123'}));
     const qcCookie=cookie(qcLogin);
     const agentForbiddenPage=await fetch(url+'/operations.html',{headers:{Cookie:agentCookie},redirect:'manual'});
     const qcForbiddenPage=await fetch(url+'/operations.js',{headers:{Cookie:qcCookie},redirect:'manual'});

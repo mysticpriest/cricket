@@ -2,6 +2,52 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Office Keys and multi-client workspaces (foundation)
+
+Cricket now begins with **Choose Your Office** at `/office.html`. Enter the office-specific key, then use your employee's email and password. Office Keys identify the organization and **do not replace employee authentication**. The key is exchanged for a short-lived, HttpOnly selection cookie; the server binds login to the selected office. Every employee session carries its office identity.
+
+**NeuTrauma is Office 1**, preserving all existing Inbound routes, QC reviews, documentation, employee accounts, analytics, and audit records. Existing local users/cases/reviews/audits/presence records receive the NeuTrauma office ID in an **additive SQLite migration**. Keep a complete backup of the `data` folder before updating.
+
+### Starting the upgraded server
+
+On the **first startup after migration**, supply a new strong NeuTrauma Office Key using `CRICKET_NEUTRAUMA_OFFICE_KEY` or allow Cricket to generate a secure random one and display it **once in the Node terminal**. Copy it before closing the terminal. Keys are stored as SHA-256 hashes, not plaintext.
+
+```powershell
+# On a NEW database also configure CRICKET_ADMIN_EMAIL and CRICKET_ADMIN_PASSWORD.
+$env:CRICKET_NEUTRAUMA_OFFICE_KEY="REPLACE-WITH-YOUR-OWN-UNIQUE-32-CHARACTER-KEY"
+$env:HOST="127.0.0.1"
+$env:PORT="3001"
+npm.cmd start
+```
+
+The `CRICKET_NEUTRAUMA_OFFICE_KEY` variable only sets the key when the NeuTrauma office is *first created* in the database. Changing it later does **not** silently rotate a stored key. Use the platform-admin rotation control to create a new key. Never put real keys into GitHub or client-side JavaScript. Do not share credentials or key values in screenshots.
+
+### Optional Cricket Platform Administrator
+
+To enable the platform console, set **all three** variables **before starting Cricket**:
+
+```powershell
+$env:CRICKET_PLATFORM_ADMIN_EMAIL="owner@example.test"
+$env:CRICKET_PLATFORM_ADMIN_PASSWORD="REPLACE-WITH-A-SECURE-PASSWORD"
+$env:CRICKET_PLATFORM_OFFICE_KEY="REPLACE-WITH-AN-INDEPENDENT-UNIQUE-PLATFORM-KEY"
+npm.cmd start
+```
+
+The platform identity is **separate from NeuTrauma office administrators**. Sign in with the platform key through `office.html`, followed by those platform credentials. You'll land on `platform.html`, where you can:
+
+- Create a client office and an initial office administrator.
+- Generate an office key (displayed only once), rotate or deactivate that key.
+- Activate/deactivate an office and configure starter route names and instructions.
+- View office names and high-level employee/case counts, but **not client cases, caller numbers, documents or QC reviews**.
+
+Each newly created office starts with a **generic starter workflow** at `office-workflow.html`. Route names and instruction text are separately configurable by the platform administrator. Unlike NeuTrauma's specialized Inbound flow, starter routes currently offer guided instructions and a **local-only draft note**; they **do not** yet store cases, run QC evaluations, or support full organization-specific workflow automation. Those are follow-on development steps. NeuTrauma-only HTML/JS and case submission are blocked for generic offices.
+
+### Office isolation and current limitations
+
+Employee directories, case search/detail/export, personal QC work folders, evaluations, analytics, live presence, audit history and dashboard counts are filtered by **the authenticated office ID**, never by an office ID supplied in an untrusted request. Wrong-office case IDs return not found. Office administrators can create users only within their office. Inactive offices cannot use existing sessions.
+
+This is **version-one isolation for a local, fictional-data prototype, not a production-grade compliance boundary**. Email addresses must currently be globally unique across offices; support for the same email in multiple offices will require a later database migration. The Platform Administrator manages configuration and keys, not other clients' private case content. Production rollout also requires security review, tenant-focused penetration testing, key lifecycle controls, reliable HTTPS hosting, secure identity infrastructure, backups, and data-protection agreements. **Do not use real patient data.**
+
 ## Agent statistic cubes, QC insights and case privacy
 
 The Analytics page is **agent-focused for everyone**. Below the graph, each agent has a compact row consisting of their name, a dot in their assigned account color, and **only three small statistic cubes** (Total, Inbound, Outbound). Resolved and Pending statistics have been removed from the Analytics interface. These figures follow the selected date, call-type and employee filters; the name-search box filters both the compact rows and graph legend.

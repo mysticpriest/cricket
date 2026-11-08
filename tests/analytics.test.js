@@ -19,21 +19,21 @@ test('role-separated analytics, temporal series, filtering, QC reviews and priva
   const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'cricket-analytics-'));
   const p=await openPort();const url='http://127.0.0.1:'+p;
   const proc=spawn(process.execPath,['server/server.js'],{cwd:ROOT,env:{...process.env,
-    CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(p),
+    CRICKET_NEUTRAUMA_OFFICE_KEY:'NEUTRAUMA-TEST-KEY-2026',CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(p),
     CRICKET_ADMIN_EMAIL:'analytics-admin@example.test',
     CRICKET_ADMIN_PASSWORD:'long-analytics-admin-password'},stdio:['ignore','pipe','pipe']});
   let stderr='';proc.stderr.on('data',x=>{stderr+=x.toString();});
   try{
     await ready(url,proc);
     const anon=await call(url,'/api/analytics/agents');assert.equal(anon.status,401);
-    const adminLogin=await call(url,'/api/auth/login',body('POST',{email:'analytics-admin@example.test',password:'long-analytics-admin-password'}));
+    const adminLogin=await call(url,'/api/auth/login',body('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'analytics-admin@example.test',password:'long-analytics-admin-password'}));
     assert.equal(adminLogin.status,200);
     const admin=cookie(adminLogin);
     const agents=[];
     for(const [name,email] of [['Agent One','agent1@example.test'],['Agent Two','agent2@example.test'],['Agent Three','agent3@example.test']]){
       const user=await call(url,'/api/users',body('POST',{displayName:name,email,role:'agent',password:'long-analytics-agent-pass'},admin));
       assert.equal(user.status,201);
-      const login=await call(url,'/api/auth/login',body('POST',{email,password:'long-analytics-agent-pass'}));
+      const login=await call(url,'/api/auth/login',body('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email,password:'long-analytics-agent-pass'}));
       assert.equal(login.status,200);
       agents.push({id:user.data.user.id,cookie:cookie(login),name});
     }
@@ -41,7 +41,7 @@ test('role-separated analytics, temporal series, filtering, QC reviews and priva
     for(const [name,email] of [['QC First','qc1@example.test'],['QC Second','qc2@example.test']]){
       const user=await call(url,'/api/users',body('POST',{displayName:name,email,role:'qc',password:'long-analytics-review-pass'},admin));
       assert.equal(user.status,201);
-      const login=await call(url,'/api/auth/login',body('POST',{email,password:'long-analytics-review-pass'}));
+      const login=await call(url,'/api/auth/login',body('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email,password:'long-analytics-review-pass'}));
       assert.equal(login.status,200);
       qcs.push({id:user.data.user.id,cookie:cookie(login),name});
     }

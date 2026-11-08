@@ -19,7 +19,7 @@ test('random account colors and private server-persisted display preferences',as
   const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'cricket-pref-'));
   const port=await availablePort();const url='http://127.0.0.1:'+port;
   const proc=spawn(process.execPath,['server/server.js'],{cwd:ROOT,env:{...process.env,
-    CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(port),
+    CRICKET_NEUTRAUMA_OFFICE_KEY:'NEUTRAUMA-TEST-KEY-2026',CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(port),
     CRICKET_ADMIN_EMAIL:'prefs-admin@example.test',CRICKET_ADMIN_PASSWORD:'secure-admin-preferences-pass'},
     stdio:['ignore','pipe','pipe']});
   let stderr='';proc.stderr.on('data',b=>{stderr+=b.toString();});
@@ -29,7 +29,7 @@ test('random account colors and private server-persisted display preferences',as
     assert.equal(anon.status,401);
     const anonPatch=await request(url,'/api/preferences',json('PATCH',{color:'violet'}));
     assert.equal(anonPatch.status,401);
-    const login=await request(url,'/api/auth/login',json('POST',{email:'prefs-admin@example.test',password:'secure-admin-preferences-pass'}));
+    const login=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'prefs-admin@example.test',password:'secure-admin-preferences-pass'}));
     assert.equal(login.status,200);
     const admin=session(login);
     const a=login.data.user.preferences;
@@ -47,7 +47,7 @@ test('random account colors and private server-persisted display preferences',as
       const result=await request(url,'/api/users',json('POST',{email,role,displayName:name,password:'secure-staff-test-password'},admin));
       assert.equal(result.status,201);
       assert.ok(COLORS.has(result.data.user.themeColor));
-      const logged=await request(url,'/api/auth/login',json('POST',{email,password:'secure-staff-test-password'}));
+      const logged=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email,password:'secure-staff-test-password'}));
       assert.equal(logged.status,200);
       assert.equal(logged.data.user.preferences.color,result.data.user.themeColor);
       employees.push({cookie:session(logged),id:result.data.user.id,assigned:result.data.user.themeColor,role});
@@ -85,7 +85,7 @@ test('random account colors and private server-persisted display preferences',as
       assert.equal(rejected.status,400,JSON.stringify(patch)+' must be rejected');
     }
     assert.deepEqual((await request(url,'/api/preferences',{headers:{Cookie:agent1.cookie}})).data.preferences,preferences);
-    const newLogin=await request(url,'/api/auth/login',json('POST',{email:'agent1@example.test',password:'secure-staff-test-password'}));
+    const newLogin=await request(url,'/api/auth/login',json('POST',{officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'agent1@example.test',password:'secure-staff-test-password'}));
     assert.deepEqual(newLogin.data.user.preferences,preferences,'Preferences persist across new sessions');
     // Authoritative storage on disk, not browser-only state.
     const database=new DatabaseSync(path.join(dataDir,'cricket.db'));

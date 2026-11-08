@@ -26,6 +26,7 @@ async function api(path, options = {}) {
 }
 function goToAuthorizedDestination(user) {
   if (!user || !user.role) throw Error('Employee account could not be verified.');
+  if(user.role==='platform_admin'){location.replace('platform.html');return;}
   const safe = nextAllowed[destination].includes(user.role) ? destination : 'index.html';
   location.replace(safe);
 }
@@ -40,7 +41,15 @@ const ACTIVITY_KEY='cricket_last_activity';
 const sessionInitialization=(async()=>{
   try {
     const data=await api('/api/auth/me');
-    if (!data.user) return;
+    if (!data.user) {
+      const response=await fetch('/api/office/selection',{credentials:'same-origin'});
+      if(!response.ok){location.replace('office.html?next='+encodeURIComponent(destination));return;}
+      const selected=await response.json();
+      const name=selected.scope==='platform'?'Cricket Platform Administration':selected.office?.name||'Office';
+      document.querySelector('#officeLoginName').textContent=name;
+      document.querySelector('#officeLoginLabel').textContent=selected.scope==='platform'?'PLATFORM ADMINISTRATOR':'EMPLOYEE PORTAL';
+      return;
+    }
     const tabActive=sessionStorage.getItem(TAB_KEY)==='1';
     const previous=Number(sessionStorage.getItem(ACTIVITY_KEY))||0;
     if (tabActive && previous>0 && Date.now()-previous<20*60*1000) {
@@ -51,6 +60,7 @@ const sessionInitialization=(async()=>{
     sessionStorage.removeItem(TAB_KEY);
     sessionStorage.removeItem(ACTIVITY_KEY);
     await api('/api/auth/logout',{method:'POST'});
+    location.replace('office.html?next='+encodeURIComponent(destination));
   } catch (_) {
     message.textContent='Unable to contact the Cricket server. Confirm that npm.cmd start is running.';
   }
