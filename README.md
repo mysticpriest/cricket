@@ -26,9 +26,11 @@ Use **Reset to Workspace Tabs only** to return to the default dashboard.
 
 Blocks, sidebar tabs, workspace shortcut cards and individual sticky notes
 retain their **nine-dot drag grip** (mouse/touch/pen and keyboard arrows) and
-their **paintbrush palette**. Choosing a color now applies a **soft, layered
-gradient to the entire card surface**, rather than changing its outer border
-color. Borders remain neutral for a cleaner appearance.
+their **paintbrush palette**. Choosing a color applies a subtle **solid pastel
+background** to the full card; there are no gradients and borders remain
+neutral. The nine-dot grip and brush appear only when the cursor hovers over
+the card or tab, or when it receives keyboard focus. On touchscreens, the
+controls remain available without hover so touch dragging and recoloring work.
 
 Existing personal layouts are migrated once to the new version: Workspace
 Tabs stays visible, while other blocks start hidden in the widget library.
