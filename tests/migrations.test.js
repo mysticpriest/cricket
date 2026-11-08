@@ -65,7 +65,7 @@ test('additive schema migration preserves older accounts and case history',async
   const port=await availablePort();
   const url='http://127.0.0.1:'+port;
   const proc=spawn(process.execPath,['server/server.js'],{
-    cwd:ROOT,env:{...process.env,CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(port)},
+    cwd:ROOT,env:{...process.env,CRICKET_NEUTRAUMA_OFFICE_KEY:'NEUTRAUMA-TEST-KEY-2026',CRICKET_DATA_DIR:dataDir,HOST:'127.0.0.1',PORT:String(port)},
     stdio:['ignore','pipe','pipe']
   });
   let stderr='';
@@ -74,7 +74,7 @@ test('additive schema migration preserves older accounts and case history',async
     await waitReady(url);
     const signedIn=await fetch(url+'/api/auth/login',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email:'legacy-admin@example.test',password})
+      body:JSON.stringify({officeKey:'NEUTRAUMA-TEST-KEY-2026',email:'legacy-admin@example.test',password})
     });
     assert.equal(signedIn.status,200);
     const payload=await signedIn.json();

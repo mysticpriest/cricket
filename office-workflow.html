@@ -1,0 +1,34 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cricket | Office Workflow</title>
+<link rel="stylesheet" href="workspace.css"><link rel="stylesheet" href="office-workflow.css">
+<script src="session-guard.js"></script><script defer src="office-workflow.js"></script>
+</head><body>
+<header class="simple-topbar office-flow-header">
+  <a class="logo" href="index.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+  <div><span class="pill"><span class="dot"></span><span id="officeFlowName">Your Office</span></span>
+  <a class="button button-outline small-button" href="index.html">← Dashboard</a></div>
+</header>
+<main class="office-flow-page">
+  <span class="eyebrow">OFFICE WORKSPACE / CUSTOM WORKFLOWS</span>
+  <h1 id="officeFlowTitle">Your office workflows<span class="logo-period">.</span></h1>
+  <p class="office-flow-lead">These routes belong to your office. Select one to review its instructions and capture a draft note.</p>
+  <div class="office-flow-layout">
+    <section class="office-flow-menu" aria-labelledby="officeRoutesHeading">
+      <div class="office-flow-section-heading"><h2 id="officeRoutesHeading">Available routes</h2><span id="officeRouteCount">0 routes</span></div>
+      <div id="officeRoutes" class="office-route-list"></div>
+    </section>
+    <section class="office-flow-detail" aria-labelledby="officeRouteTitle">
+      <span class="eyebrow">ROUTE DETAILS</span>
+      <h2 id="officeRouteTitle">Select a workflow</h2>
+      <div id="officeRouteInstructions" class="office-route-instructions">Choose a route on the left to view its instructions.</div>
+      <div id="officeRouteDraft" hidden>
+        <label for="officeDraftNote">Draft note</label>
+        <textarea id="officeDraftNote" rows="5" placeholder="Write fictional demonstration notes for this route..."></textarea>
+        <button class="button" id="officeCopyDraft" type="button">Copy draft note</button>
+        <p id="officeDraftMessage" role="status"></p>
+      </div>
+    </section>
+  </div>
+  <p class="office-flow-disclaimer">Starter workflows are configurable guidance only. Unlike the existing NeuTrauma flow, draft notes are not saved as cases or sent to Quality Control yet. Do not enter real customer or patient information.</p>
+</main></body></html>

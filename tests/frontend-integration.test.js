@@ -8,7 +8,7 @@ const fs=require('node:fs');
 const ROOT=path.resolve(__dirname,'..');
 test('all browser scripts parse as JavaScript without execution',()=>{
   const scripts=['script.js','login.js','inbound.js','qc.js','staff.js','cases.js',
-    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','qc-insights.js','settings.js','server/analytics.js'];
+    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','qc-insights.js','settings.js','office.js','office-workflow.js','platform.js','server/analytics.js','server/offices.js'];
   for(const file of scripts){
     assert.ok(fs.existsSync(path.join(ROOT,file)),file+' must exist');
     const result=spawnSync(process.execPath,['--check',path.join(ROOT,file)],{encoding:'utf8'});
@@ -99,4 +99,22 @@ test('case records and IDs are hidden from agents by both UI and backend',()=>{
   assert.doesNotMatch(bridge,/My cases/);
   assert.match(server,/\/cases\.html', \['admin'\]/);
   assert.match(server,/user\.role==='agent' \? \{ saved:true/);
+});
+
+test('multi-client Office Key entry, starter routes and platform console are wired',()=>{
+  const office=fs.readFileSync(path.join(ROOT,'office.html'),'utf8');
+  const login=fs.readFileSync(path.join(ROOT,'login.html'),'utf8');
+  const starter=fs.readFileSync(path.join(ROOT,'office-workflow.html'),'utf8');
+  const platform=fs.readFileSync(path.join(ROOT,'platform.html'),'utf8');
+  const server=fs.readFileSync(path.join(ROOT,'server','server.js'),'utf8');
+  const dashboard=fs.readFileSync(path.join(ROOT,'script.js'),'utf8');
+  assert.match(office,/officeKeyForm/);
+  assert.match(office,/office\.js/);
+  assert.match(login,/officeLoginName/);
+  assert.match(starter,/officeRoutes/);
+  assert.match(platform,/platformCreateForm/);
+  assert.match(server,/\/api\/office\/resolve/);
+  assert.match(server,/\/api\/platform\/offices/);
+  assert.match(server,/currentPlatform/);
+  assert.ok(dashboard.includes('office?.workflowTemplate'));
 });

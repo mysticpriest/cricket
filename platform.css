@@ -1,0 +1,31 @@
+body{margin:0;background:#f5f8fc;color:#17243b;font-family:'DM Sans',system-ui}
+.platform-bar{height:75px;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:0 clamp(20px,4vw,65px);background:#fff;border-bottom:1px solid #e2e8f0}
+.platform-content{max-width:1450px;padding:45px 24px 80px;margin:auto}.platform-header{display:flex;align-items:center;justify-content:space-between;gap:25px;flex-wrap:wrap;margin-bottom:28px}
+.platform-header h1{font:700 clamp(30px,4vw,48px) 'Space Grotesk',system-ui;letter-spacing:-1.9px;margin:13px 0}
+.platform-header p,.platform-card-heading p{font-size:12px;color:#64748b;line-height:1.8}
+.platform-grid{display:grid;grid-template-columns:minmax(330px,.85fr) minmax(450px,1.15fr);gap:18px;align-items:start}
+.platform-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:26px;min-width:0}
+.platform-card-heading h2{font:700 22px 'Space Grotesk',system-ui;margin:0 0 5px}
+.platform-card-heading p{margin:0 0 23px}.platform-form{display:grid;gap:14px}
+.platform-form label{display:grid;gap:7px;font-size:11px;font-weight:850;color:#475569}
+.platform-form label small{font-weight:600;color:#94a3b8}
+.platform-form input,.platform-form textarea,.platform-office-edit{width:100%;border:1px solid #d7e1ee;background:#fcfdff;border-radius:9px;padding:11px 12px;font-size:12px;color:#17243b;box-sizing:border-box}
+.platform-form textarea,.platform-office-edit{resize:vertical;line-height:1.7}
+.platform-form input:focus,.platform-form textarea:focus,.platform-office-edit:focus{outline:2px solid #bfdbfe;border-color:#2563eb}
+.platform-form button{justify-content:center;margin-top:5px}
+#platformCreateStatus,.platform-status{font-size:11px;color:#64748b;margin:3px 0}
+.platform-key-result{margin-top:23px;padding:17px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px}
+.platform-key-result strong{font-size:12px;color:#166534}.platform-key-result p{font-size:10px;color:#4b7361}
+.platform-key-result code{font-size:12px;display:block;word-break:break-all;background:#fff;border:1px solid #d1fae5;border-radius:6px;padding:11px;margin-bottom:12px;color:#166534}
+.platform-list{display:grid;gap:12px}
+.platform-office-card{padding:18px;border:1px solid #e2e8f0;border-radius:12px;background:#fcfdff;min-width:0}
+.platform-office-title{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+.platform-office-title strong{font-size:14px}.platform-office-title small{font-size:10px;padding:5px 9px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:850}
+.platform-office-meta{font-size:10px;color:#64748b;line-height:1.7;margin:8px 0 13px}
+.platform-office-actions{display:flex;flex-wrap:wrap;gap:7px}
+.platform-office-actions button{font-size:10px;font-weight:800;padding:9px 11px;border:1px solid #d7e1ee;color:#2563eb;border-radius:7px;background:white;cursor:pointer}
+.platform-office-actions button:hover{background:#eff6ff}
+.platform-office-editor{display:grid;gap:8px;margin:15px 0}.platform-office-editor label{font-size:10px;font-weight:800;color:#64748b}
+.platform-office-editor button{width:max-content}
+.platform-disclaimer{font-size:11px;line-height:1.8;color:#94a3b8;margin-top:24px}
+@media(max-width:950px){.platform-grid{grid-template-columns:1fr}}@media(max-width:600px){.platform-card{padding:18px}.platform-content{padding:25px 14px}}

@@ -41,7 +41,15 @@ function updateDivisionPermissions(role) {
   setText('#workspaceCount', available + ' available to your role');
 }
 function renderUser(user) {
-  const settings = roleDescriptions[user.role];
+  const starter=user.office?.workflowTemplate==='starter';
+  const base=roleDescriptions[user.role];
+  const settings=starter && ['agent','admin'].includes(user.role) ? {
+    ...base,
+    intro:'Your office-specific routes, instructions, and workspace tools in one place.',
+    action:'office-workflow.html',label:'Open office workflows',
+    quickHeading:'Ready for your next workflow?',
+    quickDescription:'Choose your office route to view the instructions and prepare a fictional draft note.'
+  } : base;
   if (!settings) throw new Error('Unknown employee role.');
   const email = user.email || 'Employee';
   // Never guess a person's real name from their email username.
@@ -55,6 +63,9 @@ function renderUser(user) {
   setText('#accountRole', settings.title);
   setText('#avatar', name === 'there' ? 'C' : name[0].toUpperCase());
   setText('#roleIntro', settings.intro);
+  const officeName=user.office?.name||'Cricket';
+  setText('#officeHeaderName',officeName);
+  setText('#sidebarOfficeName',officeName+' workspace');
   setText('#dateStamp', new Intl.DateTimeFormat(undefined, { weekday:'short', month:'short', day:'numeric' }).format(new Date()));
   const primary = document.querySelector('#primaryAction');
   primary.href = settings.action;
@@ -72,6 +83,21 @@ function renderUser(user) {
     setText('#totalLabel', 'My documented calls');
   }
   updateDivisionPermissions(user.role);
+  if(starter){
+    const inboundNav=document.querySelector('.nav-item[href="inbound.html"]');
+    if(inboundNav){inboundNav.href='office-workflow.html';inboundNav.textContent='↙ Office workflows';}
+    const outboundNav=document.querySelector('.nav-item[href="outbound.html"]');
+    if(outboundNav)outboundNav.hidden=true;
+    const inboundCard=document.querySelector('[data-division="inbound"]');
+    if(inboundCard){
+      inboundCard.href='office-workflow.html';
+      inboundCard.querySelector('h3').textContent='Office workflows';
+      inboundCard.querySelector('p').textContent='Open route guidance configured specifically for '+officeName+'.';
+      inboundCard.querySelector('.division-badge').textContent='CLIENT ROUTES';
+    }
+    const outboundCard=document.querySelector('[data-division="outbound"]');
+    if(outboundCard)outboundCard.hidden=true;
+  }
 }
 async function loadMetrics(user) {
   try {

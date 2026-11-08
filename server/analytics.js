@@ -56,23 +56,23 @@ function choose(params,key,set){
   if(!set.has(value))fail('Invalid '+key+' filter');
   return value;
 }
-function employeeOptions(db,roles){
+function employeeOptions(db,roles,officeId){
   const placeholders=roles.map(()=>'?').join(',');
-  return db.prepare(`SELECT id,display_name AS displayName,email,theme_color AS themeColor FROM users WHERE role IN (${placeholders}) ORDER BY display_name COLLATE NOCASE,email`).all(...roles)
+  return db.prepare(`SELECT id,display_name AS displayName,email,theme_color AS themeColor FROM users WHERE role IN (${placeholders}) AND office_id=? ORDER BY display_name COLLATE NOCASE,email`).all(...roles,officeId)
     .map(row=>({id:row.id,name:row.displayName||'Employee #'+row.id,color:row.themeColor||'ocean'}));
 }
 function baseSeries(range,fields){
   return range.labels.map(date=>({date,...fields}));
 }
-function analyticsAgents(db,params){
+function analyticsAgents(db,params,officeId){
   const range=parseRange(params);
   const agentId=parseId(params,'agentId');
   const department=choose(params,'department',AGENT_DEPARTMENTS);
   const outcome=choose(params,'outcome',OUTCOMES);
-  const agents=employeeOptions(db,['agent']);
+  const agents=employeeOptions(db,['agent'],officeId);
   if(agentId&&!agents.some(a=>a.id===agentId))fail('Selected agent does not exist');
-  const filters=['u.role=\'agent\'','c.deleted_at IS NULL','c.created_at>=?','c.created_at<?'];
-  const values=[range.start,range.endExclusive];
+  const filters=['u.role=\'agent\'','c.office_id=?','u.office_id=?','c.deleted_at IS NULL','c.created_at>=?','c.created_at<?'];
+  const values=[officeId,officeId,range.start,range.endExclusive];
   if(agentId){filters.push('u.id=?');values.push(agentId);}
   if(department!=='all'){filters.push(CHANNEL_SQL+'=?');values.push(department);}
   if(outcome!=='all'){filters.push('c.outcome=?');values.push(outcome);}
@@ -129,14 +129,14 @@ function analyticsAgents(db,params){
     notes:{outbound:'Outbound route handling is not implemented yet. Outbound totals reflect only saved case records explicitly tagged as Outbound.',deleted:'Soft-deleted cases are excluded from agent analytics.'}
   };
 }
-function analyticsQc(db,params){
+function analyticsQc(db,params,officeId){
   const range=parseRange(params);
   const reviewerId=parseId(params,'reviewerId');
   const decision=choose(params,'decision',QC_DECISIONS);
-  const reviewers=employeeOptions(db,['qc','admin']);
+  const reviewers=employeeOptions(db,['qc','admin'],officeId);
   if(reviewerId&&!reviewers.some(r=>r.id===reviewerId))fail('Selected reviewer does not exist');
-  const filters=['u.role IN (\'qc\',\'admin\')','c.deleted_at IS NULL','r.created_at>=?','r.created_at<?'];
-  const values=[range.start,range.endExclusive];
+  const filters=['u.role IN (\'qc\',\'admin\')','c.office_id=?','r.office_id=?','u.office_id=?','c.deleted_at IS NULL','r.created_at>=?','r.created_at<?'];
+  const values=[officeId,officeId,officeId,range.start,range.endExclusive];
   if(reviewerId){filters.push('u.id=?');values.push(reviewerId);}
   if(decision!=='all'){filters.push('r.decision=?');values.push(decision);}
   const fromWhere=`FROM reviews r JOIN cases c ON c.id=r.case_id JOIN users u ON u.id=r.reviewer_id
