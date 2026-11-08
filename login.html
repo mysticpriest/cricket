@@ -1,54 +1,72 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f1f6fd">
-  <meta name="description" content="Sign in to the Cricket operations workspace.">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="description" content="Sign in to your organization's Cricket workspace.">
   <title>Cricket | Employee Sign In</title>
   <link rel="stylesheet" href="workspace.css">
+  <link rel="stylesheet" href="login.css">
   <script defer src="login.js"></script>
 </head>
-<body>
-  <main class="auth-body">
-    <section class="auth-showcase" aria-label="About Cricket">
-      <a href="login.html" class="logo"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
-      <div class="auth-statement">
-        <span class="eyebrow">THE OPERATIONS WORKSPACE</span>
-        <h1>Every call.<br>One <em>clearer</em> workflow.</h1>
-        <p>Cricket brings guided conversations, documentation, and quality assurance together in a focused employee workspace.</p>
-        <div class="auth-preview" aria-label="Workflow features">
-          <div class="auth-preview-top"><span>YOUR WORKDAY, ORGANIZED</span><span>● WORKSPACE READY</span></div>
-          <div style="display:flex;gap:10px;align-items:center;margin-top:15px">
-            <span style="width:34px;height:34px;border-radius:10px;background:#eff6ff;display:grid;place-items:center;color:#2563eb">✓</span>
-            <div><strong style="font-size:12px">Guide → Document → Review</strong><p style="margin:4px 0 0;font-size:10px;color:#64748b">A connected workflow from agent to QC</p></div>
-          </div>
-          <div class="auth-preview-bars"><div class="auth-bar" style="--bar-width:84%"></div><div class="auth-bar" style="--bar-width:67%"></div><div class="auth-bar" style="--bar-width:91%"></div></div>
+<body class="client-login">
+  <main class="client-login-shell">
+    <section class="client-identity-panel" aria-label="Your organization">
+      <header class="client-identity-top">
+        <a class="logo" href="office.html"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
+        <span class="client-identity-tag">CLIENT WORKSPACE</span>
+      </header>
+      <div class="client-identity-center">
+        <div id="clientBrandVisual" class="client-brand-visual">
+          <img id="clientBrandImage" alt="" hidden>
+          <div id="clientBrandMark" class="client-brand-monogram">C</div>
         </div>
+        <div class="client-brand-divider"></div>
+        <span class="client-brand-eyebrow">YOUR WORKSPACE</span>
+        <h1 id="clientBrandName">Cricket</h1>
+        <p id="clientBrandTagline" class="client-brand-tagline">Operations Workspace</p>
+        <p id="clientBrandWelcome" class="client-brand-message">The right tools for your team, all in one place.</p>
       </div>
-      <span class="auth-caption">CRICKET / INTERNAL PRODUCT DEMONSTRATION</span>
+      <footer class="client-identity-footer">
+        <span>CRICKET / WORKFLOW PLATFORM</span>
+        <span id="clientBrandFoot">YOUR TEAM, YOUR WORKSPACE</span>
+      </footer>
     </section>
-
-    <section class="auth-pane">
-      <div class="auth-card">
-        <a href="login.html" class="logo"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
-        <div class="eyebrow" id="officeLoginLabel">OFFICE PORTAL</div>
-        <h2 id="officeLoginTitle">Welcome back<span class="logo-period">.</span></h2>
-        <div id="officeLoginName" style="font-size:12px;font-weight:850;color:#2563eb;margin:0 0 13px"></div>
-        <a href="office.html" id="changeOfficeLink" style="display:inline-block;font-size:11px;color:#2563eb;font-weight:800;margin-bottom:16px">← Change office</a>
-        <p class="auth-subtitle">Sign in with your employee credentials to access your authorized division.</p>
+    <section class="client-signin-panel" aria-labelledby="officeLoginTitle">
+      <div class="client-signin-card">
+        <div class="client-signin-kicker"><span class="client-signin-step">02</span><span id="officeLoginLabel">EMPLOYEE ACCESS</span></div>
+        <h2 id="officeLoginTitle">Sign in to continue.</h2>
+        <p class="client-signin-subtitle">Enter your employee credentials to access your assigned workspace.</p>
+        <div class="client-office-indicator">
+          <span class="client-office-indicator-dot" aria-hidden="true"></span>
+          <span id="officeLoginName">Checking office…</span>
+          <a href="office.html" id="changeOfficeLink">Change office</a>
+        </div>
         <form id="loginForm" novalidate>
-          <div class="form-field"><label for="email">Work email</label><input id="email" name="email" type="email" required autocomplete="username" placeholder="you@company.com" maxlength="254"></div>
-          <div class="form-field"><label for="password">Password</label>
-            <div class="field-control"><input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Enter your password" minlength="12"><button id="togglePassword" class="toggle-password" type="button" aria-label="Show password">Show</button></div>
+          <div class="client-field">
+            <label for="email">Work email</label>
+            <input id="email" name="email" type="email" required autocomplete="username"
+              maxlength="254" placeholder="you@organization.com">
           </div>
-          <button id="loginButton" class="button" type="submit">Sign in to Cricket <span aria-hidden="true">→</span></button>
-          <p id="loginMessage" class="auth-message" role="alert" aria-live="polite"></p>
+          <div class="client-field">
+            <label for="password">Password</label>
+            <div class="client-password-control">
+              <input id="password" name="password" type="password" required
+                autocomplete="current-password" minlength="12" placeholder="Enter your password">
+              <button id="togglePassword" type="button" aria-label="Show password">Show</button>
+            </div>
+          </div>
+          <p id="loginMessage" class="client-login-error" role="alert" aria-live="polite"></p>
+          <button id="loginButton" class="client-login-button" type="submit">
+            Sign in <span aria-hidden="true">→</span>
+          </button>
         </form>
-        <div class="auth-logo-bottom"><span class="dot"></span> Account permissions are assigned by your administrator</div>
-        <p class="auth-small">This is a local demonstration environment. Use fictional data only, and do not upload patient-identifying information.</p>
-        <p class="auth-rights">© 2026 Cricket Operations Workspace</p>
+        <p class="client-form-note">Your access and available tools are determined by your office administrator.</p>
       </div>
+      <footer class="client-login-footer">
+        <span>© 2026 Cricket</span>
+        <span>Development demonstration · Fictional data only</span>
+      </footer>
     </section>
   </main>
 </body>

@@ -29,3 +29,10 @@ body{margin:0;background:#f5f8fc;color:#17243b;font-family:'DM Sans',system-ui}
 .platform-office-editor button{width:max-content}
 .platform-disclaimer{font-size:11px;line-height:1.8;color:#94a3b8;margin-top:24px}
 @media(max-width:950px){.platform-grid{grid-template-columns:1fr}}@media(max-width:600px){.platform-card{padding:18px}.platform-content{padding:25px 14px}}
+
+.platform-demo-template{border:1px solid #cde1ef;background:#f2f8fc;color:#21629b;border-radius:8px;padding:11px 13px;font-size:11px;font-weight:800;margin:0 0 19px;display:flex;justify-content:space-between;align-items:center;gap:9px;width:100%;text-align:left}
+.platform-demo-template:hover{background:#e6f1f9}
+.platform-brand-editor{border-top:1px solid #e2e8f0;padding-top:15px;margin-top:15px}
+.platform-brand-editor input{font:inherit}
+.platform-brand-title{font-size:12px;color:#34495c;margin:0 0 6px}
+.platform-color-picker{width:80px!important;height:43px;padding:4px!important;cursor:pointer}

@@ -21,6 +21,20 @@ function parseRoutes(input){
   });
 }
 function routesText(routes){return routes.map(r=>r.name+' | '+r.instructions).join('\n');}
+const NORTHSTAR_DEMO=[
+  {name:'Order Status Inquiry',instructions:'Confirm a fictional order reference, check the order stage and explain the next expected update.'},
+  {name:'Refund Request',instructions:'Clarify the refund concern. Explain eligibility according to the client policy, without promising approval.'},
+  {name:'Delivery Issue',instructions:'Check a fictional tracking reference, record the issue and explain supported escalation options.'},
+  {name:'Product Exchange',instructions:'Confirm the item, exchange reason and permitted options under the organization’s policy.'},
+  {name:'Billing Question',instructions:'Clarify the charge in question and explain authorized billing procedures.'},
+  {name:'Supervisor Escalation',instructions:'Summarize prior actions and refer the issue when the escalation criteria are met.'}
+];
+byId('platformLoadDemo').addEventListener('click',()=>{
+  byId('platformOfficeName').value='Northstar Support';
+  byId('platformRoutes').value=routesText(NORTHSTAR_DEMO);
+  byId('platformAdminName').focus();
+  announce('platformCreateStatus','Northstar demo routes loaded. Supply an administrator name, email and password, then create the office.');
+});
 async function displayOffices(){
   const {offices}=await api('/api/platform/offices');
   const list=byId('platformOfficeList');list.replaceChildren();
@@ -66,6 +80,31 @@ async function displayOffices(){
       });
       editor.append(label,text,save);panel.append(editor);
     }
+    const brand=office.branding||{};
+    const editBrand=make('div');editBrand.className='platform-office-editor platform-brand-editor';
+    const brandTitle=make('strong','Client sign-in branding');brandTitle.className='platform-brand-title';
+    const taglineLabel=make('label','Tagline');const tagline=make('input');
+    tagline.className='platform-office-edit';tagline.maxLength=70;
+    tagline.value=brand.tagline||'Operations Workspace';
+    const colorLabel=make('label','Accent color');const color=make('input');
+    color.type='color';color.className='platform-office-edit platform-color-picker';
+    color.value=brand.color||'#2563eb';
+    const welcomeLabel=make('label','Welcome message');const welcome=make('textarea');
+    welcome.className='platform-office-edit';welcome.rows=2;welcome.maxLength=180;
+    welcome.value=brand.welcome||'Welcome to your workspace.';
+    const brandSave=make('button','Save client branding');brandSave.type='button';
+    brandSave.addEventListener('click',async()=>{
+      brandSave.disabled=true;
+      try{
+        await api('/api/platform/offices/'+office.id+'/branding',
+          payload('PATCH',{tagline:tagline.value.trim(),color:color.value,welcome:welcome.value.trim()}));
+        announce('platformListStatus','Branding updated for '+office.name+'.');
+        await displayOffices();
+      }catch(error){announce('platformListStatus',error.message);}
+      finally{brandSave.disabled=false;}
+    });
+    editBrand.append(brandTitle,taglineLabel,tagline,colorLabel,color,welcomeLabel,welcome,brandSave);
+    panel.append(editBrand);
     list.append(panel);
   }
 }

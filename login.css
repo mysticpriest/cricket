@@ -1,0 +1,43 @@
+/* Per-client sign-in. The office's verified brand metadata supplies the accent. */
+.client-login{--client-accent:#24679f;background:white;color:#233547}
+.client-login-shell{display:grid;grid-template-columns:minmax(390px,.94fr) minmax(450px,1.06fr);min-height:100svh}
+.client-identity-panel{background:#f6f8fa;border-right:1px solid #e5ebef;display:grid;grid-template-rows:auto 1fr auto;min-height:100vh;padding:32px clamp(32px,4.3vw,72px)}
+.client-identity-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.client-identity-tag{font-size:9px;font-weight:800;color:#8c9ba9;letter-spacing:.16em;white-space:nowrap}
+.client-identity-center{max-width:470px;width:100%;align-self:center;margin:35px auto}
+.client-brand-visual{height:128px;display:flex;align-items:center;justify-content:flex-start}
+.client-brand-visual img{width:min(100%,395px);max-height:120px;object-fit:contain;object-position:left center;mix-blend-mode:multiply}
+.client-brand-monogram{width:98px;height:98px;display:grid;place-items:center;border-radius:16px;background:var(--client-accent);font:650 43px 'Space Grotesk',system-ui;color:white;letter-spacing:-2px}
+.client-brand-divider{height:1px;width:100%;background:#dae3e9;margin:35px 0 28px}
+.client-brand-eyebrow{font-size:10px;font-weight:850;letter-spacing:.16em;color:var(--client-accent)}
+.client-identity-center h1{font:650 clamp(30px,3.35vw,42px) 'Space Grotesk',system-ui;letter-spacing:-1.2px;margin:13px 0 5px;color:#253745}
+.client-brand-tagline{margin:0;font-size:13px;font-weight:750;letter-spacing:.015em;color:#64798a}
+.client-brand-message{font-size:13px;color:#7e8f9e;line-height:1.9;margin:29px 0 0;max-width:370px}
+.client-identity-footer{display:flex;justify-content:space-between;gap:15px;font-size:9px;letter-spacing:.13em;font-weight:800;color:#9cabb5}
+.client-signin-panel{min-width:0;display:grid;grid-template-rows:1fr auto;padding:50px clamp(30px,6vw,110px) 30px}
+.client-signin-card{align-self:center;width:min(100%,440px);margin:auto}
+.client-signin-kicker{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:850;letter-spacing:.12em;color:#7591a6}
+.client-signin-step{display:grid;place-items:center;width:32px;height:32px;border:1px solid #d5e1e9;border-radius:50%;font-size:10px;color:var(--client-accent)}
+.client-signin-card h2{font:650 clamp(31px,3.2vw,43px)/1.16 'Space Grotesk',system-ui;letter-spacing:-1.45px;margin:27px 0 11px;color:#203246}
+.client-signin-subtitle{font-size:13px;color:#7f8e9c;line-height:1.8;margin:0 0 27px}
+.client-office-indicator{display:flex;align-items:center;gap:9px;background:#f4f7fa;border:1px solid #e7ecf0;border-radius:7px;padding:12px 13px;margin-bottom:29px}
+.client-office-indicator-dot{width:7px;height:7px;border-radius:50%;background:var(--client-accent)}
+#officeLoginName{font-size:12px;font-weight:850;color:#3f5a6c;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#changeOfficeLink{font-size:10px;font-weight:750;color:var(--client-accent);white-space:nowrap}
+#changeOfficeLink:hover{text-decoration:underline}
+.client-field{margin-top:18px}
+.client-field label{display:block;font-size:12px;color:#415568;font-weight:800;margin-bottom:9px}
+.client-field>input,.client-password-control{height:52px;border:1px solid #ccd7e0;border-radius:8px;display:flex;align-items:center;width:100%;background:white}
+.client-field>input{padding:0 15px;font-size:13px;outline:0}
+.client-password-control input{border:0;outline:0;flex:1;min-width:0;padding:0 14px;background:transparent;font-size:13px;color:#273c4c}
+.client-password-control button{background:transparent;border:0;color:var(--client-accent);font-size:11px;font-weight:800;padding:13px}
+.client-field>input:focus,.client-password-control:focus-within{border-color:var(--client-accent);box-shadow:0 0 0 3px #2c77aa1e}
+.client-field input::placeholder{color:#9ba8b4}
+.client-login-error{min-height:20px;font-size:11px;color:#b84b4b;line-height:1.6;margin:8px 0 5px}
+.client-login-button{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 18px;border:1px solid var(--client-accent);background:var(--client-accent);color:#fff;border-radius:8px;font-size:12px;font-weight:850;transition:filter .18s}
+.client-login-button:hover{filter:brightness(.9)}.client-login-button:disabled{opacity:.6;cursor:progress}
+.client-form-note{font-size:11px;color:#9aa8b5;line-height:1.8;margin-top:25px}
+.client-login-footer{display:flex;justify-content:space-between;gap:15px;font-size:10px;color:#9babba}
+@media(max-width:900px){.client-login-shell{grid-template-columns:1fr}.client-identity-panel{min-height:unset;padding:25px 28px 27px}.client-identity-center{margin:27px auto 10px;max-width:440px}.client-brand-visual{height:80px}.client-brand-visual img{max-height:80px;max-width:260px}.client-brand-monogram{height:63px;width:63px;font-size:29px}.client-brand-divider{display:none}.client-brand-eyebrow,.client-identity-center h1,.client-brand-message,.client-identity-footer{display:none}.client-brand-tagline{font-size:11px;margin-top:6px}.client-signin-panel{padding:48px 28px 25px;min-height:530px}}
+@media(max-width:460px){.client-signin-panel{padding:35px 22px 23px}.client-identity-panel{padding:20px 22px}.client-signin-card h2{font-size:31px}.client-login-footer{flex-direction:column;gap:5px}}
+@media(prefers-reduced-motion:reduce){.client-login-button{transition:none}}

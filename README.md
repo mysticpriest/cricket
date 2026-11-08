@@ -2,6 +2,38 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Branded office access and Northstar Support demonstration
+
+The new `office.html` and `login.html` use a restrained, responsive two-step sign-in experience. After an Office Key is validated, Cricket shows a brief **client-specific welcome transition** before showing employee credentials. The transition respects `prefers-reduced-motion`.
+
+**NeuTrauma** uses the actual supplied logo (optimized, stored at `assets/neutrauma-logo.webp`), its Concussion Care label, and a restrained blue accent on the welcome and login screens. The logo is only a public display asset. It is not an authentication credential.
+
+**Other offices** display their own name, initials, tagline, welcome message and accent color. Office branding is stored in additive `offices` columns (`brand_tagline`, `brand_color`, `brand_welcome`, `brand_logo_url`). A Cricket Platform Administrator can edit tagline, color and welcome message under **Client offices → Client sign-in branding**. Logo URLs are strictly server-controlled; this version does not permit arbitrary uploads or external image URLs.
+
+### Create a demonstration office
+
+For a quick fictional **Northstar Support** demo, there are two options:
+
+**Option A — Automatically initialize on the next local development start** (recommended when you have not configured a Cricket Platform Administrator):
+
+```powershell
+# From the Cricket project folder — back up data first.
+$env:CRICKET_SEED_DEMO_OFFICE="1"
+$env:HOST="127.0.0.1"
+$env:PORT="3001"
+npm.cmd start
+```
+
+On its **first creation only**, Cricket generates the Northstar Office Key and a random administrator password. It displays both once in the PowerShell terminal, alongside the email `northstar-demo@cricket.example.test`. **Save all three immediately**. The database retains the office and password hash; existing clients and cases stay unchanged. The seed is opt-in, idempotent, and explicitly **blocked in production**. Remove the environment variable after setup if desired.
+
+Sign in at `http://127.0.0.1:3001/office.html` with the Northstar key and demo administrator credentials. You can create additional fictional Northstar staff via the existing Staff Accounts page.
+
+**Option B — From the Platform Administration page:** Click **Use Northstar Support demo template**, fill in a new office administrator's name, email and secure password, and press **Create office + generate key**. A new unique Office Key is displayed once. Avoid creating the same `northstar-support` office twice: the system prevents duplicate office slugs.
+
+The Northstar demo contains six *fictional customer-support routes*: Order Status Inquiry, Refund Request, Delivery Issue, Product Exchange, Billing Question, and Supervisor Escalation.
+
+As before, **starter routes are for demonstration and local draft notes only**. They do not submit real cases, invoke QC, or integrate with an order management system. NeuTrauma retains all of its existing specialized routes and working case/QC features. This remains a **non-PHI development prototype**, not an approved healthcare deployment.
+
 ## Office Keys and multi-client workspaces (foundation)
 
 Cricket now begins with **Choose Your Office** at `/office.html`. Enter the office-specific key, then use your employee's email and password. Office Keys identify the organization and **do not replace employee authentication**. The key is exchanged for a short-lived, HttpOnly selection cookie; the server binds login to the selected office. Every employee session carries its office identity.

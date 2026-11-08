@@ -151,6 +151,28 @@ test('Office Keys isolate clients, protect NeuTrauma workflows, and enable platf
       payload('PATCH',{routes:[{name:'Shipping questions',instructions:'Check the fictional shipping status.'}]},platform.cookie));
     assert.equal(changeRoutes.status,200);
     assert.equal((await req(url,'/api/office/workflow',{headers:identity(northAdmin)})).data.office.routes[0].name,'Shipping questions');
+    const invalidBrand=await req(url,'/api/platform/offices/'+office.id+'/branding',
+      payload('PATCH',{tagline:'Unsafe',color:'red; background:url(https://invalid.example)',welcome:'Do not allow CSS injection'},platform.cookie));
+    assert.equal(invalidBrand.status,400);
+    const updatedBrand=await req(url,'/api/platform/offices/'+office.id+'/branding',
+      payload('PATCH',{
+        tagline:'Customer Support',
+        color:'#16788e',
+        welcome:'Welcome to the Northstar customer-care workspace.'
+      },platform.cookie));
+    assert.equal(updatedBrand.status,200);
+    assert.equal(updatedBrand.data.branding.color,'#16788e');
+    assert.equal(updatedBrand.data.branding.logoUrl,null);
+    const brandWorkflow=await req(url,'/api/office/workflow',{headers:identity(northAdmin)});
+    assert.equal(brandWorkflow.data.office.branding.tagline,'Customer Support');
+    assert.equal(brandWorkflow.data.office.branding.welcome,
+      'Welcome to the Northstar customer-care workspace.');
+    const brandKey=await req(url,'/api/office/resolve',payload('POST',{officeKey:newKey}));
+    assert.equal(brandKey.data.office.branding.color,'#16788e');
+    assert.equal(brandKey.data.office.branding.logoUrl,null);
+    const originalBrand=await req(url,'/api/office/workflow',{headers:identity(adminA)});
+    assert.equal(originalBrand.data.office.branding.tagline,'Concussion Care');
+    assert.equal(originalBrand.data.office.branding.logoUrl,'/assets/neutrauma-logo.webp');
     const rotate=await req(url,'/api/platform/offices/'+office.id+'/key',{method:'POST',headers:identity(platform.cookie)});
     assert.equal(rotate.status,200);
     assert.notEqual(rotate.data.officeKey,newKey);
