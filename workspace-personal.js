@@ -45,9 +45,16 @@
     try{payload=await response.json();}
     catch(_){throw Error('Cricket did not respond with valid JSON');}
     if(response.status===401){
-      location.replace('login.html?next=index.html');throw Error('Session expired');
+      location.replace('login.html?next=index.html');
+      const error=Error('Session expired');
+      error.status=401;
+      throw error;
     }
-    if(!response.ok)throw Error(payload.error||'Unable to save your workspace');
+    if(!response.ok){
+      const error=Error(payload.error||'Unable to save your workspace');
+      error.status=response.status;
+      throw error;
+    }
     return payload;
   }
   const json=(method,value)=>({
@@ -811,11 +818,39 @@
     }catch(error){byId('wsReminderMessage').textContent=error.message;}
     finally{b.disabled=false;}
   }
+  // The dashboard calls this explicit, awaited handshake. A one-time DOM event
+  // could fire while this deferred script was still loading, leaving all widgets
+  // unmounted until a second refresh. This promise is idempotent and recoverable.
+  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  async function loadPersonalDeskWithRetry(){
+    let lastError;
+    for(let attempt=0;attempt<3;attempt++){
+      try{return await api('/api/workspace/me');}
+      catch(error){
+        lastError=error;
+        if(error.status===401||error.status===403||attempt===2)throw error;
+        feedback('Reconnecting to your saved workspace…');
+        await delay(300*(attempt+1));
+      }
+    }
+    throw lastError;
+  }
   async function boot(user){
-    if(data.ready)return;
-    data.ready=true;data.user=user;
-    try{
-      const response=await api('/api/workspace/me');
+    if(data.ready)return true;
+    if(data.bootPromise)return data.bootPromise;
+    data.bootPromise=(async()=>{
+      if(!user||!user.office)throw Error('An employee office session is required');
+      // Validate all source elements before moving any elements into the grid.
+      for(const selector of ['#workspaceTiles','#workspacePersonalControls',
+        '#wsCustomize','#wsCustomizePanel','#wsCustomizeBackdrop',
+        '.workspace-body > .stats','.workspace-body > .live-agent-panel',
+        '.workspace-body > .division-grid','.workspace-body > .support-grid',
+        '.sidebar .nav']){
+        if(!document.querySelector(selector))
+          throw Error('The dashboard is missing required layout elements');
+      }
+      const response=await loadPersonalDeskWithRetry();
+      data.user=user;
       data.layout=response.layout||defaultLayout();
       data.notes=response.notes||[];
       data.reminders=response.reminders||[];
@@ -823,14 +858,15 @@
       data.serverOffset=Date.now()-response.serverTime;
       mountDashboard();
       applyLayout();drawNotes();drawReminders();drawShift();
+      data.ready=true;
+      document.body.classList.add('ws-personal-ready');
       feedback('Saved to your employee account');
       window.setInterval(()=>{if(!document.hidden)drawShiftTimer();},1000);
       window.setInterval(()=>{if(!document.hidden)drawReminders();},60000);
-    }catch(error){
-      data.ready=false;
-      const notice=byId('notice');
-      if(notice)notice.textContent='Personal workspace features unavailable: '+error.message;
-    }
+      return true;
+    })();
+    try{return await data.bootPromise;}
+    finally{data.bootPromise=null;}
   }
-  window.addEventListener('cricket-dashboard-ready',event=>{void boot(event.detail.user);});
+  window.CricketPersonalWorkspace=Object.freeze({boot});
 })();

@@ -2,6 +2,37 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Reliable dashboard loading and portrait display support
+
+**Personalized workspace initialization** is explicitly awaited before Cricket
+finishes loading the dashboard. The previous one-time authentication event could
+fire before the deferred customization script loaded, causing a blank/default
+layout until the next refresh. The main dashboard and customizer now perform a
+deterministic, single initialization step:
+
+- Employee authentication and office permissions are checked first.
+- The saved employee layout, notes, reminders and shift status are retrieved.
+  Temporary network/server failures are retried automatically up to three times.
+- Raw dashboard template sections stay hidden until the personalized blocks
+  are mounted, preventing an incorrect temporary/default dashboard from flashing.
+- If loading truly fails, Cricket shows a visible error and a **Retry loading
+  workspace** button rather than silently losing its widgets.
+
+On separate sections like Analytics, QC and Inbound, the specialized page
+remains the active view. **Overview** is still the place to edit your Custom
+Layout; returning to it reloads the same server-saved personal layout. Changing
+sections does not clear or reset any saved customization.
+
+**Vertical/portrait monitors** are supported, including common 1080×1920 and
+1440×2560 configurations. Portrait CSS rearranges charts, QC panels, route
+cards, presence/shift panels and dashboard widgets without forcing narrow
+side-by-side layouts. Windows narrower than 851 CSS pixels now provide an
+accessible **Menu** button and slide-out navigation instead of simply hiding
+the sidebar. The menu supports keyboard Escape and outside-click dismissal.
+
+This release is a UI/data-loading reliability improvement, not a change to
+the office permissions, private case records, sticky notes or shift history.
+
 ## Custom Layout — personal dashboard widget library
 
 The Cricket **Overview** dashboard now starts with one required block:

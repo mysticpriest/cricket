@@ -7,19 +7,21 @@
   <meta name="description" content="Cricket, the operations workspace for guided call handling and quality review.">
   <title>Cricket | Operations Overview</title>
   <link rel="stylesheet" href="workspace.css">
-  <script defer src="script.js"></script>
   <link rel="stylesheet" href="workspace-personal.css">
   <script defer src="workspace-personal.js"></script>
+  <script defer src="script.js"></script>
   <script src="session-guard.js"></script>
   <script src="presence-client.js"></script>
   <link rel="stylesheet" href="live-agents.css">
   <script defer src="live-agents.js"></script>
   <link rel="stylesheet" href="settings.css">
   <script defer src="settings.js"></script>
+<link rel="stylesheet" href="portrait-layout.css">
 </head>
 <body>
   <div id="dashboard" class="app-shell" aria-busy="true">
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar">
+      <button id="wsMobileNavClose" type="button" class="ws-mobile-nav-close" aria-label="Close workspace navigation">×</button>
       <a class="logo" href="index.html" aria-label="Cricket dashboard"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
       <div>
         <p class="sidebar-section-title">WORKSPACE</p>
@@ -42,9 +44,11 @@
         <p>Use fictional call details during demonstrations. Online migration is planned for a later stage.</p>
       </div>
     </aside>
+    <div id="wsMobileNavBackdrop" class="ws-mobile-nav-backdrop" hidden></div>
 
     <div class="workspace">
       <header class="topbar">
+        <button id="wsMobileNavToggle" type="button" class="ws-mobile-nav-toggle" aria-label="Open workspace navigation" aria-controls="appSidebar" aria-expanded="false"><span aria-hidden="true">☰</span><span>Menu</span></button>
         <div class="topbar-location"><span id="officeHeaderName">Workspace</span><span>›</span><strong>Overview</strong></div>
         <div class="topbar-actions">
           <span class="pill"><span class="dot"></span>Local server</span>
@@ -72,21 +76,22 @@
         </div>
         <div id="wsCustomizeBackdrop" class="ws-layout-backdrop" hidden></div>
         <aside id="wsCustomizePanel" class="ws-customize-panel" role="dialog" aria-modal="true" aria-labelledby="wsDrawerTitle" tabindex="-1" hidden></aside>
+        <p id="wsPersonalLoadState" class="ws-personal-loading" role="status">Loading your saved workspace…</p>
         <div id="workspaceTiles" class="ws-layout-grid" aria-label="Your customizable workspace"></div>
 
-        <section class="stats" aria-label="Case overview">
+        <section class="stats ws-raw-template" aria-label="Case overview">
           <div class="stat"><div class="stat-top"><span id="totalLabel">Documented cases</span><span class="stat-icon">▤</span></div><strong id="caseTotal">—</strong><small>Saved to the local QC database</small></div>
           <div class="stat"><div class="stat-top"><span>Awaiting QC review</span><span class="stat-icon">◷</span></div><strong id="casePending">—</strong><small>Pending quality evaluation</small></div>
           <div class="stat"><div class="stat-top"><span id="completedLabel">Resolved inquiries</span><span class="stat-icon">✓</span></div><strong id="caseResolved">—</strong><small id="completedNote">Completed call outcomes</small></div>
         </section>
 
-        <section class="panel live-agent-panel" aria-label="Live agent presence">
+        <section class="panel live-agent-panel ws-raw-template" aria-label="Live agent presence">
   <div class="live-agent-heading"><div><h3>Active agents</h3><p>Auto-refreshes every 5 seconds · Route timers update every second</p></div><span class="pill"><span class="dot"></span><span data-live-agent-count>Connecting…</span></span></div>
   <div data-live-agents aria-live="polite"><p class="live-agents-empty">Connecting to Cricket presence…</p></div>
 </section>
 
-        <div class="section-header"><div><h2>Divisions</h2><p>Access is based on your employee role.</p></div><span id="workspaceCount">Role-based access</span></div>
-        <section class="division-grid" aria-label="Available divisions">
+        <div class="section-header ws-raw-template"><div><h2>Divisions</h2><p>Access is based on your employee role.</p></div><span id="workspaceCount">Role-based access</span></div>
+        <section class="division-grid ws-raw-template" aria-label="Available divisions">
           <a class="division" href="inbound.html" data-access="agent,admin" data-division="inbound">
             <div class="division-head"><span class="division-icon">↙</span><span class="division-badge ready">LIVE WORKFLOW</span></div>
             <h3>Inbound</h3>
@@ -113,7 +118,7 @@
           </a>
         </section>
 
-        <div class="support-grid">
+        <div class="support-grid ws-raw-template">
           <section class="panel">
             <h3 id="quickTitle">Quick access</h3>
             <div class="info-box"><span class="eyebrow">PRESENTATION MODE</span><h4 id="quickHeading" style="margin-top:14px">Ready for your next call?</h4><p id="quickDescription">Open Inbound to demonstrate a complete guided call and automated case submission using fictional data.</p><a id="quickLink" class="button" href="inbound.html">Start the walkthrough →</a></div>
