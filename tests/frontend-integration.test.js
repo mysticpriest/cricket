@@ -242,16 +242,16 @@ test('Six operation suite features are wired through authenticated pages and pro
   const universal=fs.readFileSync(path.join(ROOT,'universal-tools.js'),'utf8');
   const ui=fs.readFileSync(path.join(ROOT,'ops-pages.js'),'utf8');
   const pages=['workflow-builder.html','workflow-runner.html','team-hub.html','workforce.html'];
-  for(const path of pages){
-    const html=fs.readFileSync(path.join(ROOT,path),'utf8');
-    assert.ok(html.includes('ops-pages.js'),path);
-    assert.ok(html.includes('universal-tools.js'),path);
-    assert.ok(html.includes('session-guard.js'),path);
+  for(const filename of pages){
+    const html=fs.readFileSync(path.join(ROOT,filename),'utf8');
+    assert.ok(html.includes('ops-pages.js'),filename);
+    assert.ok(html.includes('universal-tools.js'),filename);
+    assert.ok(html.includes('session-guard.js'),filename);
   }
-  for(const path of ['index.html','analytics.html','qc.html','operations.html',
+  for(const filename of ['index.html','analytics.html','qc.html','operations.html',
     'cases.html','staff.html','inbound.html','outbound.html','office-workflow.html']){
-    const html=fs.readFileSync(path.join(ROOT,path),'utf8');
-    assert.ok(html.includes('universal-tools.js'),path);
+    const html=fs.readFileSync(path.join(ROOT,filename),'utf8');
+    assert.ok(html.includes('universal-tools.js'),filename);
   }
   for(const feature of ['ops_workflows','ops_announcements','ops_messages','ops_notifications',
     'ops_schedules','ops_shift_corrections']){
