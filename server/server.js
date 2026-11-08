@@ -10,6 +10,7 @@ const { DatabaseSync } = require('node:sqlite');
 const { workbookXlsx } = require('./xlsx');
 const { analyticsAgents, analyticsQc } = require('./analytics');
 const {setup:setupPersonalWorkspace,route:personalWorkspaceRoute} = require('./personal-workspace');
+const {setup:setupOpsSuite,route:opsSuiteRoute,notify:opsNotify} = require('./operations-suite');
 const {migrateOffices,hash:officeHash,generateKey,validKey,validateRoutes,safeOffice,
   readOfficeSelection,findOfficeByKey,brandForRow,BRAND_DEFAULTS,DEMO_ROUTES,
   OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
@@ -151,6 +152,7 @@ CREATE INDEX IF NOT EXISTS idx_cases_deleted ON cases(deleted_at, id);
 const NEUTRAUMA_OFFICE=migrateOffices(db);
 // Additive workspace storage; the employee's office controls all reads and writes.
 setupPersonalWorkspace(db);
+setupOpsSuite(db);
 db.exec(`
 CREATE TABLE IF NOT EXISTS platform_admins(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -407,6 +409,9 @@ function processAPI(req, res, url) {
   const user = currentUser(req,touch)||currentPlatform(req,touch);
   if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
+  if (p.startsWith('/api/ops/')) {
+    return opsSuiteRoute({p,req,res,url,user,db,readBody,send,audit});
+  }
   // Persistent employee layout, private notes/reminders and server-authoritative
   // shift clock; administrators can read only their own office's staff clocks.
   if (p.startsWith('/api/workspace/') || p==='/api/admin/shifts') {
@@ -999,6 +1004,12 @@ function processAPI(req, res, url) {
           .run(found.id,user.id,decision,JSON.stringify(criteria),score,feedback,created,user.office.id);
         db.prepare('UPDATE cases SET review_status=? WHERE id=? AND office_id=?').run(decision,found.id,user.office.id);
         audit(found.id, user.id, 'review_submitted', `decision=${decision};score=${score}`);
+        // Inform the original agent privately, in the same office only.
+        const owner=db.prepare('SELECT agent_id FROM cases WHERE id=? AND office_id=?')
+          .get(found.id,user.office.id);
+        if(owner)opsNotify(db,user.office.id,owner.agent_id,'qc',
+          'QC review: '+decision,feedback||('Review scored '+score+'%'),
+          'index.html','qc-review:'+found.id+':'+created);
         db.exec('COMMIT');
       } catch (e) { db.exec('ROLLBACK'); throw e; }
       return send(res, 201, { ok: true, decision, score, createdAt: created });
@@ -1035,7 +1046,15 @@ const PAGE_ROLES = new Map([
   ['/workspace-personal.css', ['agent','qc','admin']],
   ['/analytics.html', ['agent', 'qc', 'admin']],
   ['/analytics.js', ['agent', 'qc', 'admin']],
-  ['/analytics.css', ['agent', 'qc', 'admin']]
+  ['/analytics.css', ['agent', 'qc', 'admin']],
+  ['/workflow-builder.html', ['admin']],
+  ['/workflow-runner.html', ['agent','admin']],
+  ['/team-hub.html', ['agent','qc','admin']],
+  ['/workforce.html', ['agent','qc','admin']],
+  ['/ops-pages.js', ['agent','qc','admin']],
+  ['/ops-pages.css', ['agent','qc','admin']],
+  ['/universal-tools.js', ['agent','qc','admin']],
+  ['/universal-tools.css', ['agent','qc','admin']]
 ]);
 
 function denyWorkspaceAccess(req, res, decoded) {

@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f9fc">
+<title>Cricket | Team Hub</title>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="ops-pages.css">
+<link rel="stylesheet" href="universal-tools.css">
+<link rel="stylesheet" href="portrait-layout.css">
+<script src="session-guard.js"></script>
+<script defer src="ops-pages.js"></script>
+<script defer src="universal-tools.js"></script>
+</head>
+<body data-ops-page="team"><header class="simple-topbar op-top">
+<a class="logo" href="index.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+<nav><a href="index.html">Overview</a><a href="team-hub.html">Team Hub</a>
+<a href="workforce.html">Workforce</a><a href="workflow-builder.html">Workflow Builder</a></nav>
+</header><main class="op-page">
+<div class="op-eyebrow">CRICKET / CLIENT WORKSPACE</div>
+<div class="op-page-heading"><div><h1>Team Hub</h1><p>Keep office announcements and colleague communication in one protected workspace.</p></div>
+<a class="op-back" href="index.html">← Overview</a></div>
+<p id="opStatus" class="op-status" role="status" aria-live="polite"></p>
+
+<div class="op-two-grid">
+<section class="op-panel"><div class="op-panel-heading"><h2>Office announcements</h2><span class="op-tag">Office-wide</span></div>
+<div id="teamAnnouncements" class="op-list"><p class="op-muted">Loading announcements…</p></div>
+<form id="teamAnnounceForm" class="op-form" hidden><h3>Publish announcement</h3>
+<label>Subject<input id="teamAnnounceTitle" required maxlength="120" minlength="3" placeholder="Team update"></label>
+<label>Message<textarea id="teamAnnounceBody" required minlength="5" maxlength="1500" rows="3"></textarea></label>
+<button type="submit" class="op-button">Post to this office</button></form></section>
+<section class="op-panel"><div class="op-panel-heading"><h2>Colleague messages</h2><span class="op-tag">Direct</span></div>
+<form id="teamMessageForm" class="op-form">
+<label>Send to<select id="teamRecipient" required><option value="">Choose a colleague</option></select></label>
+<label>Message<textarea id="teamBody" required maxlength="1200" rows="3" placeholder="Type a message to your colleague"></textarea></label>
+<button type="submit" class="op-button">Send message</button>
+</form>
+<h3 class="op-subtitle">Recent messages</h3><div id="teamMessages" class="op-list"></div>
+</section></div></main></body></html>

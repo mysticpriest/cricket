@@ -235,3 +235,39 @@ test('drag grips and brush controls appear on hover or keyboard focus with touch
   assert.ok(client.includes("toolRail('widgets'"));
   assert.ok(client.includes("toolRail('notes'"));
 });
+
+test('Six operation suite features are wired through authenticated pages and protected APIs',()=>{
+  const backend=fs.readFileSync(path.join(ROOT,'server','operations-suite.js'),'utf8');
+  const server=fs.readFileSync(path.join(ROOT,'server','server.js'),'utf8');
+  const universal=fs.readFileSync(path.join(ROOT,'universal-tools.js'),'utf8');
+  const ui=fs.readFileSync(path.join(ROOT,'ops-pages.js'),'utf8');
+  const pages=['workflow-builder.html','workflow-runner.html','team-hub.html','workforce.html'];
+  for(const path of pages){
+    const html=fs.readFileSync(path.join(ROOT,path),'utf8');
+    assert.ok(html.includes('ops-pages.js'),path);
+    assert.ok(html.includes('universal-tools.js'),path);
+    assert.ok(html.includes('session-guard.js'),path);
+  }
+  for(const path of ['index.html','analytics.html','qc.html','operations.html',
+    'cases.html','staff.html','inbound.html','outbound.html','office-workflow.html']){
+    const html=fs.readFileSync(path.join(ROOT,path),'utf8');
+    assert.ok(html.includes('universal-tools.js'),path);
+  }
+  for(const feature of ['ops_workflows','ops_announcements','ops_messages','ops_notifications',
+    'ops_schedules','ops_shift_corrections']){
+    assert.ok(backend.includes(feature),feature);
+  }
+  for(const endpoint of ['/api/ops/workflows','/api/ops/team/messages','/api/ops/team/announcements',
+    '/api/ops/notifications','/api/ops/workforce','/api/ops/search'])
+    assert.ok(backend.includes(endpoint),endpoint);
+  for(const section of ['Workflow Builder','Team Hub','Workforce'])
+    assert.ok(fs.readFileSync(path.join(ROOT,'index.html'),'utf8').includes(section));
+  assert.ok(universal.includes("event.key.toLowerCase()==='k'"));
+  assert.ok(universal.includes('/api/workspace/notes'));
+  assert.ok(universal.includes('/api/workspace/reminders'));
+  assert.ok(universal.includes('/api/workspace/shift'));
+  assert.ok(ui.includes("'/api/ops/workflows/'"));
+  assert.ok(server.includes('setupOpsSuite(db)'));
+  assert.ok(server.includes('opsSuiteRoute({p,req,res,url,user,db,readBody,send,audit})'));
+  assert.ok(server.includes("'/workflow-builder.html'"));
+});
