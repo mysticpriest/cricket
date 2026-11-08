@@ -2,6 +2,75 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+## Personal Desk, sticky notes, reminders and live shift clock
+
+The Cricket **Overview dashboard** is now a persistent, per-employee workspace.
+After sign-in, click **Customize workspace** to arrange these movable blocks:
+
+- Case snapshot, Active agents, Workspace tabs, My shift clock
+- Sticky notes, Reminders, Shift walkthrough and Quick access
+
+You can drag block headers on desktop, or use the **Move Up / Move Down** controls
+on desktop, tablet and mobile. Select **Small / Medium / Full width**, change each
+block's accent color, hide or reveal blocks, and reorder/change the accent of
+sidebar and division tabs. You can restore the default layout without deleting
+any notes or reminders. Overview navigation remains permanently available, and
+role restrictions always override personal visual settings.
+
+**Preferences persist on the Cricket server** in a per-user database row, so the
+same employee can sign out, return for another shift, or sign in from a different
+device to the same server and see their saved arrangement. Personal layouts
+never override office or role permissions. These controls organize the Overview
+dashboard and its tabs; they do not redesign individual workflow step screens.
+
+**Sticky notes:** add, edit, pin, color or delete private notes. They are stored
+only in your account and office. Max 60 notes, each with a 100-character title
+and up to 4,000 characters of text.
+
+**Reminders:** add a title, optional details and optional local due date/time;
+mark completed, edit or delete. Past-due items are highlighted when you open
+the dashboard. Max 120 reminders. Reminders appear **inside the workspace**;
+there is no email, push notification or operating-system alarm integration yet.
+
+### Five shift statuses
+
+The **My shift clock** block provides these five actions:
+
+| Action | Meaning |
+| --- | --- |
+| **Start Shift** | Clock in; when on Break/Meeting/System Issues, return to active work without creating a duplicate shift |
+| **Break** | Mark your current shift as on break |
+| **Meeting** | Mark your current shift as attending a meeting |
+| **System Issues** | Record system problems during your active shift |
+| **End Shift** | Clock out and close the current shift record |
+
+Every shift transition is timestamped **on the server**, written to a separate
+immutable event list and added to the role-protected activity audit. The **Live
+Operations** dashboard includes an office-scoped **Staff time clock** panel
+that refreshes approximately every **4 seconds**, showing each employee's
+latest status, clock-in time, latest transition, elapsed duration and recent
+shift events. Only an administrator of the same office can view these records.
+A Cricket Platform Administrator cannot inspect client shifts.
+
+**Important:** signing out or allowing the session to expire does **not**
+automatically clock out the employee. Managers should treat an unclosed shift
+as requiring review; this preview does not calculate payroll or certify
+attendance. Time periods include breaks, meetings and system-issue time unless
+the employer defines a separate policy. Backend authentication and office
+isolation still apply to all endpoints.
+
+API endpoints used by the new features:
+`GET /api/workspace/me`, `PUT /api/workspace/layout`,
+`POST/PATCH/DELETE /api/workspace/notes[/:id]`,
+`POST/PATCH/DELETE /api/workspace/reminders[/:id]`,
+`POST /api/workspace/shift`, and administrator-only
+`GET /api/admin/shifts`.
+
+**Safety:** These are development-only internal productivity features. Use
+fictional information in notes and reminders. Do not store patient-identifying
+information, other restricted data or real attendance/payroll records without
+a separate security, privacy and employment-policy review.
+
 ## Branded office access and Northstar Support demonstration
 
 The new `office.html` and `login.html` use a restrained, responsive two-step sign-in experience. After an Office Key is validated, Cricket shows a brief **client-specific welcome transition** before showing employee credentials. The transition respects `prefers-reduced-motion`.

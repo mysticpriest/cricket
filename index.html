@@ -8,6 +8,8 @@
   <title>Cricket | Operations Overview</title>
   <link rel="stylesheet" href="workspace.css">
   <script defer src="script.js"></script>
+  <link rel="stylesheet" href="workspace-personal.css">
+  <script defer src="workspace-personal.js"></script>
   <script src="session-guard.js"></script>
   <script src="presence-client.js"></script>
   <link rel="stylesheet" href="live-agents.css">
@@ -63,6 +65,13 @@
           </div>
           <a id="primaryAction" class="button hero-action" href="inbound.html">Open inbound workspace <span aria-hidden="true">→</span></a>
         </div>
+
+        <div id="workspacePersonalControls" class="ws-personal-controls" hidden>
+          <div><span class="eyebrow">YOUR DESK</span><span id="wsSaveMessage" class="ws-save-message" role="status">Personal layout</span></div>
+          <button type="button" id="wsCustomize" class="button button-outline small-button" aria-pressed="false">Customize workspace</button>
+        </div>
+        <div id="wsCustomizePanel" class="ws-customize-panel" hidden></div>
+        <div id="workspaceTiles" class="ws-layout-grid" aria-label="Your customizable workspace"></div>
 
         <section class="stats" aria-label="Case overview">
           <div class="stat"><div class="stat-top"><span id="totalLabel">Documented cases</span><span class="stat-icon">▤</span></div><strong id="caseTotal">—</strong><small>Saved to the local QC database</small></div>
