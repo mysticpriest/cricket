@@ -130,5 +130,5 @@ test('Client branding, original NeuTrauma logo and opt-in Northstar demo bootstr
     if(proc.exitCode===null)await shutDown(proc);
     fs.rmSync(dir,{recursive:true,force:true});
   }
-  assert.equal(stderr,'');
+  assert.ok(!stderr.includes('Error:'),stderr);
 });

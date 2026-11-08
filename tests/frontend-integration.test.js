@@ -132,9 +132,9 @@ test('client branded login, supplied NeuTrauma logo, and Northstar template are 
   assert.match(officeJs,/showOfficeHandoff/);
   assert.match(officeJs,/prefers-reduced-motion/);
   assert.match(login,/clientBrandImage/);
-  assert.match(login,/login\\.css/);
+  assert.ok(login.includes('login.css'));
   assert.match(loginJs,/applyClientBrand/);
-  assert.match(loginJs,/neutrauma-logo\\.webp/);
+  assert.ok(loginJs.includes('neutrauma-logo.webp'));
   assert.ok(fs.statSync(asset).size>2000);
   assert.ok(server.includes("'image/webp'"));
   assert.match(server,/brandForRow/);
