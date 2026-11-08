@@ -9,6 +9,8 @@
 <script src="session-guard.js"></script>
 <script src="presence-client.js"></script>
 <script defer src="operations.js"></script>
+<link rel="stylesheet" href="shift-operations.css">
+<script defer src="shift-operations.js"></script>
   <link rel="stylesheet" href="settings.css">
   <script defer src="settings.js"></script>
 </head>
@@ -34,6 +36,37 @@
       <span id="opsLastUpdated" class="ops-timestamp">Connecting…</span>
     </div>
     <div id="opsPeople" class="ops-people" aria-live="polite"><p class="ops-empty">Loading employee sessions…</p></div>
+  </section>
+  <section class="ops-section ops-shifts-section" aria-labelledby="opsShiftsTitle">
+    <div class="ops-section-head">
+      <div>
+        <h2 id="opsShiftsTitle">Staff time clock <span class="ops-live-chip">● LIVE</span></h2>
+        <p>Office-only shift statuses and clock-in/out events. Updated every 4 seconds.</p>
+      </div>
+      <span id="opsShiftUpdated" class="ops-timestamp">Connecting…</span>
+    </div>
+    <div id="opsShiftSummary" class="ops-shift-summary" aria-label="Shift status counts"></div>
+    <div class="ops-shift-tools">
+      <label for="opsShiftFilter">Filter status</label>
+      <select id="opsShiftFilter">
+        <option value="all">All employees</option>
+        <option value="working">Start Shift / Working</option>
+        <option value="break">Break</option>
+        <option value="meeting">Meeting</option>
+        <option value="system_issues">System Issues</option>
+        <option value="ended">End Shift</option>
+        <option value="not_started">Not started</option>
+      </select>
+    </div>
+    <div id="opsShiftRoster" class="ops-shift-roster" aria-live="polite">
+      <p class="ops-empty">Loading employee time clocks…</p>
+    </div>
+    <div class="ops-shift-events-wrap">
+      <h3>Recent clock events</h3>
+      <div id="opsShiftEvents" class="ops-shift-events" aria-live="polite">
+        <p class="ops-empty">Loading clock events…</p>
+      </div>
+    </div>
   </section>
   <section class="ops-section">
     <div class="ops-section-head">

@@ -9,6 +9,7 @@ const crypto = require('node:crypto');
 const { DatabaseSync } = require('node:sqlite');
 const { workbookXlsx } = require('./xlsx');
 const { analyticsAgents, analyticsQc } = require('./analytics');
+const {setup:setupPersonalWorkspace,route:personalWorkspaceRoute} = require('./personal-workspace');
 const {migrateOffices,hash:officeHash,generateKey,validKey,validateRoutes,safeOffice,
   readOfficeSelection,findOfficeByKey,brandForRow,BRAND_DEFAULTS,DEMO_ROUTES,
   OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
@@ -148,6 +149,8 @@ CREATE INDEX IF NOT EXISTS idx_cases_deleted ON cases(deleted_at, id);
 `);
 
 const NEUTRAUMA_OFFICE=migrateOffices(db);
+// Additive workspace storage; the employee's office controls all reads and writes.
+setupPersonalWorkspace(db);
 db.exec(`
 CREATE TABLE IF NOT EXISTS platform_admins(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -404,6 +407,11 @@ function processAPI(req, res, url) {
   const user = currentUser(req,touch)||currentPlatform(req,touch);
   if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
+  // Persistent employee layout, private notes/reminders and server-authoritative
+  // shift clock; administrators can read only their own office's staff clocks.
+  if (p.startsWith('/api/workspace/') || p==='/api/admin/shifts') {
+    return personalWorkspaceRoute({p,req,res,user,db,readBody,send,audit});
+  }
   if (p === '/api/office/selection' && req.method === 'GET') {
     const selected=selectedOffice(req);
     if(!selected)err(401,'Select your office first');
@@ -1021,6 +1029,10 @@ const PAGE_ROLES = new Map([
   ['/operations.html', ['admin']],
   ['/operations.js', ['admin']],
   ['/operations.css', ['admin']],
+  ['/shift-operations.js', ['admin']],
+  ['/shift-operations.css', ['admin']],
+  ['/workspace-personal.js', ['agent','qc','admin']],
+  ['/workspace-personal.css', ['agent','qc','admin']],
   ['/analytics.html', ['agent', 'qc', 'admin']],
   ['/analytics.js', ['agent', 'qc', 'admin']],
   ['/analytics.css', ['agent', 'qc', 'admin']]

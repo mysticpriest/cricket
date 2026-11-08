@@ -1,0 +1,45 @@
+/* Live office shift activity for administrators */
+.ops-shifts-section{--clock-green:#1a855c;--clock-orange:#bd771c;--clock-violet:#7256bb;--clock-rose:#ba4365;--clock-slate:#6e8193}
+.ops-shift-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:12px 0 21px}
+.ops-shift-count{border:1px solid #e2e8f0;background:#f8fafc;padding:13px;border-radius:10px;display:grid;gap:7px;min-width:0}
+.ops-shift-count span{font-size:10px;font-weight:800;color:#677d92}
+.ops-shift-count strong{font-size:24px;font-weight:850;font-variant-numeric:tabular-nums;color:#334b61}
+.ops-shift-count[data-status="working"] strong{color:var(--clock-green)}
+.ops-shift-count[data-status="break"] strong{color:var(--clock-orange)}
+.ops-shift-count[data-status="meeting"] strong{color:var(--clock-violet)}
+.ops-shift-count[data-status="system_issues"] strong{color:var(--clock-rose)}
+.ops-shift-tools{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:14px}
+.ops-shift-tools label{font-size:11px;font-weight:800;color:#64748b}
+.ops-shift-tools select{font-size:11px;border:1px solid #d7e2ed;border-radius:7px;padding:9px 10px;color:#385069;background:#fff}
+.ops-shift-roster{display:grid;gap:8px}
+.ops-clock-row{display:grid;grid-template-columns:minmax(120px,1.15fr) minmax(90px,.8fr) minmax(130px,1fr) minmax(130px,1fr) minmax(85px,.55fr);
+  align-items:center;gap:10px;background:#f9fbfd;border:1px solid #e5eaf0;border-radius:9px;padding:14px 16px;min-width:0}
+.ops-clock-identity,.ops-clock-fact{min-width:0;display:grid;gap:5px}
+.ops-clock-identity strong{font-size:11px;color:#30495e;overflow-wrap:anywhere}
+.ops-clock-identity small{font-size:9px;color:#8796a4;overflow-wrap:anywhere}
+.ops-clock-fact small{font-size:9px;color:#8799a9}
+.ops-clock-fact strong{font-size:11px;color:#425a6c;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.ops-clock-state{display:flex;align-items:center;gap:8px}
+.ops-clock-state strong{font-size:10px;color:#617589}
+.ops-shift-dot{height:9px;width:9px;flex-shrink:0;border-radius:50%;background:var(--clock-slate)}
+.ops-clock-state[data-status="working"] .ops-shift-dot{background:var(--clock-green)}
+.ops-clock-state[data-status="break"] .ops-shift-dot{background:var(--clock-orange)}
+.ops-clock-state[data-status="meeting"] .ops-shift-dot{background:var(--clock-violet)}
+.ops-clock-state[data-status="system_issues"] .ops-shift-dot{background:var(--clock-rose)}
+.ops-clock-state[data-status="working"] strong{color:var(--clock-green)}
+.ops-clock-state[data-status="break"] strong{color:var(--clock-orange)}
+.ops-clock-state[data-status="meeting"] strong{color:var(--clock-violet)}
+.ops-clock-state[data-status="system_issues"] strong{color:var(--clock-rose)}
+.ops-shift-events-wrap{margin-top:25px;border-top:1px solid #e7edf3;padding-top:16px}
+.ops-shift-events-wrap h3{font-size:13px;margin:0 0 10px;color:#31485d}
+.ops-shift-events{display:grid;gap:5px;max-height:305px;overflow-y:auto}
+.ops-clock-event{display:grid;align-items:center;grid-template-columns:minmax(150px,1fr) minmax(130px,.65fr) minmax(135px,.75fr);gap:9px;border-bottom:1px solid #ecf1f5;padding:9px 4px}
+.ops-clock-event strong{font-size:11px;color:#41576a;overflow-wrap:anywhere}
+.ops-clock-event span{font-size:10px;color:#365f84;font-weight:800}
+.ops-clock-event span[data-status="break"]{color:var(--clock-orange)}
+.ops-clock-event span[data-status="meeting"]{color:var(--clock-violet)}
+.ops-clock-event span[data-status="system_issues"]{color:var(--clock-rose)}
+.ops-clock-event span[data-status="ended"]{color:var(--clock-slate)}
+.ops-clock-event time{font-size:10px;color:#8393a1}
+@media(max-width:1100px){.ops-shift-summary{grid-template-columns:repeat(3,1fr)}.ops-clock-row{grid-template-columns:repeat(2,minmax(0,1fr))}.ops-clock-identity{grid-column:1/-1}}
+@media(max-width:640px){.ops-shift-summary{grid-template-columns:repeat(2,1fr)}.ops-clock-event{grid-template-columns:1fr 1fr}.ops-clock-event time{grid-column:1/-1}.ops-clock-row{padding:12px}}

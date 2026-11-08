@@ -118,6 +118,7 @@ document.querySelector('#logoutButton').addEventListener('click', async () => {
     const { user } = await api('/api/auth/me');
     if (!user) { location.replace('login.html?next=index.html'); return; }
     renderUser(user);
+    window.dispatchEvent(new CustomEvent('cricket-dashboard-ready',{detail:{user}}));
     dashboard.classList.add('ready');
     dashboard.setAttribute('aria-busy', 'false');
     await loadMetrics(user);

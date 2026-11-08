@@ -8,7 +8,8 @@ const fs=require('node:fs');
 const ROOT=path.resolve(__dirname,'..');
 test('all browser scripts parse as JavaScript without execution',()=>{
   const scripts=['script.js','login.js','inbound.js','qc.js','staff.js','cases.js',
-    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','qc-insights.js','settings.js','office.js','office-workflow.js','platform.js','server/analytics.js','server/offices.js'];
+    'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','qc-insights.js','settings.js','office.js','office-workflow.js','platform.js','workspace-personal.js','shift-operations.js',
+    'server/analytics.js','server/offices.js','server/personal-workspace.js'];
   for(const file of scripts){
     assert.ok(fs.existsSync(path.join(ROOT,file)),file+' must exist');
     const result=spawnSync(process.execPath,['--check',path.join(ROOT,file)],{encoding:'utf8'});
@@ -143,4 +144,28 @@ test('client branded login, supplied NeuTrauma logo, and Northstar template are 
   assert.match(platformJs,/branding/);
   assert.match(offices,/DEMO_ROUTES/);
   assert.match(offices,/brand_tagline/);
+});
+
+test('personal workspace controls and admin time clocks are included with role-based protection',()=>{
+  const index=fs.readFileSync(path.join(ROOT,'index.html'),'utf8');
+  const client=fs.readFileSync(path.join(ROOT,'workspace-personal.js'),'utf8');
+  const operations=fs.readFileSync(path.join(ROOT,'operations.html'),'utf8');
+  const server=fs.readFileSync(path.join(ROOT,'server','server.js'),'utf8');
+  const personal=fs.readFileSync(path.join(ROOT,'server','personal-workspace.js'),'utf8');
+  assert.match(index,/id="workspaceTiles"/);
+  assert.match(index,/id="wsCustomize"/);
+  assert.ok(index.includes('workspace-personal.js'));
+  assert.match(client,/wsStickyList/);
+  assert.match(client,/wsReminderList/);
+  assert.match(client,/wsShiftStatus/);
+  assert.match(client,/persistLayout/);
+  for(const action of ['start_shift','break','meeting','system_issues','end_shift'])
+    assert.ok(client.includes(action));
+  assert.match(operations,/id="opsShiftRoster"/);
+  assert.ok(operations.includes('shift-operations.js'));
+  assert.match(server,/setupPersonalWorkspace/);
+  assert.match(server,/personalWorkspaceRoute/);
+  assert.ok(server.includes("'/shift-operations.js'"));
+  assert.match(personal,/idx_work_shifts_one_open/);
+  assert.ok(personal.includes('/api/admin/shifts'));
 });
