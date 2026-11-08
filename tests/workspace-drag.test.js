@@ -112,7 +112,7 @@ test('Nine-dot pointer drag reorders dashboard cards across the grid and saves o
   assert.deepEqual(t.container.children.map(x=>x.id),['presence','metrics','quick']);
   assert.equal(t.persisted(),0,'Do not save intermediate pointer moves');
   t.fire('pointerup',275,150);
-  assert.deepEqual(t.data.layout.widgets.map(x=>x.id),['presence','metrics','quick']);
+  assert.deepEqual(Array.from(t.data.layout.widgets,x=>x.id),['presence','metrics','quick']);
   assert.equal(t.persisted(),1,'Persist the new grid order after release');
   assert.equal(t.docClasses.has('ws-pointer-sorting'),false);
 });
@@ -123,7 +123,7 @@ test('Dragging individual sticky notes changes their order and persists through 
   });
   t.fire('pointermove',275,150);
   t.fire('pointerup',275,150);
-  assert.deepEqual(t.data.notes.map(x=>x.id),['note-b','note-a','note-c']);
+  assert.deepEqual(Array.from(t.data.notes,x=>x.id),['note-b','note-a','note-c']);
   assert.equal(t.notePersisted(),1);
   assert.equal(t.persisted(),0);
 });
