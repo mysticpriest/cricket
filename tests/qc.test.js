@@ -188,7 +188,9 @@ test('QC backend: roles, case IDs, review scoring and audit', async () => {
 
     // A valid cookie is not sufficient after twenty minutes without activity.
     const cookieHeader=adminLogin.headers.get('set-cookie');
-    assert.ok(!/Max-Age=/i.test(cookieHeader), 'Session cookie should expire with the browser');
+    const employeeSessionCookie=adminLogin.headers.getSetCookie().find(value=>value.startsWith('cricket_session='));
+    assert.ok(employeeSessionCookie,'Employee session cookie must be present');
+    assert.ok(!/Max-Age=/i.test(employeeSessionCookie),'Employee session cookie must expire with the browser');
     assert.match(cookieHeader,/HttpOnly/);
     const {DatabaseSync}=require('node:sqlite');
     const maintenance=new DatabaseSync(path.join(dbDir,'cricket.db'));

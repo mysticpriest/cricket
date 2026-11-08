@@ -116,5 +116,5 @@ test('multi-client Office Key entry, starter routes and platform console are wir
   assert.match(server,/\/api\/office\/resolve/);
   assert.match(server,/\/api\/platform\/offices/);
   assert.match(server,/currentPlatform/);
-  assert.match(dashboard,/office\.workflowTemplate/);
+  assert.match(dashboard,/office\\?\\.workflowTemplate/);
 });
