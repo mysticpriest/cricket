@@ -136,7 +136,7 @@ test('client branded login, supplied NeuTrauma logo, and Northstar template are 
   assert.match(loginJs,/applyClientBrand/);
   assert.match(loginJs,/neutrauma-logo\\.webp/);
   assert.ok(fs.statSync(asset).size>2000);
-  assert.match(server,/image\\/webp/);
+  assert.ok(server.includes("'image/webp'"));
   assert.match(server,/brandForRow/);
   assert.match(server,/CRICKET_SEED_DEMO_OFFICE/);
   assert.match(platform,/platformLoadDemo/);

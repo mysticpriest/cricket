@@ -6,7 +6,7 @@ const OFFICE_SELECTION_MS=15*60*1000;
 const TEMPLATES=new Set(['neutrauma','starter']);
 const DEMO_ROUTES=[
   {name:'Order Status Inquiry',instructions:'Confirm a fictional order reference. Check the order stage in the approved order system and explain the next expected update. Never invent a delivery date.'},
-  {name:'Refund Request',instructions:'Identify the customer's reason for the refund. Explain eligibility based on the organization’s current policy. Give the expected next step without promising approval.'},
+  {name:'Refund Request',instructions:'Identify the customer’s reason for the refund. Explain eligibility based on the organization’s current policy. Give the expected next step without promising approval.'},
   {name:'Delivery Issue',instructions:'Confirm the fictional order reference and the delivery concern. Check tracking details, document the issue and offer the supported escalation path.'},
   {name:'Product Exchange',instructions:'Review the item and reason for an exchange. Confirm the permitted options under the client policy and explain how the customer starts the exchange.'},
   {name:'Billing Question',instructions:'Clarify the charge being questioned. Explain only authorized account information. Escalate suspected duplicate or incorrect charges according to the billing procedure.'},
