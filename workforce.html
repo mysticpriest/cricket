@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f9fc">
+<title>Cricket | Workforce Calendar</title>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="ops-pages.css">
+<link rel="stylesheet" href="universal-tools.css">
+<link rel="stylesheet" href="portrait-layout.css">
+<script src="session-guard.js"></script>
+<script defer src="ops-pages.js"></script>
+<script defer src="universal-tools.js"></script>
+</head>
+<body data-ops-page="workforce"><header class="simple-topbar op-top">
+<a class="logo" href="index.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+<nav><a href="index.html">Overview</a><a href="team-hub.html">Team Hub</a>
+<a href="workforce.html">Workforce</a><a href="workflow-builder.html">Workflow Builder</a></nav>
+</header><main class="op-page">
+<div class="op-eyebrow">CRICKET / CLIENT WORKSPACE</div>
+<div class="op-page-heading"><div><h1>Workforce Calendar</h1><p>See your upcoming shifts and request corrections. Office administrators can schedule staff and review timesheets.</p></div>
+<a class="op-back" href="index.html">← Overview</a></div>
+<p id="opStatus" class="op-status" role="status" aria-live="polite"></p>
+
+<div class="op-two-grid">
+<section class="op-panel"><div class="op-panel-heading"><h2>Shift calendar</h2><span class="op-tag">Upcoming & planned</span></div>
+<div id="workSchedules" class="op-list"><p class="op-muted">Loading shifts…</p></div>
+<form id="workScheduleForm" class="op-form" hidden><h3>Schedule employee</h3>
+<label>Employee<select id="workEmployee" required></select></label>
+<div class="op-inline-fields"><label>Start<input id="workStart" type="datetime-local" required></label>
+<label>End<input id="workEnd" type="datetime-local" required></label></div>
+<label>Notes<input id="workNotes" maxlength="400" placeholder="Optional shift notes"></label>
+<button type="submit" class="op-button">Add scheduled shift</button></form></section>
+<section class="op-panel"><div class="op-panel-heading"><h2>Attendance & corrections</h2><span class="op-tag">Clock records</span></div>
+<div id="workTimesheets" class="op-list"></div>
+<form id="workCorrectionForm" class="op-form"><h3>Request time correction</h3>
+<label>Completed shift<select id="workShift" required><option value="">Select your shift</option></select></label>
+<div class="op-inline-fields"><label>Corrected start<input id="workFixStart" type="datetime-local" required></label>
+<label>Corrected end<input id="workFixEnd" type="datetime-local" required></label></div>
+<label>Reason<textarea id="workReason" required minlength="8" maxlength="600" rows="2"></textarea></label>
+<button type="submit" class="op-button">Submit correction</button></form>
+<h3 class="op-subtitle">Correction requests</h3><div id="workCorrections" class="op-list"></div>
+<a id="workExport" href="/api/ops/workforce/export" class="op-button" hidden>Export office timesheets (CSV)</a>
+</section></div>
+<p class="op-footnote">Review decisions do not overwrite the immutable original clock-in/out timestamps. Timesheets are for internal preview, not certified payroll.</p></main></body></html>

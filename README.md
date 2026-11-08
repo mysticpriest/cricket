@@ -33,6 +33,83 @@ the sidebar. The menu supports keyboard Escape and outside-click dismissal.
 This release is a UI/data-loading reliability improvement, not a change to
 the office permissions, private case records, sticky notes or shift history.
 
+## Cricket Operations Suite — six integrated features
+
+The latest development upgrade introduces office-isolated productivity and
+workflow features. These are **local demonstration features only**: do not enter
+real patient information, personal customer details, or real payroll records.
+
+### 1. Workflow Builder and guided runner
+
+- An **office administrator** opens `workflow-builder.html` from the
+  Overview navigation or the universal Workspace panel.
+- Create a draft/published route using up to 12 editable steps. Steps support
+  free-text answers, Yes/No, and multiple-choice questions; reorder or remove
+  them and select which are required. Publishing makes a route immediately
+  available to agents **in that same office**.
+- Agents open `workflow-runner.html`, select a published route, answer the
+  questions, choose Resolved/Pending, and complete the route. The server
+  validates each required response and creates a real office-scoped case in
+  the **existing QC review queue**, with structured documentation. As in the
+  original NeuTrauma workflow, agents receive a save confirmation without an
+  exposed Case ID.
+- Previously completed cases remain available to QC even if an administrator
+  later unpublishes a route. This new workflow builder is separate from the
+  original NeuTrauma-specific Inbound scripts and the previous starter-route
+  instruction templates; neither legacy flow is deleted.
+
+### 2. Universal Workspace panel
+
+On **Overview, Analytics, QC, Inbound, Outbound, staff pages and other
+authorized sections**, use the floating **Workspace** button to open an
+office-aware panel with navigation, your personal sticky notes, reminders,
+five-status shift clock, and notifications. It reads and saves through the
+existing office-scoped server endpoints, not browser local storage.
+
+### 3. Notification Center
+
+The workspace panel has a Notifications tab. Office announcements, direct
+colleague messages, QC feedback, upcoming scheduled shifts, and due reminders
+generate private notifications. Mark entries as read or open their destination.
+The panel refreshes approximately every 18 seconds while visible.
+
+Notifications are **in-app only** (no browser push, SMS, or email). Reminder
+alerts are created when a user next loads/polls notifications and a reminder
+falls within the upcoming 24-hour window. QC results go only to the case
+owner; cross-office notification access is blocked.
+
+### 4. Workforce calendar and correction requests
+
+`workforce.html` displays upcoming scheduled shifts and actual clock events.
+An office administrator can schedule staff, remove planned shifts, review
+employee correction requests and export a CSV of office timesheets.
+Employees can request a correction for one of **their own completed shifts**.
+Approvals record a separate audited decision and **do not rewrite original
+clock-in/out timestamps**. Managers should verify corrections manually.
+
+This is an internal shift-planning preview, **not payroll, legal attendance
+or compliant timekeeping software**. The existing Start Shift, Break,
+Meeting, System Issues and End Shift controls remain operational.
+
+### 5. Team Hub
+
+`team-hub.html` contains administrator-published office announcements and
+direct messages to a colleague from the **same office**. Announcement
+notifications reach that office's employees, and direct-message
+notifications reach the recipient. Agents cannot publish announcements.
+
+### 6. Global command palette
+
+Press **Ctrl + K** (or **Cmd + K** on Mac) from any page that includes
+the universal Workspace panel. Search navigation, published workflows, and
+for QC/admin staff, permitted case references. Results are restricted by
+employee role and office. An accessible Search control is also present in
+the panel for those who prefer not to use keyboard shortcuts.
+
+All new feature data is stored in additive SQLite tables. On upgrade,
+**back up the entire `data` folder**. No existing office credentials,
+employees, saved layouts, notes, reminders or case history are reset.
+
 ## Custom Layout — personal dashboard widget library
 
 The Cricket **Overview** dashboard now starts with one required block:

@@ -1,0 +1,38 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f9fc">
+<title>Cricket | Workflow Builder</title>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="ops-pages.css">
+<link rel="stylesheet" href="universal-tools.css">
+<link rel="stylesheet" href="portrait-layout.css">
+<script src="session-guard.js"></script>
+<script defer src="ops-pages.js"></script>
+<script defer src="universal-tools.js"></script>
+</head>
+<body data-ops-page="builder"><header class="simple-topbar op-top">
+<a class="logo" href="index.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+<nav><a href="index.html">Overview</a><a href="team-hub.html">Team Hub</a>
+<a href="workforce.html">Workforce</a><a href="workflow-builder.html">Workflow Builder</a></nav>
+</header><main class="op-page">
+<div class="op-eyebrow">CRICKET / CLIENT WORKSPACE</div>
+<div class="op-page-heading"><div><h1>Workflow Builder</h1><p>Design guided routes for your own office, publish them, and document completed work through Cricket QC.</p></div>
+<a class="op-back" href="index.html">← Overview</a></div>
+<p id="opStatus" class="op-status" role="status" aria-live="polite"></p>
+
+<div class="op-builder-grid">
+<section class="op-panel"><div class="op-panel-heading"><h2>Your workflows</h2><button id="wbNew" class="op-button">+ New workflow</button></div>
+<div id="wbList" class="op-list"><p class="op-muted">Loading office workflows…</p></div></section>
+<section class="op-panel"><div class="op-panel-heading"><h2 id="wbEditorTitle">Create a workflow</h2><span class="op-tag">Admin editor</span></div>
+<form id="wbForm" class="op-form">
+<label>Workflow name<input id="wbTitle" required maxlength="90" minlength="3" placeholder="e.g. Appointment Request"></label>
+<label>Description<textarea id="wbDescription" maxlength="500" rows="2" placeholder="Short agent-facing guidance"></textarea></label>
+<label>Visibility<select id="wbStatus"><option value="draft">Draft — admins only</option><option value="published">Published — available to agents</option></select></label>
+<div class="op-steps-heading"><h3>Workflow steps</h3><button type="button" id="wbAddStep" class="op-ghost">+ Add step</button></div>
+<div id="wbSteps" class="op-steps"></div>
+<div class="op-form-actions"><button type="submit" class="op-button" id="wbSave">Save workflow</button>
+<button type="button" class="op-ghost" id="wbUnpublish">Unpublish</button>
+<a href="workflow-runner.html" class="op-ghost">Open agent runner</a></div>
+</form></section>
+</div>
+<p class="op-footnote">For demonstration data only. Workflow definitions are separate from NeuTrauma's existing legacy scripts; published routes save cases to the office's existing QC queue.</p></main></body></html>
