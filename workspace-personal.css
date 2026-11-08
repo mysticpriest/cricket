@@ -230,31 +230,22 @@
 @media(max-width:480px){.ws-note-card .ws-color-popover{width:173px;right:31px}}
 
 
-/* V2: whole-card soft gradients, not colored borders. The same swatch tints
-   the dashboard block, its division shortcut, sidebar tab and sticky notes. */
+/* Calm solid-color surfaces. Card borders remain neutral. */
 .ws-widget{
-  background:linear-gradient(135deg,
-    color-mix(in srgb,var(--ws-accent) 20%,white) 0%,
-    color-mix(in srgb,var(--ws-accent) 10%,white) 46%,
-    color-mix(in srgb,var(--ws-accent) 4%,white) 100%);
-  border-color:#dfe7ef;
-  box-shadow:0 8px 24px #2138570a;
-  transition:background .28s ease,transform .25s cubic-bezier(.2,.8,.2,1),
+  background:color-mix(in srgb,var(--ws-accent) 9%,white);
+  border-color:#e0e7ef;
+  box-shadow:0 5px 19px #21385708;
+  transition:background-color .2s ease,transform .25s cubic-bezier(.2,.8,.2,1),
     opacity .2s ease,box-shadow .25s ease
 }
-.ws-widget:hover{box-shadow:0 11px 27px #253b5318}
+.ws-widget:hover{box-shadow:0 8px 23px #253b5310}
 .ws-widget-header{
-  background:transparent;
-  border-top:0;
-  border-bottom:1px solid #ffffff95;
+  background:transparent;border-top:0;border-bottom:1px solid #dbe5edb8;
   border-radius:14px 14px 0 0
 }
-.ws-widget-accent{
-  background:var(--ws-accent);
-  box-shadow:0 0 0 3px #ffffff7d
-}
+.ws-widget-accent{background:color-mix(in srgb,var(--ws-accent) 60%,#566d82);box-shadow:none}
 .ws-widget-content{background:transparent}
-.ws-widget .ws-action-rail>button{background:#ffffffbb}
+.ws-widget .ws-action-rail>button{background:#ffffffc9}
 .ws-widget .ws-action-rail>button:hover{background:#fff}
 .ws-widget.ws-widget-enter{animation:ws-block-arrive .32s cubic-bezier(.15,.8,.3,1) both}
 @keyframes ws-block-arrive{
@@ -262,58 +253,56 @@
   to{opacity:1;transform:translateY(0) scale(1)}
 }
 .ws-division-shell>.division{
-  background:linear-gradient(140deg,
-    color-mix(in srgb,var(--ws-accent) 21%,white),
-    color-mix(in srgb,var(--ws-accent) 8%,white) 63%,
-    #ffffffcf);
-  border:1px solid #dce6ed;
-  border-top:1px solid #dce6ed;
-  transition:transform .2s ease,background .25s ease,box-shadow .2s ease;
+  background:color-mix(in srgb,var(--ws-accent) 12%,white);
+  border:1px solid #dce6ed;border-top:1px solid #dce6ed;
+  transition:background-color .2s ease,transform .2s ease,box-shadow .2s ease
 }
 .ws-division-shell .division:hover:not(.restricted){
-  border-color:#dce6ed;
-  border-top:1px solid #dce6ed;
-  transform:translateY(-2px);
-  box-shadow:0 11px 25px #203b5214
+  background:color-mix(in srgb,var(--ws-accent) 15%,white);
+  border-color:#dce6ed;border-top:1px solid #dce6ed;
+  transform:translateY(-2px);box-shadow:0 7px 19px #203b5211
 }
 .sidebar .ws-nav-row>.nav-item{
-  background:linear-gradient(110deg,
-    color-mix(in srgb,var(--ws-accent) 16%,white),
-    color-mix(in srgb,var(--ws-accent) 7%,white));
-  border:1px solid #e6eaf0;
-  color:#3e566d;
-  transition:background .22s ease,color .2s ease,transform .2s ease
+  background:color-mix(in srgb,var(--ws-accent) 10%,white);
+  border:1px solid #e5ebf1;color:#3e566d;
+  transition:background-color .2s ease,color .2s ease,transform .2s ease
 }
 .sidebar .ws-nav-row>.nav-item.active{
-  background:linear-gradient(110deg,
-    color-mix(in srgb,var(--ws-accent) 24%,white),
-    color-mix(in srgb,var(--ws-accent) 10%,white))!important;
-  border-color:#d8e3ed
+  background:color-mix(in srgb,var(--ws-accent) 16%,white)!important;
+  border-color:#dee7ef
 }
 .sidebar .ws-nav-row>.nav-item:hover:not(.active){
-  background:linear-gradient(110deg,
-    color-mix(in srgb,var(--ws-accent) 22%,white),
-    color-mix(in srgb,var(--ws-accent) 9%,white));
-  color:#2f485c;
-  transform:translateX(2px)
+  background:color-mix(in srgb,var(--ws-accent) 14%,white);
+  color:#2f485c;transform:translateX(2px)
 }
 .ws-note-card{
-  background:linear-gradient(130deg,
-    color-mix(in srgb,var(--ws-note-color) 20%,white),
-    color-mix(in srgb,var(--ws-note-color) 7%,white));
-  border:1px solid #e1e6ed;
-  border-left:1px solid #e1e6ed;
-  box-shadow:0 4px 12px #354a5910
+  background:color-mix(in srgb,var(--ws-note-color) 12%,white);
+  border:1px solid #e1e6ed;border-left:1px solid #e1e6ed;
+  box-shadow:0 3px 10px #354a590d;
+  transition:background-color .2s ease,box-shadow .2s ease
 }
-.ws-note-card .ws-action-rail>button{background:#ffffffbc}
-.ws-color-swatch{
-  background:linear-gradient(135deg,
-    color-mix(in srgb,var(--swatch-color) 70%,white),
-    var(--swatch-color));
-}
+.ws-note-card .ws-action-rail>button{background:#ffffffc9}
+.ws-color-swatch{background:var(--swatch-color)}
 .ws-color-caption{color:#60758b}
 .ws-color-popover{background:#fffffffa;border-color:#d8e4ed}
-
+/* Hide drag and brush controls for a hover-capable mouse/trackpad.
+   Keyboard focus reveals them, and touch devices keep them visible. */
+@media (hover:hover) and (pointer:fine){
+  .ws-action-rail{
+    opacity:0;transform:translateY(-3px);pointer-events:none;
+    transition:opacity .18s ease,transform .18s ease
+  }
+  .ws-widget:is(:hover,:focus-within) > .ws-widget-header > .ws-action-rail,
+  .ws-division-shell:is(:hover,:focus-within) > .ws-action-rail,
+  .ws-nav-row:is(:hover,:focus-within) > .ws-action-rail,
+  .ws-note-card:is(:hover,:focus-within) > .ws-action-rail,
+  .ws-widget:has(.ws-color-popover:not([hidden])) > .ws-widget-header > .ws-action-rail,
+  .ws-division-shell:has(.ws-color-popover:not([hidden])) > .ws-action-rail,
+  .ws-nav-row:has(.ws-color-popover:not([hidden])) > .ws-action-rail,
+  .ws-note-card:has(.ws-color-popover:not([hidden])) > .ws-action-rail{
+    opacity:1;transform:none;pointer-events:auto
+  }
+}
 /* Full custom-layout library: slide-in panel with interactive add/remove cards. */
 .ws-personal-controls{background:transparent;border:0;padding:10px 0 18px;gap:16px}
 .ws-personal-controls .eyebrow{font-size:10px}
@@ -354,7 +343,7 @@
 .ws-library-close:hover{background:#eff3f7;color:#253b4d}
 .ws-library-featured{display:flex;align-items:center;gap:12px;padding:15px;
   border:1px solid #d3e4f1;border-radius:13px;
-  background:linear-gradient(115deg,#dfeffb,#f5faff);margin-bottom:24px}
+  background:#edf4fa;margin-bottom:24px}
 .ws-library-featured-icon{width:38px;height:38px;border-radius:10px;
   background:#ffffffb0;display:grid;place-items:center;color:#2563a0;font-size:21px}
 .ws-library-featured>div{flex:1;min-width:0}
@@ -373,9 +362,7 @@
   box-shadow:0 8px 18px #183a5b0e}
 .ws-catalog-icon{width:41px;height:41px;border-radius:12px;flex:0 0 41px;
   display:grid;place-items:center;color:#33526a;font-size:20px;
-  background:linear-gradient(135deg,
-    color-mix(in srgb,var(--ws-accent) 24%,white),
-    color-mix(in srgb,var(--ws-accent) 8%,white))}
+  background:color-mix(in srgb,var(--ws-accent) 13%,white)}
 .ws-catalog-text{flex:1;min-width:0}
 .ws-catalog-text strong{font-size:12px;color:#2b4359}
 .ws-catalog-text p{font-size:10px;color:#8394a5;line-height:1.55;margin:4px 0 0}

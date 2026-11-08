@@ -211,8 +211,27 @@ test('new Custom Layout library starts with Workspace Tabs, supports add/remove 
   assert.ok(client.includes('function renderEditor()'));
   assert.ok(css.includes('.ws-catalog-item'));
   assert.ok(css.includes('.ws-customize-panel[hidden]'));
-  assert.ok(css.includes('linear-gradient(135deg,'));
+  assert.equal(css.includes('linear-gradient('),false,'No card or library gradients remain');
+  assert.ok(css.includes('background:color-mix(in srgb,var(--ws-accent) 9%,white)'));
+  assert.ok(css.includes('background:color-mix(in srgb,var(--ws-note-color) 12%,white)'));
   assert.ok(css.includes('.ws-division-shell>.division{'));
   assert.ok(css.includes('.sidebar .ws-nav-row>.nav-item{'));
   assert.ok(css.includes('.ws-note-card{'));
+});
+
+test('drag grips and brush controls appear on hover or keyboard focus with touch fallback',()=>{
+  const css=fs.readFileSync(path.join(ROOT,'workspace-personal.css'),'utf8');
+  const client=fs.readFileSync(path.join(ROOT,'workspace-personal.js'),'utf8');
+  assert.ok(css.includes('@media (hover:hover) and (pointer:fine)'));
+  assert.ok(css.includes('.ws-action-rail{')||css.includes('.ws-action-rail'));
+  assert.ok(css.includes('opacity:0;transform:translateY(-3px);pointer-events:none'));
+  assert.ok(css.includes('.ws-widget:is(:hover,:focus-within)'));
+  assert.ok(css.includes('.ws-division-shell:is(:hover,:focus-within)'));
+  assert.ok(css.includes('.ws-nav-row:is(:hover,:focus-within)'));
+  assert.ok(css.includes('.ws-note-card:is(:hover,:focus-within)'));
+  assert.ok(css.includes('.ws-widget:has(.ws-color-popover:not([hidden]))'));
+  assert.ok(css.includes('opacity:1;transform:none;pointer-events:auto'));
+  assert.ok(!css.includes('linear-gradient('));
+  assert.ok(client.includes("toolRail('widgets'"));
+  assert.ok(client.includes("toolRail('notes'"));
 });
