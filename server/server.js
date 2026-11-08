@@ -10,7 +10,8 @@ const { DatabaseSync } = require('node:sqlite');
 const { workbookXlsx } = require('./xlsx');
 const { analyticsAgents, analyticsQc } = require('./analytics');
 const {migrateOffices,hash:officeHash,generateKey,validKey,validateRoutes,safeOffice,
-  readOfficeSelection,findOfficeByKey,OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
+  readOfficeSelection,findOfficeByKey,brandForRow,BRAND_DEFAULTS,DEMO_ROUTES,
+  OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
 
 const ROOT = path.resolve(__dirname, '..');
 const DATA = path.resolve(process.env.CRICKET_DATA_DIR || path.join(ROOT, 'data'));
@@ -30,7 +31,7 @@ const TEXT_SIZES = new Set(['standard','large','extra-large']);
 function randomThemeColor() { return THEME_COLORS[crypto.randomInt(THEME_COLORS.length)]; }
 const OUTCOMES = new Set(['resolved', 'pending']);
 const REVIEWS = new Set(['approved', 'coaching', 'flagged']);
-const FILE_TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
+const FILE_TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const loginAttempts = new Map();
 const officeAttempts = new Map();
 const PLATFORM_OFFICE_KEY=process.env.CRICKET_PLATFORM_OFFICE_KEY||'';
@@ -407,7 +408,10 @@ function processAPI(req, res, url) {
     const selected=selectedOffice(req);
     if(!selected)err(401,'Select your office first');
     const office=selected.office_id?db.prepare('SELECT * FROM offices WHERE id=?').get(selected.office_id):null;
-    return send(res,200,{scope:selected.scope,office:office?{name:office.name,workflowTemplate:office.workflow_template}:null});
+    return send(res,200,{scope:selected.scope,office:office?{
+      name:office.name,slug:office.slug,workflowTemplate:office.workflow_template,
+      branding:brandForRow(office)
+    }:null});
   }
   if (p === '/api/office/resolve' && req.method === 'POST') {
     rateOffice(req);
@@ -421,7 +425,10 @@ function processAPI(req, res, url) {
       db.prepare('DELETE FROM office_selections WHERE expires_at<?').run(Date.now());
       db.prepare('INSERT INTO office_selections(token_hash,office_id,scope,expires_at) VALUES(?,?,?,?)')
         .run(tokenHash(token),office?.id||null,scope,Date.now()+OFFICE_SELECTION_MS);
-      return send(res,200,{ok:true,scope,office:office?{name:office.name}:null},
+      return send(res,200,{ok:true,scope,office:office?{
+        name:office.name,slug:office.slug,workflowTemplate:office.workflow_template,
+        branding:brandForRow(office)
+      }:null},
         {'Set-Cookie':setOfficeCookie(token)});
     });
   }
@@ -661,11 +668,12 @@ function processAPI(req, res, url) {
     requireRole(user,'platform_admin');
     const offices=db.prepare(`SELECT o.id,o.name,o.slug,o.workflow_template AS workflowTemplate,
       o.routes_json AS routesJson,o.active,o.created_at AS createdAt,
+      o.brand_tagline,o.brand_color,o.brand_logo_url,o.brand_welcome,
       (SELECT COUNT(*) FROM users u WHERE u.office_id=o.id) AS employees,
       (SELECT COUNT(*) FROM cases c WHERE c.office_id=o.id) AS cases
       FROM offices o ORDER BY o.id`).all().map(o=>({
       id:o.id,name:o.name,slug:o.slug,workflowTemplate:o.workflowTemplate,
-      routes:JSON.parse(o.routesJson),active:!!o.active,
+      routes:JSON.parse(o.routesJson),active:!!o.active,branding:brandForRow(o),
       createdAt:o.createdAt,employees:o.employees,cases:o.cases
     }));
     return send(res,200,{offices});
@@ -682,17 +690,23 @@ function processAPI(req, res, url) {
       if(name.length<3||!slug||!adminName||!validateEmail(adminEmail)||!validatePassword(password))
         err(400,'Enter an office name, initial administrator and valid email/password (12+ characters)');
       const key=generateKey(),timestamp=now();
+      const brand=slug==='northstar-support'?BRAND_DEFAULTS.northstar:BRAND_DEFAULTS.generic;
       db.exec('BEGIN IMMEDIATE');
       try{
-        const result=db.prepare(`INSERT INTO offices(name,slug,office_key_hash,workflow_template,routes_json,active,created_at)
-          VALUES(?,?,?,'starter',?,1,?)`).run(name,slug,officeHash(key),JSON.stringify(routes),timestamp);
+        const result=db.prepare(`INSERT INTO offices(
+          name,slug,office_key_hash,workflow_template,routes_json,active,created_at,
+          brand_tagline,brand_color,brand_logo_url,brand_welcome
+        ) VALUES(?,?,?,'starter',?,1,?,?,?,?,?)`)
+          .run(name,slug,officeHash(key),JSON.stringify(routes),timestamp,
+            brand.tagline,brand.color,brand.logoUrl||'',brand.welcome);
         const officeId=Number(result.lastInsertRowid);
         db.prepare(`INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color,office_id)
           VALUES(?,?,?,?,?,?,?)`).run(adminEmail,adminName,'admin',hashPassword(password),timestamp,randomThemeColor(),officeId);
         db.prepare('INSERT INTO platform_audit(admin_id,action,office_id,created_at) VALUES(?,?,?,?)')
           .run(user.id,'office_created',officeId,timestamp);
         db.exec('COMMIT');
-        return send(res,201,{office:{id:officeId,name,slug,workflowTemplate:'starter',active:true,routes},officeKey:key});
+        return send(res,201,{office:{id:officeId,name,slug,workflowTemplate:'starter',active:true,routes,
+          branding:{...brand}},officeKey:key});
       }catch(error){
         db.exec('ROLLBACK');
         if(error.code==='ERR_SQLITE_ERROR')err(409,'Office slug or employee email already exists');
@@ -700,7 +714,7 @@ function processAPI(req, res, url) {
       }
     });
   }
-  const officeAction=p.match(/^\/api\/platform\/offices\/(\d+)\/(key|routes|status)$/);
+  const officeAction=p.match(/^\/api\/platform\/offices\/(\d+)\/(key|routes|status|branding)$/);
   if(officeAction){
     requireRole(user,'platform_admin');
     const officeId=Number(officeAction[1]),action=officeAction[2];
@@ -713,6 +727,22 @@ function processAPI(req, res, url) {
       db.prepare('INSERT INTO platform_audit(admin_id,action,office_id,created_at) VALUES(?,?,?,?)')
         .run(user.id,'office_key_rotated',officeId,now());
       return send(res,200,{officeId,officeKey:key});
+    }
+    if(action==='branding'&&req.method==='PATCH'){
+      return readBody(req).then(data=>{
+        const tagline=typeof data.tagline==='string'?data.tagline.trim():'';
+        const color=typeof data.color==='string'?data.color.trim().toLowerCase():'';
+        const welcome=typeof data.welcome==='string'?data.welcome.trim():'';
+        if(tagline.length<2||tagline.length>70||
+           !/^#[0-9a-f]{6}$/.test(color)||welcome.length<5||welcome.length>180)
+          err(400,'Provide a tagline (2–70 characters), hex color, and welcome message (5–180 characters)');
+        db.prepare('UPDATE offices SET brand_tagline=?,brand_color=?,brand_welcome=? WHERE id=?')
+          .run(tagline,color,welcome,officeId);
+        db.prepare('INSERT INTO platform_audit(admin_id,action,office_id,created_at) VALUES(?,?,?,?)')
+          .run(user.id,'office_branding_updated',officeId,now());
+        const updated=db.prepare('SELECT * FROM offices WHERE id=?').get(officeId);
+        return send(res,200,{officeId,branding:brandForRow(updated)});
+      });
     }
     if(action==='routes'&&req.method==='PATCH'){
       if(office.workflow_template!=='starter')err(400,'NeuTrauma workflows are managed in their dedicated application');
@@ -971,7 +1001,8 @@ function processAPI(req, res, url) {
 
 /* Authenticated workspace files are protected on the server.
    Frontend role cards are only visual hints; this is the access boundary. */
-const PUBLIC_FILES = new Set(['/login.html','/login.js','/workspace.css','/office.html','/office.js','/office.css']);
+const PUBLIC_FILES = new Set(['/login.html','/login.js','/login.css','/workspace.css',
+  '/office.html','/office.js','/office.css','/assets/neutrauma-logo.webp']);
 const PAGE_ROLES = new Map([
   ['/platform.html',['platform_admin']],['/platform.js',['platform_admin']],['/platform.css',['platform_admin']],
   ['/office-workflow.html',['agent','admin']],['/office-workflow.js',['agent','admin']],['/office-workflow.css',['agent','admin']],
@@ -1079,6 +1110,36 @@ if(platformConfig.some(Boolean)){
     db.prepare('INSERT INTO platform_admins(email,display_name,password_hash,created_at) VALUES(?,?,?,?)')
       .run(platformEmail,'Cricket Platform Administrator',hashPassword(platformConfig[1]),now());
     process.stdout.write('Cricket platform administrator initialized.\n');
+  }
+}
+// Opt-in, development-only client fixture. No shared or hardcoded login secrets.
+// The key and temporary password are generated randomly and shown ONCE at creation.
+if(process.env.CRICKET_SEED_DEMO_OFFICE==='1'){
+  if(SECURE)throw Error('CRICKET_SEED_DEMO_OFFICE cannot run in production');
+  if(!db.prepare("SELECT id FROM offices WHERE slug='northstar-support'").get()){
+    const key=generateKey(),password=crypto.randomBytes(24).toString('base64url');
+    const brand=BRAND_DEFAULTS.northstar,created=now();
+    const routes=validateRoutes(DEMO_ROUTES);
+    db.exec('BEGIN IMMEDIATE');
+    try{
+      const office=db.prepare(`INSERT INTO offices(
+        name,slug,office_key_hash,workflow_template,routes_json,active,created_at,
+        brand_tagline,brand_color,brand_logo_url,brand_welcome
+      ) VALUES(?,?,?,'starter',?,1,?,?,?,?,?)`)
+        .run('Northstar Support','northstar-support',officeHash(key),JSON.stringify(routes),created,
+          brand.tagline,brand.color,brand.logoUrl||'',brand.welcome);
+      db.prepare(`INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color,office_id)
+        VALUES(?,?,?,?,?,?,?)`)
+        .run('northstar-demo@cricket.example.test','Northstar Demo Admin','admin',
+          hashPassword(password),created,randomThemeColor(),Number(office.lastInsertRowid));
+      db.exec('COMMIT');
+      process.stdout.write(
+        '\\nNORTHSTAR DEMO OFFICE (SAVE THESE ONE-TIME CREDENTIALS)\\n'+
+        'Office Key: '+key+'\\n'+
+        'Email: northstar-demo@cricket.example.test\\n'+
+        'Password: '+password+'\\n\\n'
+      );
+    }catch(error){db.exec('ROLLBACK');throw error;}
   }
 }
 const server = http.createServer(async (req, res) => {

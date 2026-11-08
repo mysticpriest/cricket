@@ -2,46 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f2f7ff">
-  <title>Cricket | Choose Your Office</title>
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="description" content="Access your organization's Cricket workspace.">
+  <title>Cricket | Office Access</title>
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="office.css">
   <script defer src="office.js"></script>
 </head>
-<body>
-  <main class="office-entry">
-    <section class="office-intro">
-      <a class="logo" href="office.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
-      <div class="office-intro-body">
-        <span class="eyebrow">ONE PLATFORM · MULTIPLE WORKSPACES</span>
-        <h1>Every office.<br><em>Its own workflow.</em></h1>
-        <p>Cricket connects employees with the right instructions, tools, and team—while keeping every client’s information separate.</p>
-        <div class="office-intro-steps">
-          <div><b>01</b><span>Choose your office</span></div>
-          <div><b>02</b><span>Sign in securely</span></div>
-          <div><b>03</b><span>Open your workflow</span></div>
+<body class="office-access-page">
+  <div class="office-access-shell">
+    <header class="office-access-header">
+      <a class="logo" href="office.html" aria-label="Cricket home"><span class="logo-mark">C</span><span>cricket<span class="logo-period">.</span></span></a>
+      <span class="office-header-label">WORKSPACE ACCESS</span>
+    </header>
+    <main class="office-access-main">
+      <section class="office-access-form-panel" aria-labelledby="officeHeading">
+        <div class="office-access-content">
+          <span class="office-step-label"><span class="office-step-marker">01</span> SELECT YOUR OFFICE</span>
+          <h1 id="officeHeading">Welcome to Cricket.</h1>
+          <p class="office-access-intro">Enter your office key to continue to your organization's workspace.</p>
+          <form id="officeKeyForm" autocomplete="off">
+            <label for="officeKey">Office key</label>
+            <div class="office-key-field">
+              <input id="officeKey" name="officeKey" type="password" required autocomplete="off"
+                minlength="16" maxlength="128" spellcheck="false" placeholder="Enter your office key">
+              <button id="officeToggle" type="button" aria-label="Show office key">Show</button>
+            </div>
+            <p id="officeKeyMessage" class="office-feedback" role="alert" aria-live="polite"></p>
+            <button class="office-continue" type="submit" id="officeKeySubmit">
+              Continue <span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <div class="office-access-help"><strong>Don't have a key?</strong> Contact your office administrator. Each organization has its own access key.</div>
         </div>
+      </section>
+      <aside class="office-access-aside" aria-label="How office access works">
+        <div class="office-aside-overline">A WORKSPACE FOR EVERY TEAM</div>
+        <h2>Built around the way<br>your office works.</h2>
+        <p>Cricket adapts the tools and routes you see to your organization—without mixing teams or records.</p>
+        <div class="office-access-steps">
+          <div class="office-step"><span>01</span><div><strong>Identify your office</strong><small>Enter the key provided by your organization</small></div></div>
+          <div class="office-step"><span>02</span><div><strong>Sign in</strong><small>Use your personal employee credentials</small></div></div>
+          <div class="office-step"><span>03</span><div><strong>Start your work</strong><small>Open your assigned tools and workflows</small></div></div>
+        </div>
+        <div class="office-aside-foot">CRICKET / CLIENT WORKSPACES <span>2026</span></div>
+      </aside>
+    </main>
+    <footer class="office-access-footer">
+      <span>© 2026 Cricket</span>
+      <span>Internal demonstration environment · Fictional records only</span>
+    </footer>
+  </div>
+  <div id="officeHandoff" class="office-handoff" role="status" aria-live="polite" hidden>
+    <div class="office-handoff-content">
+      <div id="handoffVisual" class="office-handoff-brand">
+        <img id="handoffLogo" alt="" hidden>
+        <span id="handoffMonogram" class="office-handoff-monogram">C</span>
       </div>
-      <small>CRICKET · MULTI-OFFICE DEVELOPMENT PREVIEW</small>
-    </section>
-    <section class="office-entry-form-pane">
-      <div class="office-entry-card">
-        <div class="office-key-badge">KEY <span>↗</span></div>
-        <span class="eyebrow">STEP 01 / 02</span>
-        <h2>Find your workspace<span class="logo-period">.</span></h2>
-        <p>Enter the Office Key provided by your organization. You’ll sign in with your personal credentials next.</p>
-        <form id="officeKeyForm">
-          <label for="officeKey">Office Key</label>
-          <div class="office-key-input"><span aria-hidden="true">⌑</span>
-            <input id="officeKey" type="password" required autocomplete="off" minlength="16" maxlength="128" spellcheck="false" placeholder="Enter your Office Key">
-            <button id="officeToggle" type="button" aria-label="Show Office Key">Show</button>
-          </div>
-          <p id="officeKeyMessage" class="office-key-message" role="alert" aria-live="polite"></p>
-          <button id="officeKeySubmit" class="button office-key-submit" type="submit">Continue to sign in <span aria-hidden="true">→</span></button>
-        </form>
-        <div class="office-entry-foot">No Office Key? Contact your office administrator.<br>Keys identify your workspace; they do not replace your employee login.</div>
-      </div>
-    </section>
-  </main>
+      <span class="office-handoff-label">WORKSPACE FOUND</span>
+      <h2 id="handoffOfficeName">Your office</h2>
+      <p id="handoffTagline">Preparing your sign-in experience</p>
+      <div class="office-handoff-track" aria-hidden="true"><span></span></div>
+      <small>Continuing to employee sign in</small>
+    </div>
+  </div>
 </body>
 </html>
