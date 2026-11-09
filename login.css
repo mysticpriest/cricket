@@ -51,3 +51,13 @@
 .client-signin-card h2{letter-spacing:-1.25px}
 @keyframes cricket-signin-reveal{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.client-signin-card{animation:none}.client-field input{transition:none}}
+
+/* A small, user-supplied editorial photo supports (not replaces) tenant branding. */
+.client-support-visual{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;margin-top:30px;max-width:470px;min-height:125px;overflow:hidden;border:1px solid #dce7f0;background:#eaf2f8;border-radius:14px}
+.client-support-copy{flex:1;min-width:0;padding:18px 0 18px 19px}
+.client-support-copy span{display:block;font-size:9px;letter-spacing:.12em;color:#5480a4;font-weight:800}
+.client-support-copy strong{display:block;font-size:14px;line-height:1.32;margin-top:9px;color:#25415d}
+.client-support-copy p{font-size:11px;line-height:1.55;margin:7px 0 0;color:#6f8495}
+.client-support-visual img{display:block;flex:0 0 auto;width:min(135px,34%);height:auto;object-fit:contain;align-self:flex-end}
+@media(max-width:900px){.client-support-visual{display:none}}
+@media(max-height:770px) and (min-width:901px){.client-support-visual{margin-top:17px;min-height:96px}.client-support-visual img{width:105px}}
