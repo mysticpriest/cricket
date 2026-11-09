@@ -69,3 +69,16 @@ body[data-ops-page]{background:#f7f9fc;color:#263d52;font-family:'DM Sans',syste
  .op-panel{padding:15px}.op-inline-fields{grid-template-columns:1fr}
  .op-form-actions>*{flex:1}.op-steps-heading{flex-wrap:wrap}}
 @media(orientation:portrait) and (max-width:1500px){.op-builder-grid,.op-two-grid{grid-template-columns:minmax(0,1fr)}}
+
+
+/* Direction-aware conversation history and improved focus feedback. */
+.op-message{border-color:#dce7f0;transition:border-color .18s,background-color .18s}
+.op-message.is-incoming{border-left:3px solid #3f82b3;background:#f8fbff}
+.op-message.is-outgoing{border-left:3px solid #a8b9c8;background:#fafcff}
+.op-message:hover{border-color:#b9cfe1}
+.op-message strong{font-size:12px}
+.op-message p{font-size:12px;line-height:1.65}
+.op-panel,.op-button,.op-ghost{transition:border-color .16s,box-shadow .16s,transform .16s,background-color .16s}
+.op-button:active,.op-ghost:active{transform:translateY(1px)}
+.op-button:focus-visible,.op-ghost:focus-visible,.op-form input:focus-visible,.op-form textarea:focus-visible,.op-form select:focus-visible{outline:3px solid #83b9e3;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.op-message,.op-panel,.op-button,.op-ghost{transition:none}}
