@@ -8,15 +8,23 @@ $venv = Join-Path $PSScriptRoot ".venv"
 $python = Join-Path $venv "Scripts\python.exe"
 
 if (-not (Test-Path $python)) {
-    if (Get-Command py -ErrorAction SilentlyContinue) {
-        & py -3.11 -m venv $venv 2>$null
-        if ($LASTEXITCODE -ne 0) { & py -3.12 -m venv $venv 2>$null }
-    }
-    if (-not (Test-Path $python) -and (Get-Command python -ErrorAction SilentlyContinue)) {
-        & python -m venv $venv
+    $candidates = @(
+        @{ Executable = 'py'; Prefix = @('-3.11') },
+        @{ Executable = 'py'; Prefix = @('-3.12') },
+        @{ Executable = 'python'; Prefix = @() }
+    )
+    foreach ($candidate in $candidates) {
+        if (-not (Get-Command $candidate.Executable -ErrorAction SilentlyContinue)) { continue }
+        $pythonArgs = @($candidate.Prefix) + @('-m', 'venv', $venv)
+        try {
+            & $candidate.Executable @pythonArgs 2>$null
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $python)) { break }
+        } catch {
+            # Try the next installed Python version.
+        }
     }
     if (-not (Test-Path $python)) {
-        throw "Python 3.11 or 3.12 was not found. Install Python from https://www.python.org/downloads/windows/ and run this script again."
+        throw "Install Python 3.11 or 3.12 (64-bit) from https://www.python.org/downloads/windows/ and run this installer again."
     }
 }
 & $python -m pip install --disable-pip-version-check -r (Join-Path $PSScriptRoot "requirements-captions.txt")
