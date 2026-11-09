@@ -11,7 +11,6 @@ const { workbookXlsx } = require('./xlsx');
 const { analyticsAgents, analyticsQc } = require('./analytics');
 const {setup:setupPersonalWorkspace,route:personalWorkspaceRoute} = require('./personal-workspace');
 const {setup:setupOpsSuite,route:opsSuiteRoute,notify:opsNotify} = require('./operations-suite');
-const {route:captionRoute} = require('./captions');
 const {migrateOffices,hash:officeHash,generateKey,validKey,validateRoutes,safeOffice,
   readOfficeSelection,findOfficeByKey,brandForRow,BRAND_DEFAULTS,DEMO_ROUTES,
   OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
@@ -412,11 +411,6 @@ function processAPI(req, res, url) {
   const user = currentUser(req,touch)||currentPlatform(req,touch);
   if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
-  if (p.startsWith('/api/captions/')) {
-    requireRole(user,'agent','admin');
-    requireOffice(user);
-    return captionRoute({p,req,res,user,send});
-  }
   if (p.startsWith('/api/ops/')) {
     return opsSuiteRoute({p,req,res,url,user,db,readBody,send,audit});
   }
