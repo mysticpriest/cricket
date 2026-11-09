@@ -21,6 +21,11 @@
       {from:760,to:810,at:0,duration:.10,gain:.095,type:'sine'},
       {from:990,to:1000,at:.14,duration:.14,gain:.09,type:'sine'}
     ],
+    message:[
+      {from:660,to:770,at:0,duration:.085,gain:.11,type:'sine'},
+      {from:900,to:1080,at:.10,duration:.105,gain:.10,type:'sine'},
+      {from:1120,to:1180,at:.22,duration:.13,gain:.075,type:'sine'}
+    ],
     shift:[
       {from:440,to:560,at:0,duration:.085,gain:.11,type:'sine'},
       {from:680,to:730,at:.10,duration:.11,gain:.10,type:'sine'}
@@ -54,7 +59,7 @@
     const ctx=contextForPlayback();
     if(!ctx)return false;
     const time=Date.now();
-    const limit=type==='notification'?3500:type==='click'||type==='navigate'?75:180;
+    const limit=type==='notification'||type==='message'?3500:type==='click'||type==='navigate'?75:180;
     if(type===lastCue&&time-lastPlayed<limit)return false;
     lastCue=type;lastPlayed=time;
     const start=ctx.currentTime+.005;
