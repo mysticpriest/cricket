@@ -41,3 +41,13 @@
 @media(max-width:900px){.client-login-shell{grid-template-columns:1fr}.client-identity-panel{min-height:unset;padding:25px 28px 27px}.client-identity-center{margin:27px auto 10px;max-width:440px}.client-brand-visual{height:80px}.client-brand-visual img{max-height:80px;max-width:260px}.client-brand-monogram{height:63px;width:63px;font-size:29px}.client-brand-divider{display:none}.client-brand-eyebrow,.client-identity-center h1,.client-brand-message,.client-identity-footer{display:none}.client-brand-tagline{font-size:11px;margin-top:6px}.client-signin-panel{padding:48px 28px 25px;min-height:530px}}
 @media(max-width:460px){.client-signin-panel{padding:35px 22px 23px}.client-identity-panel{padding:20px 22px}.client-signin-card h2{font-size:31px}.client-login-footer{flex-direction:column;gap:5px}}
 @media(prefers-reduced-motion:reduce){.client-login-button{transition:none}}
+
+
+/* Restrained sign-in motion and tenant-neutral surfaces, no gradients. */
+.client-signin-card{animation:cricket-signin-reveal .28s ease-out both}
+.client-field input{transition:border-color .16s,box-shadow .16s}
+.client-signin-panel a:focus-visible,.client-signin-panel button:focus-visible{outline:3px solid #83b9e3;outline-offset:3px}
+.client-identity-panel{background:#f5f8fb}
+.client-signin-card h2{letter-spacing:-1.25px}
+@keyframes cricket-signin-reveal{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.client-signin-card{animation:none}.client-field input{transition:none}}
