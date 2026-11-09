@@ -133,6 +133,8 @@
     if(mute)try{mute.disconnect();}catch(_){}
     if(stream)stream.getTracks().forEach(t=>t.stop());
     stream=null;processor=null;source=null;mute=null;
+    // Each new caller session must reconfirm recording/transcription consent.
+    if($('ccConsent'))$('ccConsent').checked=false;
     if(context)void context.close().catch(()=>{});
     context=null;chunks=[];frames=0;
     if(remaining)enqueue(remaining,rate,run);
@@ -209,7 +211,7 @@
     const head=el('header','cc-head');
     const title=el('div','cc-title');
     title.append(el('span','cc-eyebrow','INBOUND / OUTBOUND TOOLS'),el('h2','', 'Live caller captions'));
-    const close=button('×','ccClose','cc-close');close.setAttribute('aria-label','Close captions panel');
+    const close=button('×','ccClose','cc-close');close.setAttribute('aria-label','Stop capture and close captions');
     head.append(title,close);
     const intro=el('p','cc-intro','Transcribe computer or browser-tab audio. Microphone audio is not captured. Updates arrive about every 6 seconds.');
     const how=el('div','cc-help','Select the browser tab or screen playing the caller’s voice. Enable “Share tab audio” or “Share system audio” in the browser dialog.');
@@ -246,14 +248,14 @@
     const copy=button('Copy captions','ccCopy','cc-utility');
     const clear=button('Clear','ccClear','cc-utility');
     footer.append(copy,clear);
-    const privacy=el('p','cc-privacy','Audio is sent to your organization’s configured Azure Speech service for transcription. Cricket does not save audio or captions to the database. Avoid sensitive personal information until approved.');
+    const privacy=el('p','cc-privacy','Audio is sent to your organization’s configured Azure Speech service for transcription. Closing this panel stops capture. Cricket does not save audio or captions to its database. Avoid sensitive personal information until approved.');
     panel.append(head,intro,how,settings,consent,actions,state,captionTitle,transcriptBox,footer,privacy);
     document.body.append(launch,panel);
     const toggle=visible=>{
       opened=visible;panel.hidden=!visible;launch.setAttribute('aria-expanded',String(visible));
     };
     launch.addEventListener('click',()=>toggle(!opened));
-    close.addEventListener('click',()=>toggle(false));
+    close.addEventListener('click',()=>{stop(true);toggle(false);});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&opened)toggle(false);});
     startButton.addEventListener('click',start);
     stopButton.addEventListener('click',()=>stop(true));
