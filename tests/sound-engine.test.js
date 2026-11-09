@@ -76,6 +76,8 @@ test('Sound engine never autoplays, waits for a gesture, then plays quiet synthe
   assert.equal(b.oscillators(),0,'Unlock does not itself play a sound');
   assert.equal(b.sound.play('success'),true);
   assert.equal(b.oscillators(),2,'Success uses two original synthesized tones');
+  assert.equal(b.sound.play('message'),true,'Direct messages have a distinct sound');
+  assert.equal(b.oscillators(),5,'The direct-message chime has three soft tones');
   assert.ok(b.contexts()>=1);
   assert.equal(b.sound.play('unknown'),false,'Unsupported cues are ignored');
 });
