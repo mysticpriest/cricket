@@ -217,7 +217,7 @@
     const localeLabel=el('label','cc-label','Spoken language');
     const select=el('select','cc-select');select.id='ccLanguage';
     const locales=[
-      ['en-US','English (US)'],['en-GB','English (UK)'],['es-ES','Spanish'],
+      ['en-US','English (US)'],['en-GB','English (UK)'],['mk-MK','Macedonian'],['es-ES','Spanish'],
       ['fr-FR','French'],['de-DE','German'],['it-IT','Italian'],['pt-PT','Portuguese']
     ];
     for(const [value,name] of locales){
