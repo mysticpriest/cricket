@@ -89,6 +89,7 @@ test('Browser-native captions require zero Python installs, Azure keys, or Crick
 });
 test('Caller captions demand consent, then recognize the selected audio track (not microphone)',async()=>{
   const b=browserFixture();
+  await b.click('ccLauncher');
   await b.click('ccStart');
   assert.equal(b.screenRequests.length,0,'Cannot share before consent');
   assert.match(b.elements.get('ccStatus').textContent,/consent/i);
@@ -123,6 +124,7 @@ test('Old Chromium browsers are blocked rather than falling back to the micropho
 });
 test('Missing shared audio track fails safely and stops the screen capture',async()=>{
   const b=browserFixture({audio:false});
+  await b.click('ccLauncher');
   b.elements.get('ccConsent').checked=true;
   await b.click('ccStart');
   assert.equal(b.recognitions.length,0);
