@@ -34,7 +34,7 @@
   const NORMAL={enabled:true,volume:25};
   let settings={...NORMAL};
   let ready=false,gesture=false,context=null,loading=null,lastCue='',lastPlayed=0;
-  let saveSequence=Promise.resolve();
+  let saveSequence=Promise.resolve(),preferenceRevision=0;
   const clamp=v=>Math.max(0,Math.min(100,Math.round(Number(v)||0)));
   const validate=value=>({
     enabled:value?.enabled===true,
@@ -124,6 +124,7 @@
   async function save(prefs){
     const next=validate(prefs);
     const previous={...settings};
+    const revision=++preferenceRevision;
     settings=next; // Immediate UI feedback, with rollback on save error.
     ready=true;
     const send=async()=>{
@@ -134,11 +135,15 @@
         });
         const payload=await response.json().catch(()=>({}));
         if(!response.ok)throw Error(payload.error||'Sound settings could not be saved');
-        // Do not overwrite a newer local choice with an older request result.
-        return validate(payload.preferences);
+        // Only the latest save is allowed to settle the active preference.
+        const saved=validate(payload.preferences);
+        if(revision===preferenceRevision){settings=saved;ready=true;}
+        return saved;
       }catch(error){
-        // Keep disabled if the original preference cannot be verified.
-        settings={...previous,enabled:false};ready=false;
+        // A stale failing request must not disable a newer successful choice.
+        if(revision===preferenceRevision){
+          settings={...previous,enabled:false};ready=false;
+        }
         throw error;
       }
     };
