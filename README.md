@@ -491,55 +491,84 @@ Planned migration path:
 Do not use this local SQLite file on ephemeral Azure Functions storage; replace the storage layer with Azure SQL or another approved durable database before going live.
 
 
-## Caller computer-audio captions (opt-in)
+## Free English live caller captions (no Azure or API keys)
 
-Cricket includes a **Caller captions** panel on Inbound, Outbound, Office Workflow,
-and guided Workflow Runner. It uses Microsoft Azure AI Speech and requires
-a running Cricket Node.js backend, not GitHub Pages alone.
+Cricket uses [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper) with
+the free **English-only base.en model**, running on the same Windows computer
+as the Cricket Node.js backend. A single persistent Python worker handles
+segments. No cloud speech transcription subscription or per-minute API fee.
 
-### Configuration (PowerShell)
+### One-time installation on Windows
 
-Create an Azure AI Speech resource, then open PowerShell in the Cricket directory.
-Use your own resource's key and region. **Never put the key in GitHub or a frontend file.**
+1. Install Python 3.11 or Python 3.12 (64-bit) from
+   https://www.python.org/downloads/windows/ if you do not already have one.
+   Enable the Python launcher / PATH option during installation.
+2. Extract the latest Cricket ZIP and open PowerShell in that Cricket folder.
+3. Run the setup script:
 
-    $env:CRICKET_AZURE_SPEECH_KEY="YOUR_AZURE_SPEECH_RESOURCE_KEY"
-    $env:CRICKET_AZURE_SPEECH_REGION="eastus"  # Change to your resource's region
+       .\setup-captions.ps1
+
+   This creates an isolated `.venv`, installs the pinned open-source
+   `faster-whisper` dependency, and downloads the base English model to
+   `data/caption-models`. **An internet connection is needed only during
+   initial dependency/model download**, not for transcription after setup.
+   These generated files are excluded from Git.
+
+   If PowerShell blocks the script, run it from this same folder with:
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup-captions.ps1`.
+   You do not need to change your system-wide PowerShell execution policy.
+4. Start or restart Cricket:
+
+       $env:HOST="127.0.0.1"
+       $env:PORT="3001"
+       npm.cmd start
+
+5. Use the Node-hosted site at `http://127.0.0.1:3001` in Chrome or Edge.
+   Sign in as an employee and open **Caller captions** inside Inbound,
+   Outbound, Office Workflow, or the guided Workflow Runner.
+
+### Use
+
+- Confirm authorization and any recording/transcription consent before each
+  call.
+- Click **Start captions** and select the tab with the caller's voice.
+  Select **Share tab audio** in Chrome/Edge's share dialog. Some Windows/browser
+  setups also permit **Share system audio**.
+- The text appears in approx. 6-second finalized segments, plus local model
+  processing delay. On a slow CPU, expect higher latency; the app may skip
+  segments when the engine cannot keep up.
+- **Stop**, **Copy**, and **Clear** work as before. Closing the caption panel
+  stops capture, and each new call requires fresh consent.
+
+To favor speed over accuracy on a slower Windows PC, choose the smaller
+English model using PowerShell in your Cricket folder:
+
+    $env:CRICKET_CAPTIONS_MODEL="tiny.en"
+    .\setup-captions.ps1
     $env:HOST="127.0.0.1"
     $env:PORT="3001"
     npm.cmd start
 
-Configure the same environment variables for any hosted Node.js server. Without
-them, the caption panel explains why transcription is disabled. The remaining
-Cricket features continue to work.
+The selected model name must also be set each time you launch Cricket, or it
+will default back to `base.en`. The `tiny.en` model downloads separately.
 
-### Using captions
+### Privacy and limitations
 
-1. Open Cricket in Chrome/Edge at http://127.0.0.1:3001 or on HTTPS.
-2. Open **Caller captions** at the bottom left of a call workspace.
-3. Choose the spoken language (English, Macedonian, and several others).
-4. Confirm that your organization has authorization and any required consent
-   for capturing and transcribing the call.
-5. Select **Start captions**, choose the tab playing the caller's voice, and
-   enable **Share tab audio**. On compatible Windows/browser configurations,
-   screen sharing may offer system audio.
-6. Speech appears in approximately 6-second **finalized audio segments**, plus
-   service and network latency. Select **Stop**, **Copy captions**, or **Clear**.
+The browser does not request microphone access; a screen/video track is
+required by browser sharing APIs but no screen frames are inspected or sent.
+Raw audio segments travel only between the browser and Cricket's own
+authenticated Node.js server, then into a local Python process. The speech
+worker does **not send call audio to Azure or other speech APIs** and neither
+audio nor caption text is automatically persisted by Cricket. A model download
+uses Hugging Face during one-time setup, but not for inference.
 
-The microphone is never requested. The browser requires explicit share
-permission for each session; no screen/video frames are transmitted.
-If the selected source has no audio track, Cricket stops it immediately.
+This is *near-live*, English-only chunked recognition, not sub-second streaming
+or speaker separation. Text may be inaccurate or lose words at segment
+boundaries. Results depend on the CPU and the source application's audio
+sharing compatibility. Do not transcribe actual patient-identifying data
+without the required organizational, legal, and security approvals. Prefer
+fictional audio when testing.
 
-**Privacy:** This panel temporarily holds captions in the current browser tab.
-Raw audio is transferred only to Cricket's authenticated backend and Azure
-Speech for processing; Cricket does not persist these chunks or the transcript
-in its database, browser storage, or logs. Clipboard copying is user initiated.
-Azure processing rules and your organization's policies still apply.
-
-**Limitations:** This is near-live segmented speech recognition, not continuous
-interim word-by-word transcription or speaker diarization. Cutting audio into
-segments may split words. Audio track availability depends on browser and OS.
-Do not process real patient-identifying data without formal security, privacy,
-consent, and compliance approvals. Use fictional audio for initial testing.
-
-For production-grade low-latency captions, migrate to continuous Azure Speech
-SDK streaming integrated with an approved call audio provider.
+For multiple employees on different machines, a hosted production speech
+service or a properly provisioned shared inference server would be needed.
+This local installer is intended for the Windows development setup.
