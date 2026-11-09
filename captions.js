@@ -114,11 +114,10 @@
     instance.maxAlternatives=1;
     recognizer=instance;
     completed=new Set();
-    let gotResult=false,ended=false;
+    let gotResult=false,ended=false,silence=false;
     instance.onstart=()=>{
       if(generationId!==generation)return;
       status('Listening to shared caller audio…','live');
-      attempt=0;
     };
     instance.onresult=event=>{
       if(generationId!==generation||!active)return;
@@ -148,6 +147,7 @@
         return;
       }
       if(code==='aborted')return;
+      if(code==='no-speech'){silence=true;return;}
       status('Speech recognition paused ('+code+'); retrying…','warning');
     };
     instance.onend=()=>{
@@ -156,13 +156,13 @@
       interim('');
       // Reuse existing user-authorized shared audio without showing another prompt.
       // Back off after repeated short sessions so provider errors do not hot-loop.
-      attempt=gotResult?0:attempt+1;
+      attempt=(gotResult||silence)?0:attempt+1;
       if(attempt>6){
         stop();
         status('Recognition repeatedly stopped. Restart captions or try another shared tab.','error');
         return;
       }
-      const delay=Math.min(3500,500*attempt);
+      const delay=attempt===0?500:Math.min(3500,500*attempt);
       clearRestart();
       restartTimer=setTimeout(()=>{restartTimer=null;resume(generationId);},delay);
       status('Reconnecting to browser speech recognition…','warning');
@@ -198,6 +198,10 @@
         'Sharing cancelled. Select the caller’s tab and enable audio.':
         'Could not open the audio-sharing picker.','error');
       return;
+    }
+    if(!opened){
+      chosen.getTracks().forEach(track=>track.stop());
+      return; // The panel was closed while the user was in the share dialog.
     }
     if(!chosen.getAudioTracks().length){
       chosen.getTracks().forEach(track=>track.stop());
