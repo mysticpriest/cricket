@@ -202,7 +202,9 @@
    if(!teamData.messages.length)messages.append(el('p','op-muted','Your messages will appear here.'));
    for(const msg of teamData.messages){
      const from=msg.senderId===user.id?'To '+msg.recipientName:'From '+msg.senderName;
-     messages.append(card(from,msg.body,date(msg.createdAt)));
+     const entry=card(from,msg.body,date(msg.createdAt));
+     entry.classList.add('op-message',msg.senderId===user.id?'is-outgoing':'is-incoming');
+     messages.append(entry);
    }
    const select=$('teamRecipient'),selectedValue=select.value;
    select.replaceChildren();
@@ -229,6 +231,14 @@
      $('teamBody').value='';await loadTeam();status('Message sent.');
    }));
    void loadTeam().catch(error=>status(error.message,true));
+   // Keep incoming messages and office announcements up to date without
+   // replacing the message compose form or interrupting typing.
+   window.setInterval(()=>{
+     if(!document.hidden)void loadTeam().catch(()=>{});
+   },15000);
+   document.addEventListener('visibilitychange',()=>{
+     if(!document.hidden)void loadTeam().catch(()=>{});
+   });
  }
  async function loadWorkforce(){
    workforceData=await api('/api/ops/workforce');
