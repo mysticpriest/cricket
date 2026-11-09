@@ -117,7 +117,7 @@
         status(error.message||'Caption request failed','error');
         if(responseShouldStop(error))stop(false);
       }
-    }).finally(()=>{inFlight--;if(run===session)refresh();});
+    }).finally(()=>{if(run===session){inFlight=Math.max(0,inFlight-1);refresh();}});
   }
   function responseShouldStop(error){
     return /not configured|session|authorization|credentials|consent/i.test(String(error?.message||''));
@@ -168,10 +168,11 @@
     }
     try{
       const Audio=window.AudioContext||window.webkitAudioContext;
-      if(!Audio||typeof new Audio().createScriptProcessor!=='function')
-        throw Error('This browser cannot process shared audio.');
-      context=new Audio();
+      if(!Audio)throw Error('This browser cannot process shared audio.');
       stream=selected;
+      context=new Audio();
+      if(typeof context.createScriptProcessor!=='function')
+        throw Error('This browser cannot process shared audio.');
       source=context.createMediaStreamSource(new MediaStream([track]));
       processor=context.createScriptProcessor(4096,1,1);
       mute=context.createGain();mute.gain.value=0;
