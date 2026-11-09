@@ -24,6 +24,7 @@ function request(body=wave(),headers={}){
 }
 async function invoke({p='/api/captions/transcribe',req=request(),fetcher}={}){
   let answer;
+  req.method=p==='/api/captions/config'?'GET':'POST';
   await route({p,req,res:{},user:{id:2501,office:{id:2461}},
     send:(_res,status,body)=>{answer={status,body};},fetcher});
   return answer;
