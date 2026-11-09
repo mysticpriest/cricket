@@ -47,3 +47,6 @@
 @media(max-width:700px){.cc-launcher{left:12px;bottom:65px;padding:10px 11px}.cc-panel{left:12px;bottom:113px;max-height:calc(100dvh - 130px)}}
 @media(orientation:portrait) and (min-width:701px){.cc-panel{max-height:80dvh}}
 @media(prefers-reduced-motion:reduce){.cc-launcher,.cc-panel,.cc-primary,.cc-secondary,.cc-utility{transition:none;animation:none}}
+
+/* English-only local recognizer information, no language picker. */
+.cc-language-fixed{font-size:11px;font-weight:750;color:#2d6588;background:#eef5fa;border:1px solid #deebf5;padding:9px 11px;border-radius:9px;margin:0;width:100%;box-sizing:border-box}
