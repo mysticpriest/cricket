@@ -489,3 +489,57 @@ Planned migration path:
 - Application Insights and managed backup/retention policies.
 
 Do not use this local SQLite file on ephemeral Azure Functions storage; replace the storage layer with Azure SQL or another approved durable database before going live.
+
+
+## Caller computer-audio captions (opt-in)
+
+Cricket includes a **Caller captions** panel on Inbound, Outbound, Office Workflow,
+and guided Workflow Runner. It uses Microsoft Azure AI Speech and requires
+a running Cricket Node.js backend, not GitHub Pages alone.
+
+### Configuration (PowerShell)
+
+Create an Azure AI Speech resource, then open PowerShell in the Cricket directory.
+Use your own resource's key and region. **Never put the key in GitHub or a frontend file.**
+
+    $env:CRICKET_AZURE_SPEECH_KEY="YOUR_AZURE_SPEECH_RESOURCE_KEY"
+    $env:CRICKET_AZURE_SPEECH_REGION="eastus"  # Change to your resource's region
+    $env:HOST="127.0.0.1"
+    $env:PORT="3001"
+    npm.cmd start
+
+Configure the same environment variables for any hosted Node.js server. Without
+them, the caption panel explains why transcription is disabled. The remaining
+Cricket features continue to work.
+
+### Using captions
+
+1. Open Cricket in Chrome/Edge at http://127.0.0.1:3001 or on HTTPS.
+2. Open **Caller captions** at the bottom left of a call workspace.
+3. Choose the spoken language (English, Macedonian, and several others).
+4. Confirm that your organization has authorization and any required consent
+   for capturing and transcribing the call.
+5. Select **Start captions**, choose the tab playing the caller's voice, and
+   enable **Share tab audio**. On compatible Windows/browser configurations,
+   screen sharing may offer system audio.
+6. Speech appears in approximately 6-second **finalized audio segments**, plus
+   service and network latency. Select **Stop**, **Copy captions**, or **Clear**.
+
+The microphone is never requested. The browser requires explicit share
+permission for each session; no screen/video frames are transmitted.
+If the selected source has no audio track, Cricket stops it immediately.
+
+**Privacy:** This panel temporarily holds captions in the current browser tab.
+Raw audio is transferred only to Cricket's authenticated backend and Azure
+Speech for processing; Cricket does not persist these chunks or the transcript
+in its database, browser storage, or logs. Clipboard copying is user initiated.
+Azure processing rules and your organization's policies still apply.
+
+**Limitations:** This is near-live segmented speech recognition, not continuous
+interim word-by-word transcription or speaker diarization. Cutting audio into
+segments may split words. Audio track availability depends on browser and OS.
+Do not process real patient-identifying data without formal security, privacy,
+consent, and compliance approvals. Use fictional audio for initial testing.
+
+For production-grade low-latency captions, migrate to continuous Azure Speech
+SDK streaming integrated with an approved call audio provider.
