@@ -1,276 +1,295 @@
 'use strict';
 /*
- * Caller captions — authorized computer/tab audio only, never microphone input.
- * Audio exists in memory for six seconds at a time and is sent to Cricket's
- * authenticated local Faster-Whisper worker. Nothing is sent to Azure,
- * and transcripts are never saved automatically.
+ * Cricket English caller captions (browser-native Web Speech API).
+ * No extra download, install, API key, model or Cricket transcription endpoint.
+ * Chrome / Edge 135+ can accept a shared audio MediaStreamTrack in
+ * SpeechRecognition.start(audioTrack). Never invoke start() without the track:
+ * that would select the employee's microphone instead.
+ *
+ * IMPORTANT: Browser speech recognition may transmit audio to the browser
+ * provider's speech service. This is NOT guaranteed to process audio locally.
  */
 (()=>{
-  const INTERVAL_SECONDS=6;
-  const MAX_LINES=100;
+  const MAX_LINES=120;
   const $=id=>document.getElementById(id);
-  const el=(tag,cls,text)=>{
-    const node=document.createElement(tag);
-    if(cls)node.className=cls;
-    if(text!==undefined)node.textContent=String(text);
-    return node;
+  const make=(tag,cls,content)=>{
+    const element=document.createElement(tag);
+    if(cls)element.className=cls;
+    if(content!==undefined)element.textContent=String(content);
+    return element;
   };
-  const button=(label,id,cls)=>{
-    const node=el('button',cls||'cc-button',label);
-    node.type='button';node.id=id;return node;
-  };
-  let configured=false,active=false,stream=null,context=null,source=null,processor=null,mute=null;
-  let chunks=[],frames=0,queue=Promise.resolve(),inFlight=0,session=0;
-  let transcript=[],opened=false,startTime=0;
-  function status(message,kind='info'){
-    const node=$('ccStatus');
-    if(node){node.textContent=message;node.dataset.kind=kind;}
+  function button(text,id,cls){
+    const node=make('button',cls||'cc-utility',text);
+    node.id=id;node.type='button';return node;
   }
-  function refresh(){
-    const live=active;
-    $('ccStart').disabled=live||!configured;
-    $('ccStop').disabled=!live;
-    $('ccConsent').disabled=live;
-    $('ccLauncher').classList.toggle('is-listening',live);
-    $('ccLive').hidden=!live;
+  function supported(){
+    const ua=navigator.userAgent||'';
+    // Prevent older implementations from interpreting start(track) as
+    // start() and silently recording the employee microphone.
+    if(/Android|iPhone|iPad|iPod/i.test(ua))return false;
+    const match=ua.match(/(?:Edg|Chrome)\/(\d+)/);
+    const Recognizer=window.SpeechRecognition||window.webkitSpeechRecognition;
+    return Boolean(match&&Number(match[1])>=135&&typeof Recognizer==='function'&&
+      window.isSecureContext&&navigator.mediaDevices?.getDisplayMedia);
+  }
+  let stream=null,recognizer=null,active=false,opened=false,attempt=0;
+  let generation=0,completed=new Set(),restartTimer=null,transcript=[];
+  function status(text,kind='info'){
+    const node=$('ccStatus');
+    if(node){node.textContent=text;node.dataset.kind=kind;}
+  }
+  function renderControls(){
+    $('ccStart').disabled=active||!supported();
+    $('ccStop').disabled=!active;
+    $('ccConsent').disabled=active;
+    $('ccLauncher').classList.toggle('is-listening',active);
+    $('ccLive').hidden=!active;
     $('ccTranscriptEmpty').hidden=transcript.length>0;
     $('ccCopy').disabled=transcript.length===0;
     $('ccClear').disabled=transcript.length===0;
-    $('ccPending').textContent=inFlight?inFlight+' segment'+(inFlight===1?'':'s')+' processing':'';
   }
-  function display(){
-    const host=$('ccLines');
-    const nearEnd=host.scrollHeight-host.scrollTop-host.clientHeight<65;
-    host.replaceChildren();
-    for(const line of transcript){
-      const entry=el('div','cc-line');
-      const time=el('time','cc-time',line.time);
-      const content=el('p','',line.text);
-      entry.append(time,content);host.append(entry);
-    }
-    if(nearEnd)host.scrollTop=host.scrollHeight;
-    refresh();
-  }
-  function addLine(text){
-    if(!text||!text.trim())return;
-    transcript.push({text:text.trim(),time:new Date().toLocaleTimeString([],{
-      hour:'2-digit',minute:'2-digit',second:'2-digit'
-    })});
+  function addCaption(text){
+    const cleaned=String(text||'').trim();
+    if(!cleaned)return;
+    transcript.push({
+      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+      text:cleaned
+    });
     if(transcript.length>MAX_LINES)transcript.shift();
-    display();
+    renderTranscript();
   }
-  function downsample(samples,rate){
-    const size=Math.floor(samples.length*16000/rate);
-    const wav=new ArrayBuffer(44+size*2),view=new DataView(wav);
-    const ascii=(pos,text)=>{for(let i=0;i<text.length;i++)view.setUint8(pos+i,text.charCodeAt(i));};
-    ascii(0,'RIFF');view.setUint32(4,36+size*2,true);ascii(8,'WAVE');
-    ascii(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);
-    view.setUint16(22,1,true);view.setUint32(24,16000,true);
-    view.setUint32(28,32000,true);view.setUint16(32,2,true);
-    view.setUint16(34,16,true);ascii(36,'data');view.setUint32(40,size*2,true);
-    for(let i=0;i<size;i++){
-      const position=i*rate/16000,left=Math.floor(position);
-      const remainder=position-left;
-      const value=(samples[left]||0)*(1-remainder)+(samples[Math.min(left+1,samples.length-1)]||0)*remainder;
-      const clamped=Math.max(-1,Math.min(1,value));
-      view.setInt16(44+i*2,clamped<0?Math.round(clamped*32768):Math.round(clamped*32767),true);
+  function renderTranscript(){
+    const container=$('ccLines');
+    const atBottom=container.scrollHeight-container.scrollTop-container.clientHeight<80;
+    const fragment=document.createDocumentFragment();
+    for(const line of transcript){
+      const card=make('div','cc-line');
+      const time=make('time','cc-time',line.time);
+      const body=make('p','',line.text);
+      card.append(time,body);fragment.append(card);
     }
-    return wav;
+    container.replaceChildren(fragment);
+    if(atBottom)container.scrollTop=container.scrollHeight;
+    $('ccTranscriptEmpty').hidden=transcript.length>0;
+    renderControls();
   }
-  function takeFrames(){
-    const total=frames;
-    if(!total)return null;
-    const samples=new Float32Array(total);
-    let offset=0;
-    for(const part of chunks){samples.set(part,offset);offset+=part.length;}
-    chunks=[];frames=0;return samples;
+  function interim(text){
+    const element=$('ccInterim');
+    element.textContent=text||'';
+    element.hidden=!text;
   }
-  function enqueue(samples,rate,run){
-    if(!samples||samples.length/rate<.5)return;
-    if(inFlight>=2){
-      status('Caption service is behind; a segment was skipped.','warning');
-      return;
-    }
-    const wave=downsample(samples,rate);
-    inFlight++;refresh();
-    queue=queue.catch(()=>{}).then(async()=>{
-      if(run!==session)return;
-      try{
-        const response=await fetch('/api/captions/transcribe',{
-          method:'POST',credentials:'same-origin',
-          headers:{
-            'Content-Type':'audio/wav',
-            'X-Cricket-Captions-Consent':'yes'
-          },
-          body:wave
-        });
-        const payload=await response.json().catch(()=>({}));
-        if(!response.ok)throw Error(payload.error||'Speech service unavailable');
-        if(run!==session)return;
-        if(payload.text)addLine(payload.text);
-        if(active)status('Listening to shared computer audio…','live');
-        else status('Capture stopped. Captions are held in this tab only.','info');
-      }catch(error){
-        if(run!==session)return;
-        status(error.message||'Caption request failed','error');
-        if(responseShouldStop(error))stop(false);
-      }
-    }).finally(()=>{if(run===session){inFlight=Math.max(0,inFlight-1);refresh();}});
+  function clearRestart(){
+    if(restartTimer!==null){clearTimeout(restartTimer);restartTimer=null;}
   }
-  function responseShouldStop(error){
-    return /not configured|session|authorization|credentials|consent/i.test(String(error?.message||''));
-  }
-  function stop(flush=true){
+  function stop(){
     if(!active&&!stream)return;
-    const wasActive=active;
-    active=false;
-    const remaining=flush&&wasActive?takeFrames():null;
-    const rate=context?.sampleRate||48000,run=session;
-    if(processor){processor.onaudioprocess=null;try{processor.disconnect();}catch(_){}}
-    if(source)try{source.disconnect();}catch(_){}
-    if(mute)try{mute.disconnect();}catch(_){}
-    if(stream)stream.getTracks().forEach(t=>t.stop());
-    stream=null;processor=null;source=null;mute=null;
-    // Each new caller session must reconfirm recording/transcription consent.
-    if($('ccConsent'))$('ccConsent').checked=false;
-    if(context)void context.close().catch(()=>{});
-    context=null;chunks=[];frames=0;
-    if(remaining)enqueue(remaining,rate,run);
-    if(wasActive)status('Capture stopped. Transcript stays in this tab until cleared.','info');
-    refresh();
+    const previous=stream;
+    active=false;generation++;clearRestart();
+    if(recognizer){
+      recognizer.onresult=null;
+      recognizer.onerror=null;
+      recognizer.onend=null;
+      try{recognizer.abort();}catch(_){}
+    }
+    recognizer=null;
+    stream=null;completed.clear();attempt=0;
+    if(previous)previous.getTracks().forEach(track=>track.stop());
+    $('ccConsent').checked=false;interim('');
+    status('Captions stopped. History is only kept in this tab until cleared.');
+    renderControls();
+  }
+  function resume(generationId){
+    if(!active||generationId!==generation||!stream)return;
+    const audioTrack=stream.getAudioTracks()[0];
+    if(!audioTrack||audioTrack.readyState!=='live'){
+      stop();status('The shared audio source ended.','warning');return;
+    }
+    // The browser can end a recognition session after silence or a timeout.
+    // Reuse the same explicitly shared audio track, never the microphone.
+    const Recognizer=window.SpeechRecognition||window.webkitSpeechRecognition;
+    const instance=new Recognizer();
+    instance.lang='en-US';
+    instance.continuous=true;
+    instance.interimResults=true;
+    instance.maxAlternatives=1;
+    recognizer=instance;
+    completed=new Set();
+    let gotResult=false,ended=false;
+    instance.onstart=()=>{
+      if(generationId!==generation)return;
+      status('Listening to shared caller audio…','live');
+      attempt=0;
+    };
+    instance.onresult=event=>{
+      if(generationId!==generation||!active)return;
+      gotResult=true;
+      const now=[];
+      for(let i=0;i<event.results.length;i++){
+        const result=event.results[i],phrase=result?.[0]?.transcript||'';
+        if(result?.isFinal){
+          if(!completed.has(i)){
+            completed.add(i);addCaption(phrase);
+          }
+        }else if(phrase.trim())now.push(phrase.trim());
+      }
+      interim(now.join(' '));
+    };
+    instance.onerror=event=>{
+      if(generationId!==generation||!active)return;
+      const code=String(event?.error||'unknown');
+      if(['not-allowed','service-not-allowed','audio-capture','language-not-supported'].includes(code)){
+        stop();
+        status('Browser speech recognition is unavailable or permission was denied ('+code+').','error');
+        return;
+      }
+      if(code==='network'){
+        stop();
+        status('The browser speech service could not connect. Check your connection.','error');
+        return;
+      }
+      if(code==='aborted')return;
+      status('Speech recognition paused ('+code+'); retrying…','warning');
+    };
+    instance.onend=()=>{
+      if(generationId!==generation||!active||ended)return;
+      ended=true;
+      interim('');
+      // Reuse existing user-authorized shared audio without showing another prompt.
+      // Back off after repeated short sessions so provider errors do not hot-loop.
+      attempt=gotResult?0:attempt+1;
+      if(attempt>6){
+        stop();
+        status('Recognition repeatedly stopped. Restart captions or try another shared tab.','error');
+        return;
+      }
+      const delay=Math.min(3500,500*attempt);
+      clearRestart();
+      restartTimer=setTimeout(()=>{restartTimer=null;resume(generationId);},delay);
+      status('Reconnecting to browser speech recognition…','warning');
+    };
+    try{
+      // Supplying this LIVE audio track is essential. Do not call start() without it.
+      instance.start(audioTrack);
+    }catch(error){
+      stop();
+      status('Your browser could not recognize shared audio. Use current desktop Chrome or Edge.','error');
+    }
   }
   async function start(){
-    if(active||!configured)return;
+    if(active)return;
+    if(!supported()){
+      status('Use desktop Chrome or Edge version 135+ over localhost or HTTPS to caption shared audio.','error');
+      return;
+    }
     if(!$('ccConsent').checked){
-      status('Confirm permission and caller consent before starting.','warning');
+      status('Confirm authorization and any required caller consent first.','warning');
       $('ccConsent').focus();return;
     }
-    if(!window.isSecureContext||!navigator.mediaDevices?.getDisplayMedia){
-      status('Audio sharing needs Chrome/Edge on localhost or HTTPS.','error');return;
-    }
-    // Screen or tab selection MUST be initiated directly by this user click.
-    // A video track is mandatory for getDisplayMedia but is never examined.
-    let selected;
+    let chosen;
     try{
-      selected=await navigator.mediaDevices.getDisplayMedia({
+      // Browser picker requires a direct user click; the mandatory video track
+      // is not read, displayed, sent or recorded.
+      chosen=await navigator.mediaDevices.getDisplayMedia({
         video:true,audio:true,systemAudio:'include',
         surfaceSwitching:'include',selfBrowserSurface:'exclude'
       });
     }catch(error){
-      status(error?.name==='NotAllowedError'?'Audio sharing was cancelled.':
-        'Could not start screen/tab audio sharing.','error');return;
-    }
-    const track=selected.getAudioTracks()[0];
-    if(!track){
-      selected.getTracks().forEach(t=>t.stop());
-      status('No audio was shared. Select the caller’s tab and enable “Share tab audio”, or choose system audio.','error');
+      status(error?.name==='NotAllowedError'?
+        'Sharing cancelled. Select the caller’s tab and enable audio.':
+        'Could not open the audio-sharing picker.','error');
       return;
     }
-    try{
-      const Audio=window.AudioContext||window.webkitAudioContext;
-      if(!Audio)throw Error('This browser cannot process shared audio.');
-      stream=selected;
-      context=new Audio();
-      if(typeof context.createScriptProcessor!=='function')
-        throw Error('This browser cannot process shared audio.');
-      source=context.createMediaStreamSource(new MediaStream([track]));
-      processor=context.createScriptProcessor(4096,1,1);
-      mute=context.createGain();mute.gain.value=0;
-      chunks=[];frames=0;queue=Promise.resolve();inFlight=0;
-      const run=++session;
-      processor.onaudioprocess=event=>{
-        if(!active)return;
-        const samples=event.inputBuffer.getChannelData(0);
-        chunks.push(new Float32Array(samples));frames+=samples.length;
-        if(frames>=context.sampleRate*INTERVAL_SECONDS){
-          enqueue(takeFrames(),context.sampleRate,run);
-        }
-      };
-      source.connect(processor);processor.connect(mute);mute.connect(context.destination);
-      active=true;startTime=Date.now();
-      for(const item of selected.getTracks()){
-        item.addEventListener('ended',()=>{if(active)stop(true);},{once:true});
-      }
-      if(context.state==='suspended')await context.resume();
-      status('Listening to shared computer audio…','live');
-      refresh();
-    }catch(error){
-      selected.getTracks().forEach(t=>t.stop());
-      stop(false);
-      status(error.message||'Could not create a caption session.','error');
+    if(!chosen.getAudioTracks().length){
+      chosen.getTracks().forEach(track=>track.stop());
+      status('No audio was shared. Select the caller’s tab and tick “Share tab audio” (or share system audio).','error');
+      return;
     }
+    stream=chosen;active=true;attempt=0;
+    const run=++generation;
+    for(const track of stream.getTracks()){
+      track.addEventListener('ended',()=>{
+        if(active&&run===generation){
+          stop();status('Screen or tab sharing ended. Captions are stopped.','warning');
+        }
+      },{once:true});
+    }
+    status('Starting browser speech recognition…','info');
+    renderControls();
+    resume(run);
   }
   function setup(){
-    const launch=button('◉  Caller captions','ccLauncher','cc-launcher');
-    launch.setAttribute('aria-controls','ccPanel');
-    launch.setAttribute('aria-expanded','false');
-    const panel=el('aside','cc-panel');panel.id='ccPanel';panel.hidden=true;
-    panel.setAttribute('aria-label','Caller computer-audio captions');
-    const head=el('header','cc-head');
-    const title=el('div','cc-title');
-    title.append(el('span','cc-eyebrow','INBOUND / OUTBOUND TOOLS'),el('h2','', 'Live caller captions'));
-    const close=button('×','ccClose','cc-close');close.setAttribute('aria-label','Stop capture and close captions');
-    head.append(title,close);
-    const intro=el('p','cc-intro','Free English captions from computer or browser-tab audio. Your local Cricket computer handles recognition; no API key or cloud transcription.');
-    const how=el('div','cc-help','Select the browser tab or screen playing the caller’s voice. Enable “Share tab audio” or “Share system audio” in the browser dialog.');
-    const settings=el('div','cc-settings');
-    settings.append(el('p','cc-language-fixed','English only · Faster-Whisper (offline)'));
-    const consent=el('label','cc-consent');
-    const check=el('input');check.type='checkbox';check.id='ccConsent';
-    consent.append(check,el('span','','I confirm I am authorized to capture this call and have obtained any required consent.'));
-    const actions=el('div','cc-actions');
-    const startButton=button('Start captions','ccStart','cc-primary');
-    const stopButton=button('Stop','ccStop','cc-secondary');
-    actions.append(startButton,stopButton);
-    const state=el('div','cc-state');
-    const live=el('span','cc-live','●  CAPTURING AUDIO');live.id='ccLive';live.hidden=true;
-    const msg=el('p','cc-status','Checking local English captions…');msg.id='ccStatus';msg.setAttribute('role','status');
-    state.append(live,msg);
-    const captionTitle=el('div','cc-transcript-heading');
-    captionTitle.append(el('strong','', 'Conversation captions'),el('span','cc-pending',''));
-    captionTitle.querySelector('span').id='ccPending';
-    const transcriptBox=el('div','cc-transcript');
-    const empty=el('p','cc-empty','Captions will appear here as the caller speaks.');empty.id='ccTranscriptEmpty';
-    const lines=el('div','cc-lines');lines.id='ccLines';lines.setAttribute('aria-live','polite');
-    transcriptBox.append(empty,lines);
-    const footer=el('div','cc-footer');
-    const copy=button('Copy captions','ccCopy','cc-utility');
-    const clear=button('Clear','ccClear','cc-utility');
-    footer.append(copy,clear);
-    const privacy=el('p','cc-privacy','Audio is processed on the Cricket server using free local Faster-Whisper. Closing this panel stops capture. No Azure account or transcription API is used. Cricket does not save audio or captions to its database. Do not use patient information until approved.');
-    panel.append(head,intro,how,settings,consent,actions,state,captionTitle,transcriptBox,footer,privacy);
-    document.body.append(launch,panel);
-    const toggle=visible=>{
-      opened=visible;panel.hidden=!visible;launch.setAttribute('aria-expanded',String(visible));
+    const launcher=button('◉  Caller captions','ccLauncher','cc-launcher');
+    launcher.setAttribute('aria-controls','ccPanel');
+    launcher.setAttribute('aria-expanded','false');
+    const panel=make('aside','cc-panel');panel.id='ccPanel';panel.hidden=true;
+    panel.setAttribute('aria-label','Live caller captions');
+    const header=make('header','cc-head');
+    const titles=make('div','cc-title');
+    titles.append(make('span','cc-eyebrow','CALL WORKSPACE TOOLS'),
+      make('h2','','Live caller captions'));
+    const close=button('×','ccClose','cc-close');
+    close.setAttribute('aria-label','Stop capturing and close captions');
+    header.append(titles,close);
+    const intro=make('p','cc-intro',
+      'English captions using your browser. No Python, model downloads, API keys or extra installation.');
+    const tips=make('div','cc-help',
+      'Share the browser tab playing the caller’s voice and enable “Share tab audio”. Compatible Windows devices may also offer “Share system audio”.');
+    const settings=make('div','cc-settings');
+    settings.append(make('p','cc-language-fixed','English · Browser speech recognition'));
+    const consent=make('label','cc-consent');
+    const checkbox=make('input');checkbox.type='checkbox';checkbox.id='ccConsent';
+    consent.append(checkbox,make('span','',
+      'I confirm this call can be transcribed and any required caller consent has been obtained.'));
+    const actions=make('div','cc-actions');
+    actions.append(button('Start captions','ccStart','cc-primary'),button('Stop','ccStop','cc-secondary'));
+    const state=make('div','cc-state');
+    const live=make('span','cc-live','●  LIVE CAPTIONS');live.id='ccLive';live.hidden=true;
+    const message=make('p','cc-status','Checking browser compatibility…');
+    message.id='ccStatus';message.setAttribute('role','status');
+    state.append(live,message);
+    const label=make('div','cc-transcript-heading');
+    label.append(make('strong','','Caller captions'));
+    const transcriptBox=make('div','cc-transcript');
+    const empty=make('p','cc-empty','Recognized English speech will appear here.');
+    empty.id='ccTranscriptEmpty';
+    const list=make('div','cc-lines');list.id='ccLines';list.setAttribute('aria-live','polite');
+    const partial=make('p','cc-interim','');partial.id='ccInterim';partial.hidden=true;
+    partial.setAttribute('aria-live','off');
+    transcriptBox.append(empty,list,partial);
+    const foot=make('div','cc-footer');
+    foot.append(button('Copy captions','ccCopy','cc-utility'),button('Clear','ccClear','cc-utility'));
+    const privacy=make('p','cc-privacy',
+      'Your browser may send shared audio to its speech-recognition provider over the internet. Cricket does not send the audio to its own server or save captions automatically. Do not use with patient information without organizational approval.');
+    panel.append(header,intro,tips,settings,consent,actions,state,label,transcriptBox,foot,privacy);
+    document.body.append(launcher,panel);
+    const toggle=show=>{
+      if(!show)stop();
+      opened=show;panel.hidden=!show;launcher.setAttribute('aria-expanded',String(show));
     };
-    launch.addEventListener('click',()=>toggle(!opened));
-    close.addEventListener('click',()=>{stop(true);toggle(false);});
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&opened)toggle(false);});
-    startButton.addEventListener('click',start);
-    stopButton.addEventListener('click',()=>stop(true));
-    copy.addEventListener('click',async()=>{
+    launcher.addEventListener('click',()=>toggle(!opened));
+    close.addEventListener('click',()=>toggle(false));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&opened)toggle(false);});
+    $('ccStart').addEventListener('click',start);
+    $('ccStop').addEventListener('click',stop);
+    $('ccCopy').addEventListener('click',async()=>{
       try{
-        await navigator.clipboard.writeText(transcript.map(x=>'['+x.time+'] Caller: '+x.text).join('\n'));
-        status('Caption text copied to clipboard.','info');
-      }catch(_){status('Clipboard permission denied. Try your browser permissions.','error');}
+        await navigator.clipboard.writeText(
+          transcript.map(x=>'['+x.time+'] Caller: '+x.text).join('\n'));
+        status('Captions copied to clipboard.');
+      }catch(_){status('Could not copy captions. Check clipboard permissions.','error');}
     });
-    clear.addEventListener('click',()=>{
-      transcript=[];display();status(active?'Caption history cleared; still listening.':'Caption history cleared.');
+    $('ccClear').addEventListener('click',()=>{
+      transcript=[];renderTranscript();interim('');
+      status(active?'History cleared. Still listening.':'Caption history cleared.');
     });
-    window.addEventListener('pagehide',()=>{session++;stop(false);transcript=[];});
-    refresh();
-    void fetch('/api/captions/config',{credentials:'same-origin'})
-      .then(async res=>{if(!res.ok)throw Error('Caption service cannot be reached.');
-        return res.json();})
-      .then(data=>{
-        configured=Boolean(data.enabled);
-        status(configured?'Ready · English captions process locally. Share the caller’s tab or computer audio to begin.':
-          'Free English captions need one-time setup. Run .\\setup-captions.ps1 from the Cricket folder, then restart the server.',
-          configured?'info':'warning');
-        refresh();
-      })
-      .catch(error=>{configured=false;status(error.message,'error');refresh();});
+    window.addEventListener('pagehide',()=>{stop();transcript=[];});
+    renderControls();
+    status(supported()?
+      'Ready. Share the caller’s audio to start English captions.':
+      'Use desktop Chrome or Edge 135+ over localhost or HTTPS. This browser does not support shared-audio captions.',
+      supported()?'info':'warning');
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',setup,{once:true});
   else setup();
 })();
