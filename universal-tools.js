@@ -19,8 +19,9 @@
     if(!res.ok)throw Error(data.error||'Request failed');return data;
   };
   const json=(method,obj)=>({method,headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
-  let user,desk,notifications=[],open=false,selected='desk',searchTimer;
+  let user,desk,notifications=[],open=false,selected='desk',searchTimer,alertTimer,refreshInFlight=null;
   let priorNotificationIds=null;
+  const originalTitle=document.title;
   const audio=()=>window.CricketSound;
   const allowed=(url)=>{
     if(user?.role==='admin')return true;
@@ -48,24 +49,91 @@
     $('utShade').hidden=!open;
     $('utLaunch').setAttribute('aria-expanded',String(open));
     document.body.classList.toggle('ut-panel-open',open);
-    if(open){renderPanel();void refresh();}
+    if(open){renderPanel();void refresh({desk:true});}
   }
-  async function refresh(){
-    if(!user)return;
+  // Polling is deliberately isolated from workspace forms. Incoming alerts
+  // must not wipe a note, reminder, or other input someone is editing.
+  function safeTarget(item){
+    const href=String(item?.href||'index.html');
+    return /^(?:[a-z-]+\.html)(?:\?[a-zA-Z0-9=&_-]*)?$/.test(href)&&allowed(href.split('?')[0])
+      ?href:'index.html';
+  }
+  function alertSummary(item){
+    if(item.type==='message')return {title:'New team message',detail:'A colleague sent you a message.'};
+    if(item.type==='announcement')return {title:'New announcement',detail:'Your office has shared an update.'};
+    if(item.type==='reminder')return {title:'Reminder',detail:'A personal reminder needs your attention.'};
+    if(item.type==='schedule')return {title:'Schedule update',detail:'An upcoming shift needs your attention.'};
+    return {title:'New notification',detail:'There is an update in your workspace.'};
+  }
+  function showToast(item){
+    const tray=$('utToastStack');if(!tray)return;
+    const info=alertSummary(item),toast=make('article','ut-toast');
+    toast.setAttribute('role','status');
+    const symbol=make('span','ut-toast-icon',item.type==='message'?'✉':'●');
+    symbol.setAttribute('aria-hidden','true');
+    const copy=make('div','ut-toast-copy');
+    copy.append(make('strong','',info.title),make('p','',info.detail));
+    const action=link('View',safeTarget(item),'ut-toast-open');
+    const close=button('×',()=>toast.remove(),'ut-toast-close');
+    close.setAttribute('aria-label','Dismiss notification');
+    toast.append(symbol,copy,action,close);
+    tray.replaceChildren(toast);
+    clearTimeout(alertTimer);
+    alertTimer=window.setTimeout(()=>toast.remove(),8500);
+  }
+  function desktopAlert(item){
+    // Explicitly opt-in; never reveal the actual message body or case details.
+    if(!('Notification' in window)||window.Notification.permission!=='granted')return;
     try{
-      const [state,notifs]=await Promise.all([api('/api/workspace/me'),api('/api/ops/notifications')]);
-      desk=state;notifications=notifs.notifications;
-      // Establish a silent baseline on first load; only newly arriving,
-      // unread notifications make a sound on later polls.
-      const unreadIds=new Set(notifications.filter(x=>!x.readAt).map(x=>x.id));
-      if(priorNotificationIds!==null&&
-        [...unreadIds].some(id=>!priorNotificationIds.has(id))&&!document.hidden)
-        audio()?.play('notification');
-      priorNotificationIds=unreadIds;
-      $('utCounter').textContent=String(notifs.unread||'');
-      $('utCounter').hidden=!notifs.unread;
-      if(open)renderPanel();
-    }catch(error){if(open)$('utStatus').textContent=error.message;}
+      const summary=alertSummary(item);
+      const n=new window.Notification('Cricket · '+summary.title,{
+        body:summary.detail,tag:'cricket-'+item.id,silent:true
+      });
+      n.onclick=()=>{window.focus();window.location.assign(safeTarget(item));n.close();};
+    }catch(_){/* Browsers may block notifications. */}
+  }
+  function updateCounter(total){
+    const count=Math.max(0,Number(total)||0),badge=count>99?'99+':String(count);
+    $('utCounter').textContent=badge;
+    $('utCounter').hidden=count===0;
+    $('utAlertsTab').textContent=count?'Notifications ('+badge+')':'Notifications';
+    document.title=count?'('+count+') '+originalTitle:originalTitle;
+  }
+  async function refresh({desk:withDesk=false}={}){
+    if(!user)return;
+    if(refreshInFlight)return refreshInFlight;
+    refreshInFlight=(async()=>{
+      try{
+        const needDesk=withDesk||!desk;
+        const [state,notifs]=await Promise.all([
+          needDesk?api('/api/workspace/me'):Promise.resolve(null),
+          api('/api/ops/notifications')
+        ]);
+        if(state)desk=state;
+        notifications=notifs.notifications||[];
+        const unreadIds=new Set(notifications.filter(x=>!x.readAt).map(x=>x.id));
+        if(priorNotificationIds!==null){
+          const arrived=notifications.find(x=>!x.readAt&&!priorNotificationIds.has(x.id));
+          if(arrived){
+            if(document.hidden)desktopAlert(arrived);
+            else{
+              if(arrived.type==='message')audio()?.play('message');
+              else audio()?.play('notification');
+              showToast(arrived);
+            }
+          }
+        }
+        priorNotificationIds=unreadIds;
+        updateCounter(notifs.unread);
+        if(open&&(selected==='alerts'||state)){
+          const content=$('utContent'),scroll=content.scrollTop;
+          renderPanel();
+          content.scrollTop=scroll;
+        }
+      }catch(error){if(open)$('utStatus').textContent=error.message;}
+    })();
+    try{return await refreshInFlight;}
+    finally{refreshInFlight=null;}
   }
   function renderPanel(){
     const host=$('utContent');host.replaceChildren();
@@ -197,6 +265,26 @@
     const help=make('p','ut-muted',
       'Soft clicks and cues for completed actions, notifications and shifts. Settings follow your employee account.');
     section.append(title,label,slider,help);
+    if('Notification' in window&&window.isSecureContext){
+      const controls=make('div','ut-browser-alerts');
+      const permission=window.Notification.permission;
+      if(permission==='default'){
+        controls.append(button('Enable desktop alerts',async()=>{
+          try{
+            const result=await window.Notification.requestPermission();
+            const message=result==='granted'?'Desktop alerts are enabled. Previews stay private.'
+              :'Desktop alerts were not enabled. In-app notifications still work.';
+            renderPanel();
+            $('utStatus').textContent=message;
+          }catch(_){$('utStatus').textContent='Desktop alerts are unavailable in this browser.';}
+        },'ut-browser-enable'));
+      }else{
+        controls.append(make('p','ut-muted',permission==='granted'
+          ?'Desktop alerts on · notification previews are private'
+          :'Desktop alerts blocked · update browser site permissions to enable them'));
+      }
+      section.append(controls);
+    }
     host.append(section);
   }
   function renderNotifications(host){
@@ -267,7 +355,9 @@
     const results=make('div','ut-search-results');results.id='utSearchResults';
     searchModal.append(bar,results);searchShade.append(searchModal);
     searchShade.addEventListener('click',event=>{if(event.target===searchShade)closeSearch();});
-    document.body.append(shade,launch,panel,searchShade);
+    const toastStack=make('div','ut-toast-stack');
+    toastStack.id='utToastStack';toastStack.setAttribute('aria-live','polite');
+    document.body.append(shade,launch,panel,searchShade,toastStack);
     document.addEventListener('keydown',event=>{
       if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
         event.preventDefault();setOpen(false);openSearch();
@@ -285,9 +375,10 @@
       setup();
       try{await audio()?.load();}
       catch(_){/* Sound fails silent; navigation and work must still load. */}
-      await refresh();
-      window.setInterval(()=>{if(!document.hidden)void refresh();},18000);
-      document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
+      await refresh({desk:true});
+      // Background tabs can deliver previously permitted desktop notifications.
+      window.setInterval(()=>void refresh(),15000);
+      document.addEventListener('visibilitychange',()=>void refresh());
     }catch(_){/* Ignore non-employee/login pages; backend owns access checks. */}
   });
 })();
