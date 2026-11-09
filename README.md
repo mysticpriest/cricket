@@ -491,84 +491,65 @@ Planned migration path:
 Do not use this local SQLite file on ephemeral Azure Functions storage; replace the storage layer with Azure SQL or another approved durable database before going live.
 
 
-## Free English live caller captions (no Azure or API keys)
+## English caller captions — browser-native, no installation or API keys
 
-Cricket uses [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper) with
-the free **English-only base.en model**, running on the same Windows computer
-as the Cricket Node.js backend. A single persistent Python worker handles
-segments. No cloud speech transcription subscription or per-minute API fee.
+The **Caller captions** panel in Cricket uses the browser's built-in
+[Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition/start)
+and calls **SpeechRecognition.start(audioTrack)** with the live audio track
+from a user-approved browser tab or screen share. It does not install
+Python or a Whisper model, upload audio to a Cricket transcription
+endpoint, require an API key, or add transcription API fees.
 
-### One-time installation on Windows
+### Requirements and use
 
-1. Install Python 3.11 or Python 3.12 (64-bit) from
-   https://www.python.org/downloads/windows/ if you do not already have one.
-   Enable the Python launcher / PATH option during installation.
-2. Extract the latest Cricket ZIP and open PowerShell in that Cricket folder.
-3. Run the setup script:
+- **Desktop Chrome or Microsoft Edge version 135 or newer**, with an internet
+  connection for the browser's recognition service.
+- **Secure page:** localhost (http://127.0.0.1:3001) or a deployed **HTTPS**
+  website. Azure Static Web Apps provides HTTPS.
+- **The caller must be audible through a shareable tab or system-audio
+  source.** Chrome/Edge audio sharing varies by selected surface and OS.
+- **Authorization and any required consent** to transcribe the conversation.
 
-       .\setup-captions.ps1
+Start Cricket as normal, without an additional caption setup command:
 
-   This creates an isolated `.venv`, installs the pinned open-source
-   `faster-whisper` dependency, and downloads the base English model to
-   `data/caption-models`. **An internet connection is needed only during
-   initial dependency/model download**, not for transcription after setup.
-   These generated files are excluded from Git.
-
-   If PowerShell blocks the script, run it from this same folder with:
-   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\setup-captions.ps1`.
-   You do not need to change your system-wide PowerShell execution policy.
-4. Start or restart Cricket:
-
-       $env:HOST="127.0.0.1"
-       $env:PORT="3001"
-       npm.cmd start
-
-5. Use the Node-hosted site at `http://127.0.0.1:3001` in Chrome or Edge.
-   Sign in as an employee and open **Caller captions** inside Inbound,
-   Outbound, Office Workflow, or the guided Workflow Runner.
-
-### Use
-
-- Confirm authorization and any recording/transcription consent before each
-  call.
-- Click **Start captions** and select the tab with the caller's voice.
-  Select **Share tab audio** in Chrome/Edge's share dialog. Some Windows/browser
-  setups also permit **Share system audio**.
-- The text appears in approx. 6-second finalized segments, plus local model
-  processing delay. On a slow CPU, expect higher latency; the app may skip
-  segments when the engine cannot keep up.
-- **Stop**, **Copy**, and **Clear** work as before. Closing the caption panel
-  stops capture, and each new call requires fresh consent.
-
-To favor speed over accuracy on a slower Windows PC, choose the smaller
-English model using PowerShell in your Cricket folder:
-
-    $env:CRICKET_CAPTIONS_MODEL="tiny.en"
-    .\setup-captions.ps1
     $env:HOST="127.0.0.1"
     $env:PORT="3001"
     npm.cmd start
 
-The selected model name must also be set each time you launch Cricket, or it
-will default back to `base.en`. The `tiny.en` model downloads separately.
+Open an Inbound, Outbound, Office Workflow, or guided Workflow Runner
+screen. Open **Caller captions**, confirm consent, click **Start captions**,
+and choose the tab playing the caller's voice. Enable **Share tab audio**
+(or **Share system audio** where available).
 
-### Privacy and limitations
+Final captions and interim words appear as the browser recognizes them.
+Use **Stop**, **Copy captions**, or **Clear**. Closing the panel stops
+screen sharing and recognition. Each new session requires fresh consent.
+The browser may occasionally end speech-recognition sessions; Cricket
+restarts recognition using only the same already authorized audio track
+(never the employee microphone). If the browser is unsupported, or
+sharing provides no audio track, captioning stops with a clear message.
 
-The browser does not request microphone access; a screen/video track is
-required by browser sharing APIs but no screen frames are inspected or sent.
-Raw audio segments travel only between the browser and Cricket's own
-authenticated Node.js server, then into a local Python process. The speech
-worker does **not send call audio to Azure or other speech APIs** and neither
-audio nor caption text is automatically persisted by Cricket. A model download
-uses Hugging Face during one-time setup, but not for inference.
+### Privacy, availability, and limitations
 
-This is *near-live*, English-only chunked recognition, not sub-second streaming
-or speaker separation. Text may be inaccurate or lose words at segment
-boundaries. Results depend on the CPU and the source application's audio
-sharing compatibility. Do not transcribe actual patient-identifying data
-without the required organizational, legal, and security approvals. Prefer
-fictional audio when testing.
+**Browser speech recognition is not necessarily offline.** In Chrome and
+some other browsers, shared audio may be transmitted to the **browser
+provider's speech-recognition servers**. Cricket does not control that
+service's data handling, availability, or limits. Check organizational
+policy, permissions, retention requirements and third-party processing
+agreements **before transcribing real customer or patient calls**. Cricket
+itself does not automatically store the captured audio or caption text.
 
-For multiple employees on different machines, a hosted production speech
-service or a properly provisioned shared inference server would be needed.
-This local installer is intended for the Windows development setup.
+The functionality relies on an experimental, browser-dependent
+\`start(audioTrack)\` extension. It is supported in desktop Chromium
+browsers from version 135 and is not broadly cross-browser compatible.
+Cricket intentionally *never* falls back to \`start()\`, which could
+use the employee microphone instead. For initial validation, use
+fictional call audio.
+
+**Azure migration:** The captions script and stylesheet are static web
+assets and need no Node.js transcription route. They can be hosted by
+Azure Static Web Apps with no changes to the caption engine. Other
+parts of Cricket still require its existing authenticated Node.js
+backend and persistent database; deploying the entire application to
+Static Web Apps still requires a separate backend migration.
+
