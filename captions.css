@@ -50,3 +50,6 @@
 
 /* English-only local recognizer information, no language picker. */
 .cc-language-fixed{font-size:11px;font-weight:750;color:#2d6588;background:#eef5fa;border:1px solid #deebf5;padding:9px 11px;border-radius:9px;margin:0;width:100%;box-sizing:border-box}
+
+.cc-interim{margin:4px 10px 9px;padding:8px 10px;background:#edf5fa;border-radius:8px;color:#466d8a;font:italic 11px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
+.cc-interim[hidden]{display:none!important}
