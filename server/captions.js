@@ -1,7 +1,7 @@
 'use strict';
 // Caller-side captions: short, explicitly-authorized PCM audio segments.
 // Never store, log, or return the raw audio or an Azure credential.
-const LANGUAGES=Object.freeze(['en-US','en-GB','es-ES','fr-FR','de-DE','it-IT','pt-PT']);
+const LANGUAGES=Object.freeze(['en-US','en-GB','mk-MK','es-ES','fr-FR','de-DE','it-IT','pt-PT']);
 const MAX_BYTES=400000;
 const MIN_AUDIO_BYTES=16000; // at least 0.5s of 16 kHz, 16-bit, mono
 const requestWindows=new Map();
