@@ -11,5 +11,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Verify local caption worker syntax
+        run: python3 -m py_compile server/local-caption-worker.py
       - name: Run backend tests
         run: npm test
