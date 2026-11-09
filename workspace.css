@@ -145,3 +145,11 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #93c5
 @media(max-width:850px){.app-shell{grid-template-columns:1fr}.sidebar{display:none}.topbar{height:74px}.auth-body{grid-template-columns:1fr}.auth-showcase{display:none}.auth-pane{min-height:100vh;padding:35px 24px}.auth-card .eyebrow{margin-top:40px}}
 @media(max-width:650px){.topbar-actions .identity-text{display:none}.topbar-location{font-size:10px}.workspace-body{padding:26px 18px 55px}.main-head{display:block}.main-head h1{font-size:35px}.hero-action{margin-top:17px}.stats{grid-template-columns:1fr}.division-grid{grid-template-columns:1fr}.section-header{margin-top:30px}.support-grid{grid-template-columns:1fr}.panel{padding:20px}.simple-topbar{padding:16px}.simple-topbar .logo{font-size:17px}.simple-wrap{padding:29px 17px}.identity{display:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* Subtle, responsive enterprise workspace interactions. */
+.app-shell .division,.app-shell .panel,.app-shell .info-box{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.app-shell .division:hover{transform:translateY(-2px);box-shadow:0 10px 25px #183a5914}
+.app-shell a:focus-visible,.app-shell button:focus-visible{outline:3px solid #87b9e2;outline-offset:3px}
+.app-shell .pill{font-variant-numeric:tabular-nums}
+@media(prefers-reduced-motion:reduce){.app-shell .division,.app-shell .panel,.app-shell .info-box{transition:none}.app-shell .division:hover{transform:none}}
