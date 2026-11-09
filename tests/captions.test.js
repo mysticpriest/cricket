@@ -104,7 +104,8 @@ test('Caller captions demand consent, then recognize the selected audio track (n
   });
   const lines=b.elements.get('ccLines').children;
   assert.equal(lines.length,1);
-  assert.equal(lines[0].children[1].textContent,'Hello, I am calling about an appointment.');
+  assert.equal(lines[0].children.length,1);
+  assert.equal(lines[0].children[0].children[1].textContent,'Hello, I am calling about an appointment.');
   await b.click('ccStop');
   assert.equal(b.audioTrack.stopped,true);
   assert.equal(b.videoTrack.stopped,true);
