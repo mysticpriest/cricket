@@ -20,6 +20,7 @@
  const json=(method,body)=>({method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const status=(message,error=false)=>{
    const node=$('opStatus');node.textContent=message;node.classList.toggle('error',error);
+   if(message)window.CricketSound?.play(error?'error':'success');
  };
  const date=stamp=>new Date(stamp).toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
  const local=millis=>{

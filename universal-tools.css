@@ -64,3 +64,18 @@
 .ut-search-item small{font-size:10px;font-weight:500;color:#8295a6}
 @media(max-width:650px){.ut-launch{right:12px;bottom:12px}.ut-panel{padding:15px 13px 0}
 .ut-search-shade{padding-top:10vh}}
+
+/* Compact, per-employee sound preferences — no extra floating controls. */
+.ut-sound-section{background:#f9fbfd}
+.ut-sound-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+.ut-sound-title h3{margin:0}
+.ut-sound-toggle{border:1px solid #c7d8e8;background:#eaf2fa;color:#315e84;
+  border-radius:9px;padding:8px 11px;font-size:11px;font-weight:850;cursor:pointer}
+.ut-sound-toggle[aria-pressed="false"]{background:#f0f2f5;color:#7a8796;border-color:#d7e0e9}
+.ut-sound-toggle:disabled{opacity:.6;cursor:wait}
+.ut-sound-volume-label{font-size:10px;font-weight:800;color:#5e758b;
+  display:flex;align-items:center;justify-content:space-between}
+.ut-sound-percentage{font-size:11px;font-weight:850;color:#3b5871;font-variant-numeric:tabular-nums}
+.ut-sound-slider{width:100%;margin:12px 0 4px;accent-color:#2f6998;cursor:pointer}
+.ut-sound-slider:disabled{opacity:.35;cursor:not-allowed}
+.ut-sound-section .ut-muted{margin:6px 0 0;font-size:10px}

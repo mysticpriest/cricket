@@ -603,9 +603,13 @@
     try{
       const result=await api('/api/workspace/shift',json('POST',{action}));
       data.shift=result.shift;data.serverOffset=Date.now()-result.serverTime;
+      window.CricketSound?.play('shift');
       drawShift();
       byId('wsShiftMessage').textContent='Your shift status has been recorded.';
-    }catch(error){byId('wsShiftMessage').textContent=error.message;drawShift();}
+    }catch(error){
+      window.CricketSound?.play('error');
+      byId('wsShiftMessage').textContent=error.message;drawShift();
+    }
   }
   function drawShift(){
     const shift=data.shift,active=!!shift&&!shift.endedAt;
@@ -712,6 +716,7 @@
         json(id?'PATCH':'POST',value));
       data.notes=result.notes;resetNoteForm();drawNotes();
       byId('wsNoteMessage').textContent='Note saved to your account.';
+      window.CricketSound?.play('success');
     }catch(error){byId('wsNoteMessage').textContent=error.message;}
     finally{b.disabled=false;}
   }
@@ -815,6 +820,7 @@
         json(id?'PATCH':'POST',value));
       data.reminders=result.reminders;resetReminderForm();drawReminders();
       byId('wsReminderMessage').textContent='Reminder saved to your account.';
+      window.CricketSound?.play('success');
     }catch(error){byId('wsReminderMessage').textContent=error.message;}
     finally{b.disabled=false;}
   }
