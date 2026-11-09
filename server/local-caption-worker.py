@@ -55,6 +55,7 @@ def main():
     for line in sys.stdin:
         if len(line) > 650000:
             continue
+        request = {}
         try:
             request = json.loads(line)
             request_id = request.get("id")
