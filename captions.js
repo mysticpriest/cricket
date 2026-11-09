@@ -2,7 +2,8 @@
 /*
  * Caller captions — authorized computer/tab audio only, never microphone input.
  * Audio exists in memory for six seconds at a time and is sent to Cricket's
- * authenticated Azure Speech proxy. Transcript is never saved automatically.
+ * authenticated local Faster-Whisper worker. Nothing is sent to Azure,
+ * and transcripts are never saved automatically.
  */
 (()=>{
   const INTERVAL_SECONDS=6;
@@ -29,7 +30,6 @@
     const live=active;
     $('ccStart').disabled=live||!configured;
     $('ccStop').disabled=!live;
-    $('ccLanguage').disabled=live;
     $('ccConsent').disabled=live;
     $('ccLauncher').classList.toggle('is-listening',live);
     $('ccLive').hidden=!live;
@@ -92,7 +92,6 @@
       return;
     }
     const wave=downsample(samples,rate);
-    const language=$('ccLanguage').value;
     inFlight++;refresh();
     queue=queue.catch(()=>{}).then(async()=>{
       if(run!==session)return;
@@ -101,8 +100,7 @@
           method:'POST',credentials:'same-origin',
           headers:{
             'Content-Type':'audio/wav',
-            'X-Cricket-Captions-Consent':'yes',
-            'X-Cricket-Caption-Language':language
+            'X-Cricket-Captions-Consent':'yes'
           },
           body:wave
         });
@@ -213,19 +211,10 @@
     title.append(el('span','cc-eyebrow','INBOUND / OUTBOUND TOOLS'),el('h2','', 'Live caller captions'));
     const close=button('×','ccClose','cc-close');close.setAttribute('aria-label','Stop capture and close captions');
     head.append(title,close);
-    const intro=el('p','cc-intro','Transcribe computer or browser-tab audio. Microphone audio is not captured. Updates arrive about every 6 seconds.');
+    const intro=el('p','cc-intro','Free English captions from computer or browser-tab audio. Your local Cricket computer handles recognition; no API key or cloud transcription.');
     const how=el('div','cc-help','Select the browser tab or screen playing the caller’s voice. Enable “Share tab audio” or “Share system audio” in the browser dialog.');
     const settings=el('div','cc-settings');
-    const localeLabel=el('label','cc-label','Spoken language');
-    const select=el('select','cc-select');select.id='ccLanguage';
-    const locales=[
-      ['en-US','English (US)'],['en-GB','English (UK)'],['mk-MK','Macedonian'],['es-ES','Spanish'],
-      ['fr-FR','French'],['de-DE','German'],['it-IT','Italian'],['pt-PT','Portuguese']
-    ];
-    for(const [value,name] of locales){
-      const option=el('option','',name);option.value=value;select.append(option);
-    }
-    localeLabel.append(select);settings.append(localeLabel);
+    settings.append(el('p','cc-language-fixed','English only · Faster-Whisper (offline)'));
     const consent=el('label','cc-consent');
     const check=el('input');check.type='checkbox';check.id='ccConsent';
     consent.append(check,el('span','','I confirm I am authorized to capture this call and have obtained any required consent.'));
@@ -235,7 +224,7 @@
     actions.append(startButton,stopButton);
     const state=el('div','cc-state');
     const live=el('span','cc-live','●  CAPTURING AUDIO');live.id='ccLive';live.hidden=true;
-    const msg=el('p','cc-status','Checking transcription service…');msg.id='ccStatus';msg.setAttribute('role','status');
+    const msg=el('p','cc-status','Checking local English captions…');msg.id='ccStatus';msg.setAttribute('role','status');
     state.append(live,msg);
     const captionTitle=el('div','cc-transcript-heading');
     captionTitle.append(el('strong','', 'Conversation captions'),el('span','cc-pending',''));
@@ -248,7 +237,7 @@
     const copy=button('Copy captions','ccCopy','cc-utility');
     const clear=button('Clear','ccClear','cc-utility');
     footer.append(copy,clear);
-    const privacy=el('p','cc-privacy','Audio is sent to your organization’s configured Azure Speech service for transcription. Closing this panel stops capture. Cricket does not save audio or captions to its database. Avoid sensitive personal information until approved.');
+    const privacy=el('p','cc-privacy','Audio is processed on the Cricket server using free local Faster-Whisper. Closing this panel stops capture. No Azure account or transcription API is used. Cricket does not save audio or captions to its database. Do not use patient information until approved.');
     panel.append(head,intro,how,settings,consent,actions,state,captionTitle,transcriptBox,footer,privacy);
     document.body.append(launch,panel);
     const toggle=visible=>{
@@ -275,8 +264,8 @@
         return res.json();})
       .then(data=>{
         configured=Boolean(data.enabled);
-        status(configured?'Ready · Share the caller’s tab or computer audio to begin.':
-          'Azure Speech is not configured. Set the server Speech key and region to enable captions.',
+        status(configured?'Ready · English captions process locally. Share the caller’s tab or computer audio to begin.':
+          'Free English captions need one-time setup. Run .\\setup-captions.ps1 from the Cricket folder, then restart the server.',
           configured?'info':'warning');
         refresh();
       })
