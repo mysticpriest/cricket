@@ -33,6 +33,36 @@ the sidebar. The menu supports keyboard Escape and outside-click dismissal.
 This release is a UI/data-loading reliability improvement, not a change to
 the office permissions, private case records, sticky notes or shift history.
 
+## Employee sound effects (quiet and optional)
+
+Cricket now has small, original **Web Audio** interface cues for button clicks,
+page navigation, saved workflows, successful actions, invalid actions, shift
+changes, and newly arriving office notifications. No external audio files,
+copyrighted soundtracks, or third-party audio services are needed.
+
+**Sound controls:** On any signed-in page, open the floating **Workspace**
+panel and find **Sound effects** under its navigation links. Use **Sound on /
+Muted** and the 0–100% volume slider. A preview plays when enabling sounds
+or changing volume. Settings are saved in additive `users.sound_enabled` and
+`users.sound_volume` columns **per employee account**, not per browser:
+they persist through sign-out, refresh and the next shift. New employees
+default to sound on at a restrained **25% volume**. Mute is always available.
+
+Modern browsers require a **user click or keyboard interaction** before
+allowing sound. Cricket never plays automatically when a page loads; the
+first interaction unlocks its audio engine. The browser or operating-system
+volume controls still apply. Unsupported browsers safely remain silent.
+
+The Notification Center plays a short alert only when it detects a **new
+unread notification after the first inbox load**, not whenever Cricket
+refreshes or replays an old message. Alerts are suppressed while the
+document is hidden and have a brief cooldown to avoid repeated sounds.
+
+Sound does **not** transmit personal data, alter case documentation or
+change the existing five shift statuses. The old `/api/preferences`
+display-settings contract is unchanged; sound settings use a separate
+authenticated `GET/PATCH /api/sound/preferences` API.
+
 ## Cricket Operations Suite — six integrated features
 
 The latest development upgrade introduces office-isolated productivity and

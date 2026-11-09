@@ -107,6 +107,8 @@ for (const [table, column, definition] of [
   ['users', 'ui_density', "TEXT NOT NULL DEFAULT 'comfortable'"],
   ['users', 'text_size', "TEXT NOT NULL DEFAULT 'standard'"],
   ['users', 'reduce_motion', "INTEGER NOT NULL DEFAULT 0"],
+  ['users', 'sound_enabled', "INTEGER NOT NULL DEFAULT 1"],
+  ['users', 'sound_volume', "INTEGER NOT NULL DEFAULT 25"],
   ['cases', 'call_phone', "TEXT"],
   ['cases', 'call_started_at', "TEXT"],
   ['cases', 'deleted_at', 'TEXT'],
@@ -777,6 +779,33 @@ function processAPI(req, res, url) {
       });
     }
   }
+  // Sound is an independent employee preference: the legacy display-settings
+  // endpoint retains its exact payload and remains backward compatible.
+  if (p === '/api/sound/preferences' && req.method === 'GET') {
+    requireRole(user,'agent','qc','admin');
+    const row=db.prepare('SELECT sound_enabled,sound_volume FROM users WHERE id=? AND office_id=?')
+      .get(user.id,user.office.id);
+    if(!row)err(404,'Employee account not found');
+    return send(res,200,{preferences:{
+      enabled:row.sound_enabled===1,volume:row.sound_volume
+    }});
+  }
+  if (p === '/api/sound/preferences' && req.method === 'PATCH') {
+    requireRole(user,'agent','qc','admin');
+    return readBody(req).then(data=>{
+      if(!data||typeof data!=='object'||Array.isArray(data)||
+        Object.keys(data).length!==2||
+        typeof data.enabled!=='boolean'||!Number.isInteger(data.volume)||
+        data.volume<0||data.volume>100)
+        err(400,'Choose a sound setting and volume from 0 to 100');
+      const row=db.prepare('SELECT sound_enabled,sound_volume FROM users WHERE id=? AND office_id=?')
+        .get(user.id,user.office.id);
+      if(!row)err(404,'Employee account not found');
+      db.prepare('UPDATE users SET sound_enabled=?,sound_volume=? WHERE id=? AND office_id=?')
+        .run(data.enabled?1:0,data.volume,user.id,user.office.id);
+      return send(res,200,{preferences:{enabled:data.enabled,volume:data.volume}});
+    });
+  }
   if (p === '/api/preferences' && req.method === 'GET') {
     requireRole(user,'agent','qc','admin');
     return send(res,200,{preferences:user.preferences});
@@ -1054,6 +1083,7 @@ const PAGE_ROLES = new Map([
   ['/ops-pages.js', ['agent','qc','admin']],
   ['/ops-pages.css', ['agent','qc','admin']],
   ['/universal-tools.js', ['agent','qc','admin']],
+  ['/sound-engine.js', ['agent','qc','admin']],
   ['/universal-tools.css', ['agent','qc','admin']]
 ]);
 

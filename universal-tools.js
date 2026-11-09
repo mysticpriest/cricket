@@ -20,6 +20,8 @@
   };
   const json=(method,obj)=>({method,headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
   let user,desk,notifications=[],open=false,selected='desk',searchTimer;
+  let priorNotificationIds=null;
+  const audio=()=>window.CricketSound;
   const allowed=(url)=>{
     if(user?.role==='admin')return true;
     if(['staff.html','operations.html','workflow-builder.html','cases.html'].includes(url))return false;
@@ -53,6 +55,13 @@
     try{
       const [state,notifs]=await Promise.all([api('/api/workspace/me'),api('/api/ops/notifications')]);
       desk=state;notifications=notifs.notifications;
+      // Establish a silent baseline on first load; only newly arriving,
+      // unread notifications make a sound on later polls.
+      const unreadIds=new Set(notifications.filter(x=>!x.readAt).map(x=>x.id));
+      if(priorNotificationIds!==null&&
+        [...unreadIds].some(id=>!priorNotificationIds.has(id))&&!document.hidden)
+        audio()?.play('notification');
+      priorNotificationIds=unreadIds;
       $('utCounter').textContent=String(notifs.unread||'');
       $('utCounter').hidden=!notifs.unread;
       if(open)renderPanel();
@@ -69,6 +78,7 @@
     const navGrid=make('div','ut-nav');
     for(const [label,href] of links)if(allowed(href))navGrid.append(link(label,href));
     nav.append(navGrid);host.append(nav);
+    renderAudioSettings(host);
     const shift=make('section','ut-section');
     shift.append(make('h3','', 'Time clock'));
     const status=desk?.shift?.status||'not_started';
@@ -80,7 +90,9 @@
       const b=button(label,async()=>{
         b.disabled=true;try{
           const result=await api('/api/workspace/shift',json('POST',{action}));
-          desk.shift=result.shift;renderPanel();
+          desk.shift=result.shift;
+          audio()?.play('shift');
+          renderPanel();
         }catch(error){$('utStatus').textContent=error.message; b.disabled=false;}
       });
       const active=!!desk?.shift&&!desk.shift.endedAt;
@@ -134,6 +146,58 @@
       }catch(error){$('utStatus').textContent=error.message;}
     });
     remind.append(form);host.append(remind);
+  }
+  function renderAudioSettings(host){
+    if(!audio())return;
+    const prefs=audio().getPreferences();
+    const section=make('section','ut-section ut-sound-section');
+    const title=make('div','ut-sound-title');
+    title.append(make('h3','', 'Sound effects'));
+    const toggle=button(prefs.enabled?'Sound on':'Muted',async()=>{
+      toggle.disabled=true;
+      try{
+        const newEnabled=!audio().getPreferences().enabled;
+        const saving=audio().save({...audio().getPreferences(),enabled:newEnabled});
+        // Preview within the user gesture; browsers can reject newly created
+        // AudioContexts when playback waits until after a network request.
+        if(newEnabled)audio().preview();
+        const next=await saving;
+        toggle.textContent=next.enabled?'Sound on':'Muted';
+        toggle.setAttribute('aria-pressed',String(next.enabled));
+        slider.disabled=!next.enabled;
+        $('utStatus').textContent='Sound preference saved.';
+      }catch(error){
+        $('utStatus').textContent=error.message;
+      }finally{toggle.disabled=false;}
+    },'ut-sound-toggle');
+    toggle.setAttribute('aria-label','Enable or mute Cricket sound effects');
+    toggle.setAttribute('aria-pressed',String(prefs.enabled));
+    title.append(toggle);
+    const label=make('label','ut-sound-volume-label');
+    label.textContent='Volume';
+    const percentage=make('output','ut-sound-percentage',prefs.volume+'%');
+    const slider=make('input','ut-sound-slider');
+    slider.type='range';slider.min='0';slider.max='100';slider.step='5';
+    slider.value=String(prefs.volume);slider.disabled=!prefs.enabled;
+    slider.setAttribute('aria-label','Cricket sound volume');
+    slider.addEventListener('input',()=>{
+      percentage.textContent=slider.value+'%';
+    });
+    slider.addEventListener('change',async()=>{
+      slider.disabled=true;
+      try{
+        const saving=audio().save({...audio().getPreferences(),volume:Number(slider.value)});
+        audio().preview();
+        await saving;
+        $('utStatus').textContent='Sound volume saved.';
+      }catch(error){$('utStatus').textContent=error.message;}
+      finally{slider.disabled=!audio().getPreferences().enabled;}
+    });
+    label.append(percentage);
+    const help=make('p','ut-muted',
+      'Soft clicks and cues for completed actions, notifications and shifts. Settings follow your employee account.');
+    section.append(title,label,slider,help);
+    host.append(section);
   }
   function renderNotifications(host){
     if(!notifications.length)host.append(make('p','ut-muted','No notifications yet.'));
@@ -218,7 +282,10 @@
       const response=await api('/api/auth/me');
       user=response.user;
       if(!user||!user.office)return;
-      setup();await refresh();
+      setup();
+      try{await audio()?.load();}
+      catch(_){/* Sound fails silent; navigation and work must still load. */}
+      await refresh();
       window.setInterval(()=>{if(!document.hidden)void refresh();},18000);
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
     }catch(_){/* Ignore non-employee/login pages; backend owns access checks. */}
