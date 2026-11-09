@@ -135,8 +135,10 @@ function route(ctx){
   const verb=req.method;
   if(p==='/api/ops/notifications'&&verb==='GET'){
     automaticNotifications(db,user);
-    const list=db.prepare("SELECT id,type,title,body,href,read_at AS readAt,created_at AS createdAt FROM ops_notifications WHERE office_id=? AND user_id=? ORDER BY created_at DESC LIMIT 80").all(office,user.id);
-    send(res,200,{notifications:list,unread:list.filter(x=>!x.readAt).length});return true;
+    const list=db.prepare("SELECT id,type,title,body,href,read_at AS readAt,created_at AS createdAt FROM ops_notifications WHERE office_id=? AND user_id=? ORDER BY created_at DESC,id DESC LIMIT 80").all(office,user.id);
+    // The preview is limited; calculate the count across the full unread inbox.
+    const unread=db.prepare("SELECT COUNT(*) AS total FROM ops_notifications WHERE office_id=? AND user_id=? AND read_at IS NULL").get(office,user.id).total;
+    send(res,200,{notifications:list,unread});return true;
   }
   const seen=p.match(/^\/api\/ops\/notifications\/([a-f0-9-]{36})\/read$/i);
   if(seen&&verb==='POST'){
