@@ -113,7 +113,7 @@
   border-color:var(--cricket-accent-border)!important;
 }
 :root[data-cricket-theme="personal"] .an-stat-card:after,
-:root[data-cricket-theme="personal"] .stat:after {background:radial-gradient(circle at top right,var(--cricket-accent-soft),transparent 78%)!important;}
+:root[data-cricket-theme="personal"] .stat:after {background:var(--cricket-accent-soft)!important;}
 :root[data-cricket-theme="personal"] .an-chart-line.animated {filter:drop-shadow(0 3px 7px var(--cricket-accent-border))!important;}
 :root[data-cricket-theme="personal"] .an-tab.active {background:transparent!important;}
 /* Density is shared across Cricket, not merely in Settings. */
