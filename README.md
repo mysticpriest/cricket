@@ -2,6 +2,76 @@
 
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
+
+## Modular SaaS foundation — development preview
+
+Cricket is moving toward a configurable, multi-client **modular SaaS** product.
+The first milestone is implemented, but **subscription payments are NOT live**.
+All prices in this release are illustrative ideas from the initial business
+plan; no invoices are created, no payments are collected, and modules are
+not automatically suspended based on payment status.
+
+### Current module catalog and proposed pricing
+
+| Module | Draft price (USD/month) | Availability |
+| --- | ---: | --- |
+| Workflow Builder / Inbound & Outbound | $400 per office | Existing |
+| Quality Control | $300 per office | Existing |
+| Staff Accounts | $100 per active seat | Existing core module |
+| Case Management | TBD | Existing |
+| Analytics | TBD | Existing |
+| Team Hub | TBD | Existing basic messaging |
+| Workforce | TBD | Existing |
+| Cricket Connect communications | $250 per office | **Planned** — not implemented |
+
+The separate Cricket Connect product (voice/video/screen sharing) has **not**
+been implemented and cannot be activated by an administrator. Basic Team Hub
+messages are a different currently existing module.
+
+### Platform administration
+
+Sign in with the configured **platform** administrator and open
+\`platform.html\`. Under each office, select **Modules & seats**:
+
+- Enable or disable existing modules for that office only.
+- Set a limit on the number of staff accounts, or leave it unlimited in preview.
+- See a *draft* monthly subtotal of known module prices using current seat count.
+  Any modules with TBD pricing are excluded and labeled.
+- Changes are persisted in the SQLite database and survive restarts.
+- All changes are restricted to the platform administrator, and recorded
+  in the existing platform audit trail.
+
+The existing offices receive all their already implemented modules **enabled**
+by default on upgrade; existing employee accounts and workflows are preserved.
+New offices also begin with enabled demo/preview modules. Turning a module off
+blocks its authenticated backend API routes and protected page files, rather
+than merely hiding a link in the dashboard.
+
+Client office administrators can see their own enabled modules and seat
+allocation from **My modules** in the management section of the dashboard,
+or directly at \`subscription.html\`. They cannot change subscriptions,
+see another office's settings, or enable planned modules.
+
+### Separation and deployment plans
+
+Module entitlements live in \`server/modules.js\` and are scoped by
+the existing authenticated \`office_id\`. The UI reads
+\`GET /api/modules/me\`, while platform management uses
+\`GET /api/platform/modules\` and the platform-only office module/seat APIs.
+All update requests are authenticated and office-scoped on the server.
+
+The current platform is a **development preview**, not a commercial billing
+system. The next phases include a payment provider appropriate to the
+company's jurisdiction, real invoices and subscription lifecycle handling,
+versioned entitlements, tenant-aware identity and provisioning, per-industry
+templates, production-grade persistent storage and disaster recovery, and
+compliance/security evaluation before handling regulated information.
+
+**Back up the full \`data\` directory before replacing the program.** Do not
+overwrite it with files from a ZIP update. A new version makes additive
+database migrations and keeps existing tenant features enabled.
+
+
 ## Reliable dashboard loading and portrait display support
 
 **Personalized workspace initialization** is explicitly awaited before Cricket
