@@ -2,8 +2,8 @@
 // Cricket modular SaaS foundation. Catalog prices are DRAFT USD/month,
 // not charges or subscriptions. No payment processor is connected.
 const CATALOG=Object.freeze([
-  {key:'workflow_builder',name:'Workflow Builder',description:'Inbound, outbound and guided workflows',status:'available',priceUsd:400,unit:'office'},
-  {key:'quality_control',name:'Quality Control',description:'Review queues, scorecards and coaching',status:'available',priceUsd:300,unit:'office'},
+  {key:'workflow_builder',name:'Workflow Builder',description:'Inbound, outbound and guided workflows (requires Case Management)',status:'available',priceUsd:400,unit:'office'},
+  {key:'quality_control',name:'Quality Control',description:'Review queues, scorecards and coaching (requires Case Management)',status:'available',priceUsd:300,unit:'office'},
   {key:'case_management',name:'Case Management',description:'Office-scoped case records and archive',status:'available',priceUsd:null,unit:'office'},
   {key:'analytics',name:'Analytics',description:'Team and QC performance reports',status:'available',priceUsd:null,unit:'office'},
   {key:'team_hub',name:'Team Hub',description:'Existing announcements and basic colleague messages',status:'available',priceUsd:null,unit:'office'},
@@ -122,6 +122,14 @@ async function route({p,req,res,user,db,send,readBody}){
     const body=await readBody(req);
     if(!body||typeof body.enabled!=='boolean'||Object.keys(body).length!==1)
       fail(400,'Set enabled to true or false');
+    // Keep subscription combinations functional: core workflow and QC operations
+    // rely on the case store for completed records and review history.
+    if(body.enabled&&['workflow_builder','quality_control'].includes(key)&&
+       !has(db,officeId,'case_management'))
+      fail(409,'Enable Case Management before enabling '+module.name);
+    if(!body.enabled&&key==='case_management'&&
+       (has(db,officeId,'workflow_builder')||has(db,officeId,'quality_control')))
+      fail(409,'Disable Workflow Builder and Quality Control before disabling Case Management');
     const updated=db.prepare('UPDATE office_modules SET enabled=?,updated_at=? WHERE office_id=? AND module_key=?')
       .run(body.enabled?1:0,new Date().toISOString(),officeId,key);
     if(!updated.changes)fail(404,'Module not found for office');
