@@ -1,0 +1,27 @@
+body{margin:0;background:#f5f8fc;color:#253a50;font-family:system-ui,sans-serif}
+.sub-topbar{display:flex;justify-content:space-between;align-items:center;padding:17px clamp(18px,5vw,65px);border-bottom:1px solid #e2ebf2;background:#fff}
+.sub-layout{max-width:1100px;margin:0 auto;padding:45px 24px 80px}
+.sub-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:27px}
+.sub-heading h1{font:750 clamp(29px,4vw,45px)/1.2 system-ui;letter-spacing:-1.5px;margin:12px 0}
+.sub-heading p{color:#6b8092;font-size:13px;line-height:1.6;margin:0}
+.sub-tag{padding:9px 12px;border-radius:9px;background:#edf4f9;color:#3b6d91;font-size:11px;font-weight:800}
+.sub-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 32px}
+.sub-summary>div{display:grid;gap:8px;border:1px solid #e0eaf1;background:#fff;border-radius:13px;padding:21px}
+.sub-summary span{color:#718599;font-size:11px;font-weight:750}
+.sub-summary strong{font-size:22px;color:#214865}
+.sub-section-title{font-size:17px;margin:0 0 14px}
+.sub-modules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sub-module{display:flex;align-items:flex-start;gap:13px;padding:19px;background:#fff;border:1px solid #e1eaf1;border-radius:13px;min-width:0}
+.sub-icon{display:grid;place-items:center;flex:none;width:33px;height:33px;border-radius:9px;background:#edf5fb;color:#326d9b;font-weight:850}
+.sub-module-body{flex:1;min-width:0}
+.sub-module h3{font-size:14px;margin:0 0 6px}
+.sub-module p{font-size:11px;line-height:1.6;color:#74899c;margin:0}
+.sub-module-meta{display:grid;gap:7px;justify-items:end;flex:none;max-width:120px;font-size:10px;color:#8497a6;text-align:right}
+.sub-module-meta strong{font-size:10px;color:#46718e}
+.sub-module-meta .sub-active{color:#237450}
+.sub-bottom{margin-top:32px;padding:22px 24px;background:#edf4f9;border:1px solid #dae8f2;border-radius:13px}
+.sub-bottom h2{font-size:16px;margin:0 0 7px}
+.sub-bottom p{font-size:12px;line-height:1.7;color:#5d7488;margin:0}
+.sub-bottom .sub-fine{font-size:10px;margin-top:9px;color:#8698a7}
+.sub-error{font-size:12px;color:#ae3e43}
+@media(max-width:730px){.sub-summary,.sub-modules{grid-template-columns:1fr}.sub-layout{padding:28px 16px}.sub-module-meta{max-width:100px}}
