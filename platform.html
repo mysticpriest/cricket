@@ -9,10 +9,23 @@
 </head><body>
 <header class="platform-bar"><a class="logo" href="platform.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a><span class="pill">PLATFORM ADMIN</span><button id="platformLogout" class="button button-outline small-button" type="button">Sign out</button></header>
 <main class="platform-content">
-  <div class="platform-header"><div><span class="eyebrow">CRICKET PLATFORM / ADMINISTRATION</span><h1>Office management<span class="logo-period">.</span></h1><p>Create independent client offices, issue keys, and configure their starter workflows.</p></div><span class="pill"><span class="dot"></span>Multi-office preview</span></div>
+  <div class="platform-header">
+    <div>
+      <span class="eyebrow">CRICKET / PLATFORM CONTROL CENTER</span>
+      <h1>Client portfolio<span class="logo-period">.</span></h1>
+      <p>Manage workspaces, subscriptions, access, and branding from one secure place.</p>
+    </div>
+    <span class="pill"><span class="dot"></span>Development environment</span>
+  </div>
+  <section class="platform-overview" aria-label="Platform summary">
+    <article class="platform-overview-stat"><span>Client organizations</span><strong id="platformTotalClients">—</strong><small>Provisioned workspaces</small></article>
+    <article class="platform-overview-stat"><span>Active clients</span><strong id="platformActiveClients">—</strong><small>Available to employees</small></article>
+    <article class="platform-overview-stat"><span>Staff accounts</span><strong id="platformStaffTotal">—</strong><small>Across all clients</small></article>
+    <article class="platform-overview-stat"><span>Documented cases</span><strong id="platformCasesTotal">—</strong><small>Aggregate count only</small></article>
+  </section>
   <section class="platform-grid">
     <div class="platform-card">
-      <div class="platform-card-heading"><h2>Add a new office</h2><p>Create the workspace and its first local office administrator.</p>
+      <div class="platform-card-heading"><h2>Create a client workspace</h2><p>Provision an organization, invite its first administrator, and configure the starting workflows.</p>
       <button id="platformLoadDemo" class="platform-demo-template" type="button">Use starter office template <span aria-hidden="true">→</span></button>
       </div>
       <form id="platformCreateForm" class="platform-form">
@@ -34,7 +47,7 @@
       </div>
     </div>
     <div class="platform-card">
-      <div class="platform-card-heading"><h2>Client offices</h2><p>Each office has isolated employees, cases, reviews and analytics.</p></div>
+      <div class="platform-card-heading"><h2>Organizations</h2><p>Manage clients individually. Use Modules &amp; seats to configure each subscription.</p></div>
       <div id="platformOfficeList" class="platform-list"><p>Loading offices…</p></div>
       <p id="platformListStatus" class="platform-status" role="status"></p>
     </div>
