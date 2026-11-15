@@ -11,7 +11,7 @@ const pages=[
  'index.html','login.html','office.html','platform.html','subscription.html',
  'inbound.html','outbound.html','qc.html','analytics.html','cases.html','staff.html',
  'operations.html','office-workflow.html','team-hub.html','workforce.html',
- 'workflow-builder.html','workflow-runner.html'
+ 'workflow-builder.html','workflow-runner.html','connect.html'
 ];
 
 test('Fluent design system is applied to every first-class Cricket screen',()=>{
