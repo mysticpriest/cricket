@@ -1134,7 +1134,21 @@ function denyWorkspaceAccess(req, res, decoded) {
         'X-Content-Type-Options': 'nosniff'
       });
       if (req.method === 'HEAD') res.end();
-      else res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Access restricted · Cricket</title><body style="font:16px system-ui;padding:12vh 8vw;background:#f7f9fc;color:#14223d"><p style="color:#2563eb;font-weight:700">CRICKET · ACCESS CONTROL</p><h1>This workspace is restricted.</h1><p>Your account does not have the required role for this division.</p><p><a href="/index.html">Return to your dashboard</a></p></body></html>');
+      else {
+        const platformPage=decoded==='/platform.html';
+        const subscriptionPage=decoded==='/subscription.html';
+        const title=platformPage?'Platform Administrator account required':
+          subscriptionPage?'Office Administrator account required':'This workspace is restricted';
+        const detail=platformPage?
+          'You are signed in to a regular office account. To manage all clients and their module subscriptions, switch accounts using your separate Platform Office Key and Platform Administrator credentials.':
+          subscriptionPage?
+          'Only an Office Administrator can view their company\'s enabled modules and staff-seat allocation. Platform Administrators manage those settings from the Platform Console.':
+          'Your account does not have the required role for this division.';
+        const link=platformPage?'/office.html':subscriptionPage&&user.role==='platform_admin'?'/platform.html':'/index.html';
+        const linkText=platformPage?'Switch to Platform Administrator login':
+          subscriptionPage&&user.role==='platform_admin'?'Open Platform Console':'Return to dashboard';
+        res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Access restricted · Cricket</title><body style="font:16px/1.6 system-ui;padding:10vh 8vw;background:#f7f9fc;color:#14223d;max-width:760px"><p style="color:#2563eb;font-weight:700">CRICKET · ACCESS CONTROL</p><h1>'+title+'</h1><p>'+detail+'</p><p><a style="color:#1762a0;font-weight:700" href="'+link+'">'+linkText+'</a></p></body></html>');
+      }
     } else send(res, 403, { error: 'Insufficient permission' });
     return true;
   }
