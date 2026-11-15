@@ -1263,4 +1263,9 @@ const server = http.createServer(async (req, res) => {
   }
 });
 server.listen(PORT, HOST, () => process.stdout.write(`Cricket QC available at http://${HOST}:${PORT}\n`));
-process.on('SIGTERM', () => server.close(() => { db.close(); process.exit(0); }));
+process.on('SIGTERM', () => {
+  // Active EventSource connections would otherwise prevent the HTTP server
+  // from closing during a service restart or Azure container deployment.
+  connect.closeAll();
+  server.close(() => { db.close(); process.exit(0); });
+});
