@@ -54,6 +54,100 @@ performance validation, and compliant handling of any sensitive information.
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
 
+
+## Cricket Connect — optional communication module (v1)
+
+Cricket Connect is an independently organized browser UI and backend component,
+available to selected offices through the existing SaaS subscription controls.
+It does not change or replace Cricket's existing Team Hub.
+
+### What is included
+
+- **Private 1-to-1 text messaging** between staff in the same office. Messages
+  are stored in the office-scoped \`connect_messages\` SQLite table; the
+  existing Team Hub database is untouched.
+- **Live online status and message notifications** using authenticated
+  **Server-Sent Events (SSE)**. The server maintains an active stream per open
+  Connect browser tab; events are never globally broadcast to other offices.
+- **1-to-1 voice and video calls** using native browser
+  \`RTCPeerConnection\` with signed-in, office-authorized signaling. The
+  recipient can accept or decline; either participant can hang up.
+- **Screen sharing** during voice or video calls via a browser permission
+  prompt. The screen stream replaces the outgoing video track without a new
+  call or browser plugin.
+- **Microphone mute, camera toggle, call rejection and end-call controls.**
+  Media and WebRTC session descriptions are never written to Cricket's
+  database. The browser's WebRTC transport encrypts the call media.
+
+**Not yet included:** Group chats, group meetings, persistent call history,
+attachments, push notifications while Connect is closed, recording, external
+guest calls, dedicated TURN hosting, enterprise SSO for standalone Connect,
+formal healthcare compliance, or production billing. These are future phases.
+
+### Enable a client
+
+1. Sign in with your **Platform Administrator** account at
+   \`platform.html\`. This is distinct from an office administrator.
+2. Under the requested client's office, click **Modules & seats**.
+3. Enable **Cricket Connect**. The \`$250/month\` label is only the draft
+   catalog price; **no payment or subscription charge occurs**.
+4. Sign in as two employees of that office in two different browser profiles
+   or devices. They can open **Connect** from the dashboard or go directly
+   to \`connect.html\`.
+5. Select a colleague, write a message, or start a voice/video call. The
+   recipient must have Connect open to see the incoming call promptly.
+6. When a call is active, select **Share screen** to choose a display or tab.
+
+All employee roles (agent, QC reviewer and office administrator) can use
+Connect **only for their own office** when subscribed. Disabled offices are
+blocked from the Connect page, scripts, styles, and every Connect API; even an
+active SSE stream is closed when the module is switched off. The module
+starts **disabled by default** for every office.
+
+### Starting locally
+
+No new Node.js package, Azure Speech key, Python installation or external
+communication API key is required for this initial development version:
+
+    $env:HOST="127.0.0.1"
+    $env:PORT="3001"
+    npm.cmd start
+
+For text-only testing across a local network, you can use
+\`$env:HOST="0.0.0.0"\` and visit the computer's private IP from another
+machine. However, **camera, microphone and screen capture require a secure
+context (HTTPS or localhost)** in modern browsers. Visiting an HTTP LAN IP
+usually will *not* allow calling even though messaging works. For two-device
+video testing, configure HTTPS (with a trusted development certificate or a
+proper HTTPS deployment).
+
+Calls use the public, free Google STUN server by default:
+\`stun:stun.l.google.com:19302\`. STUN does not carry the audio/video media,
+but a TURN relay is required for some networks to connect. You can configure
+alternative STUN/TURN servers using the JSON environment setting:
+
+    $env:CRICKET_CONNECT_ICE_SERVERS='[{"urls":"stun:stun.example.net:3478"},{"urls":"turns:turn.example.net:5349","username":"YOUR_USER","credential":"YOUR_PASSWORD"}]'
+
+Use your own real TURN service credentials; this setting is only an example.
+TURN traffic and server hosting may incur costs. Treat TURN credentials as
+secrets in environment configuration, not in the repository.
+
+### Production and Azure migration
+
+Connect's interface is framework-free static HTML, CSS and JavaScript and can
+be hosted on **Azure Static Web Apps**. However, the **authenticated Node.js
+Connect API and SSE/signaling backend must run on a separately hosted,
+long-lived service**, such as Azure App Service or Azure Container Apps.
+Static Web Apps alone cannot operate this real-time backend.
+
+The current message database and in-process SSE/call maps assume **one Node
+server instance with persistent storage**. For an actual multitenant SaaS
+launch, move to a scalable managed database, Redis or another distributed
+event bus for presence and signaling, a reliable TURN deployment, TLS,
+production monitoring, backups, and security/compliance review. This is a
+development preview, **not approved for patient data or sensitive recordings**.
+
+
 ## Modular SaaS foundation — development preview
 
 Cricket is moving toward a configurable, multi-client **modular SaaS** product.
@@ -73,11 +167,12 @@ not automatically suspended based on payment status.
 | Analytics | TBD | Existing |
 | Team Hub | TBD | Existing basic messaging |
 | Workforce | TBD | Existing |
-| Cricket Connect communications | $250 per office | **Planned** — not implemented |
+| Cricket Connect communications | $250 per office | **Development preview** — opt-in |
 
-The separate Cricket Connect product (voice/video/screen sharing) has **not**
-been implemented and cannot be activated by an administrator. Basic Team Hub
-messages are a different currently existing module.
+Cricket Connect now has an **opt-in development preview**. Its messages and
+calling system are separate from basic Team Hub announcements and messaging.
+Connect stays **disabled for all existing and new offices** until a platform
+administrator activates it under **Modules & seats**.
 
 ### Platform administration
 
