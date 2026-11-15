@@ -418,7 +418,7 @@ function processAPI(req, res, url) {
   // Polling/monitoring endpoints are read-only and must not extend idle sessions.
   const touch=req.method !== 'GET'&&p!=='/api/presence';
   const user = currentUser(req,touch)||currentPlatform(req,touch);
-  if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
+  if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: SECURE?'production':'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
   // Tenant entitlements are enforced before any module API is invoked.
   if(p==='/api/modules/me'||p==='/api/platform/modules'||
