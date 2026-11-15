@@ -1,0 +1,56 @@
+# One-host, single-process demonstration staging. Fictional data only.
+# Requires DNS, Docker Compose, and a PRIVATE .env in the repository root.
+# Caddy issues public HTTPS certificates automatically.
+# Do NOT scale Cricket above one replica or put SQLite on Azure Files/NFS.
+services:
+  cricket:
+    build:
+      context: .
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3001
+      PUBLIC_ORIGIN: https://${CRICKET_DOMAIN:?Set_CRICKET_DOMAIN_in_.env}
+      CRICKET_DATA_DIR: /var/lib/cricket
+      CRICKET_ADMIN_NAME: ${CRICKET_ADMIN_NAME:-Demo Administrator}
+      CRICKET_ADMIN_EMAIL: ${CRICKET_ADMIN_EMAIL:?Set_CRICKET_ADMIN_EMAIL_in_.env}
+      CRICKET_ADMIN_PASSWORD: ${CRICKET_ADMIN_PASSWORD:?Set_CRICKET_ADMIN_PASSWORD_in_.env}
+      CRICKET_NEUTRAUMA_OFFICE_KEY: ${CRICKET_NEUTRAUMA_OFFICE_KEY:?Set_CRICKET_NEUTRAUMA_OFFICE_KEY_in_.env}
+      CRICKET_PLATFORM_ADMIN_EMAIL: ${CRICKET_PLATFORM_ADMIN_EMAIL:?Set_CRICKET_PLATFORM_ADMIN_EMAIL_in_.env}
+      CRICKET_PLATFORM_ADMIN_PASSWORD: ${CRICKET_PLATFORM_ADMIN_PASSWORD:?Set_CRICKET_PLATFORM_ADMIN_PASSWORD_in_.env}
+      CRICKET_PLATFORM_OFFICE_KEY: ${CRICKET_PLATFORM_OFFICE_KEY:?Set_CRICKET_PLATFORM_OFFICE_KEY_in_.env}
+    expose:
+      - "3001"
+    volumes:
+      - cricket_data:/var/lib/cricket
+    healthcheck:
+      test: ["CMD","node","-e","fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 6s
+      start_period: 35s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  proxy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      CRICKET_DOMAIN: ${CRICKET_DOMAIN:?Set_CRICKET_DOMAIN_in_.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      cricket:
+        condition: service_healthy
+volumes:
+  cricket_data:
+  caddy_data:
+  caddy_config:
