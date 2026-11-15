@@ -1,2 +1,5 @@
 /* Unsubscribed module links are hidden; APIs and pages also enforce entitlements. */
 a.module-unavailable{display:none!important}
+
+/* New products are opt-in: never flash their links before entitlement checks. */
+#appSidebar a[data-connect-link]:not(.connect-entitled){display:none!important}
