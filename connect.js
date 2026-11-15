@@ -186,13 +186,14 @@
    const remote=state.remoteStream;
    if(!remote.getTracks().some(t=>t.id===event.track.id))remote.addTrack(event.track);
    const viewer=$('coRemote');viewer.srcObject=remote;
-   viewer.hidden=!remote.getVideoTracks().length;
-   $('coVideoEmpty').hidden=!viewer.hidden;
-   viewer.play().catch(()=>{toast('Click the remote video if your browser blocks automatic playback.');});
-   event.track.onunmute=()=>{
+   const updateVideo=()=>{
     viewer.hidden=!remote.getVideoTracks().some(t=>t.readyState==='live'&&!t.muted);
     $('coVideoEmpty').hidden=!viewer.hidden;
    };
+   updateVideo();
+   viewer.play().catch(()=>{toast('If you cannot hear the call, check browser autoplay permissions.');});
+   event.track.onunmute=updateVideo;
+   event.track.onmute=updateVideo;
   };
   pc.onconnectionstatechange=()=>{
    if(!state.call||state.call.id!==current.id)return;
