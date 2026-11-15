@@ -308,6 +308,13 @@
     else if(packet.from!==state.self.id)toast('New message from '+peerName(packet.from));
    }else if(packet.type==='call')void callEvent(packet);
    else if(packet.type==='signal')void onSignal(packet);
+   else if(packet.type==='disabled'){
+    clearCall();state.stream?.close();
+    $('coMessage').disabled=true;$('coSend').disabled=true;
+    $('coAudio').disabled=true;$('coVideo').disabled=true;
+    $('coConnection').textContent='Connect disabled for this organization';
+    toast('The organization administrator disabled Cricket Connect.',true);
+   }
   });
  }
  async function toggleMic(){
