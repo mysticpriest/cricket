@@ -96,12 +96,16 @@ test('Connect: tenant isolation, optional subscription, private messages and liv
   assert.equal(me.body.modules.find(x=>x.key==='communications').enabled,false);
   assert.equal((await http(base,'/connect.html','GET',undefined,admin)).status,403);
   assert.equal((await http(base,'/connect.js','GET',undefined,admin)).status,403);
+  assert.equal((await http(base,'/connect-alerts.js','GET',undefined,admin)).status,403);
+  assert.equal((await http(base,'/connect-alerts.css','GET',undefined,admin)).status,403);
   assert.equal((await http(base,'/api/connect/bootstrap','GET',undefined,admin)).status,403);
   assert.equal((await http(base,'/api/connect/bootstrap','GET',undefined,platform)).status,403);
   const enabled=await http(base,'/api/platform/offices/'+office+'/modules/communications',
    'PATCH',{enabled:true},platform);
   assert.equal(enabled.status,200);
   assert.equal((await http(base,'/connect.html','GET',undefined,admin)).status,200);
+  assert.equal((await http(base,'/connect-alerts.js','GET',undefined,admin)).status,200);
+  assert.equal((await http(base,'/connect-alerts.css','GET',undefined,admin)).status,200);
   const userCreated=await http(base,'/api/users','POST',{
    displayName:'Connect Agent',email:'connect-agent@example.test',password:'connect-agent-password-2026',role:'agent'
   },admin);
@@ -183,6 +187,7 @@ test('Connect: tenant isolation, optional subscription, private messages and liv
   assert.equal(disabled.status,200);
   assert.equal((await http(base,'/api/connect/messages?peer='+agentId,'GET',undefined,admin)).status,403);
   assert.equal((await http(base,'/connect.html','GET',undefined,agent)).status,403);
+  assert.equal((await http(base,'/connect-alerts.js','GET',undefined,agent)).status,403);
  }catch(e){e.message+=' | server stderr: '+stderr.slice(0,800);throw e;}
  finally{
   stream?.close();child.kill('SIGTERM');
