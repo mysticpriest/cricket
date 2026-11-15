@@ -62,8 +62,20 @@ async function displayOffices(){
         await displayOffices();
       }catch(error){announce('platformListStatus',error.message);}
     });
-    actions.append(rotate,activate);
-    panel.append(title,desc,actions);
+    const manage=make('button','Modules & seats');manage.type='button';
+    manage.setAttribute('aria-expanded','false');
+    const modulePanel=make('section');modulePanel.className='platform-subscription';modulePanel.hidden=true;
+    manage.addEventListener('click',async()=>{
+      if(!modulePanel.hidden){modulePanel.hidden=true;manage.setAttribute('aria-expanded','false');return;}
+      modulePanel.hidden=false;manage.setAttribute('aria-expanded','true');
+      modulePanel.replaceChildren(make('p','Loading module subscriptions…'));
+      try{
+        const data=await api('/api/platform/offices/'+office.id+'/modules');
+        renderModules(office,modulePanel,data);
+      }catch(error){modulePanel.replaceChildren(make('p','Could not load modules: '+error.message));}
+    });
+    actions.append(rotate,activate,manage);
+    panel.append(title,desc,actions,modulePanel);
     if(office.workflowTemplate==='starter'){
       const editor=make('div');editor.className='platform-office-editor';
       const label=make('label','Starter routes (Name | Instructions)');const text=make('textarea');
@@ -108,6 +120,75 @@ async function displayOffices(){
     list.append(panel);
   }
 }
+
+function money(usd){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(usd);}
+function renderModules(office,container,data){
+  container.replaceChildren();
+  const heading=make('h3','Module subscriptions');heading.className='platform-subscription-title';
+  container.append(heading);
+  const explanatory=make('p','Configure this office’s modules. Pricing is a draft preview; no payments are collected.');
+  explanatory.className='platform-subscription-help';container.append(explanatory);
+  const list=make('div');list.className='platform-module-list';
+  for(const mod of data.modules){
+    const item=make('label');item.className='platform-module-row';
+    const check=make('input');check.type='checkbox';check.checked=mod.enabled;
+    check.disabled=mod.status!=='available';
+    check.setAttribute('aria-label',mod.name+' for '+office.name);
+    const details=make('span');details.className='platform-module-detail';
+    const label=make('strong',mod.name);
+    const description=make('small',mod.description);
+    const badge=make('small',mod.status==='planned'?'Coming soon':
+      mod.status==='core'?'Core module':mod.priceUsd==null?'Pricing TBD':
+      money(mod.priceUsd)+' / month');
+    badge.className='platform-module-price';
+    details.append(label,description);
+    item.append(check,details,badge);
+    list.append(item);
+    if(mod.status==='available'){
+      check.addEventListener('change',async()=>{
+        check.disabled=true;
+        try{
+          const updated=await api('/api/platform/offices/'+office.id+'/modules/'+mod.key,
+            payload('PATCH',{enabled:check.checked}));
+          renderModules(office,container,updated);
+          announce('platformListStatus',mod.name+(check.checked?' enabled':' disabled')+' for '+office.name+'.');
+        }catch(error){
+          check.checked=!check.checked;check.disabled=false;
+          announce('platformListStatus',error.message);
+        }
+      });
+    }
+  }
+  container.append(list);
+  const seatRow=make('div');seatRow.className='platform-seat-row';
+  const limits=make('div');limits.className='platform-seat-info';
+  limits.append(make('strong','Staff account limit'),
+    make('small',data.seats.used+' accounts currently used · core access'));
+  const control=make('input');control.type='number';control.min='1';control.max='100000';
+  control.placeholder='Unlimited';control.value=data.seats.limit??'';
+  control.setAttribute('aria-label','Staff seat limit for '+office.name);
+  const save=make('button','Save limit');save.type='button';
+  save.addEventListener('click',async()=>{
+    save.disabled=true;
+    const raw=control.value.trim(),limit=raw===''?null:Number(raw);
+    try{
+      const updated=await api('/api/platform/offices/'+office.id+'/seats',payload('PATCH',{limit}));
+      renderModules(office,container,updated);
+      announce('platformListStatus','Seat limit saved for '+office.name+'.');
+    }catch(error){announce('platformListStatus',error.message);save.disabled=false;}
+  });
+  seatRow.append(limits,control,save);
+  const helper=make('small','Leave empty for unlimited during the current preview. The existing accounts are never removed when a limit changes.');
+  helper.className='platform-subscription-help';
+  container.append(seatRow,helper);
+  const total=make('p',
+    'Draft known-price subtotal: '+money(data.pricing.knownSubtotalUsd)+'/month'
+    +(data.pricing.unpricedModules.length?' · Additional module prices TBD':''));
+  total.className='platform-price-total';container.append(total);
+  const warning=make('p','PREVIEW ONLY · Not an invoice or an active paid subscription.');
+  warning.className='platform-subscription-disclaimer';container.append(warning);
+}
+
 function showKey(key){
   lastKey=key;byId('platformNewKey').hidden=false;byId('platformKeyValue').textContent=key;
   byId('platformNewKey').scrollIntoView({block:'nearest',behavior:'smooth'});
