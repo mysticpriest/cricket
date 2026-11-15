@@ -23,9 +23,14 @@
      $('subOfficeName').textContent=data.office.name+' · Subscription and enabled features';
      $('subSeatsUsed').textContent=String(data.seats.used);
      $('subSeatsLimit').textContent=data.seats.limit==null?'Unlimited':String(data.seats.limit);
+     $('subEnabledCount').textContent=String(data.modules.filter(mod=>mod.enabled).length);
+     $('subDraftSubtotal').textContent=new Intl.NumberFormat('en-US',{
+       style:'currency',currency:'USD',maximumFractionDigits:0
+     }).format(data.pricing.knownSubtotalUsd);
      const list=$('subModules');list.replaceChildren();
      for(const module of data.modules){
        const card=create('article',undefined,'sub-module');
+       card.dataset.moduleStatus=module.status==='planned'?'planned':module.enabled?'enabled':'disabled';
        const icon=create('span',module.enabled?'✓':module.status==='planned'?'◷':'—','sub-icon');
        icon.setAttribute('aria-hidden','true');
        const description=create('div',undefined,'sub-module-body');
@@ -38,6 +43,15 @@
          (module.unit==='seat'?' per seat / month':' / month');
        meta.append(flag,create('span',draft));
        card.append(icon,description,meta);list.append(card);
+     }
+     for(const control of document.querySelectorAll('[data-module-filter]')){
+       control.addEventListener('click',()=>{
+         const selected=control.dataset.moduleFilter;
+         for(const tab of document.querySelectorAll('[data-module-filter]'))
+           tab.setAttribute('aria-pressed',String(tab===control));
+         for(const card of list.querySelectorAll('.sub-module'))
+           card.hidden=selected!=='all'&&card.dataset.moduleStatus!==selected;
+       });
      }
    }catch(error){$('subModules').replaceChildren();$('subError').textContent=error.message;}
  }
