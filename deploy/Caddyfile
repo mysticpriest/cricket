@@ -1,0 +1,13 @@
+# Domain supplied through CRICKET_DOMAIN. Never expose Node port directly.
+{$CRICKET_DOMAIN} {
+    encode zstd gzip
+    # SSE and WebRTC signaling need immediate event flushing.
+    reverse_proxy cricket:3001 {
+        flush_interval -1
+    }
+    header {
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000"
+    }
+}
