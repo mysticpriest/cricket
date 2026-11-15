@@ -6,6 +6,7 @@
     'inbound.html':'workflow_builder','outbound.html':'workflow_builder',
     'office-workflow.html':'workflow_builder','workflow-builder.html':'workflow_builder',
     'workflow-runner.html':'workflow_builder','team-hub.html':'team_hub',
+    'connect.html':'communications',
     'workforce.html':'workforce','operations.html':'workforce'
   };
   function apply(root,availability){
@@ -14,6 +15,8 @@
       const uri=link.getAttribute('href')?.split('?')[0]?.split('#')[0]?.replace(/^\.\//,'')||'';
       const module=routeModule[uri];
       if(module)link.classList.toggle('module-unavailable',availability[module]===false);
+      if(link.hasAttribute('data-connect-link'))
+        link.classList.toggle('connect-entitled',availability.communications===true);
     }
   }
   async function init(){
