@@ -37,12 +37,23 @@ byId('platformLoadDemo').addEventListener('click',()=>{
 });
 async function displayOffices(){
   const {offices}=await api('/api/platform/offices');
+  // Aggregate counts only: platform administration never reads private cases.
+  const summary={
+    platformTotalClients:offices.length,
+    platformActiveClients:offices.filter(office=>office.active).length,
+    platformStaffTotal:offices.reduce((sum,office)=>sum+Number(office.employees||0),0),
+    platformCasesTotal:offices.reduce((sum,office)=>sum+Number(office.cases||0),0)
+  };
+  for(const [id,value] of Object.entries(summary)){
+    const node=byId(id);
+    if(node)node.textContent=value.toLocaleString('en-US');
+  }
   const list=byId('platformOfficeList');list.replaceChildren();
   for(const office of offices){
-    const panel=make('article');panel.className='platform-office-card';
+    const panel=make('article');panel.className='platform-office-card';panel.dataset.officeId=String(office.id);
     const title=make('div');title.className='platform-office-title';
     title.append(make('strong',office.name));
-    const status=make('small',office.active?'ACTIVE':'INACTIVE');title.append(status);
+    const status=make('small',office.active?'Active':'Inactive');status.className=office.active?'platform-office-active':'platform-office-inactive';title.append(status);
     const desc=make('div',office.workflowTemplate+' workflow · '+office.employees+' employees · '+office.cases+' saved cases · '+office.routes.length+' routes');
     desc.className='platform-office-meta';
     const actions=make('div');actions.className='platform-office-actions';
