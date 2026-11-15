@@ -568,7 +568,7 @@
     }
     host.append(installed);
     const foot=make('div','ws-library-footer');
-    foot.append(make('p','', 'Use each card’s nine-dot grip to drag it, or its brush to choose a gradient. Colors, layout and block sizes stay saved for your next shift.'));
+    foot.append(make('p','', 'Use each card’s nine-dot grip to drag it, or its brush to choose a solid accent color. Colors, layout and block sizes stay saved for your next shift.'));
     foot.append(button('Reset to Workspace Tabs only','ws-library-reset',()=>{
       if(!confirm('Reset your workspace to only Workspace Tabs? Your saved notes, reminders, shift records and office access will not be deleted.'))return;
       data.layout=defaultLayout();
