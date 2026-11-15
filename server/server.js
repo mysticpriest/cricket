@@ -11,6 +11,7 @@ const { workbookXlsx } = require('./xlsx');
 const { analyticsAgents, analyticsQc } = require('./analytics');
 const {setup:setupPersonalWorkspace,route:personalWorkspaceRoute} = require('./personal-workspace');
 const {setup:setupOpsSuite,route:opsSuiteRoute,notify:opsNotify} = require('./operations-suite');
+const modules=require('./modules');
 const {migrateOffices,hash:officeHash,generateKey,validKey,validateRoutes,safeOffice,
   readOfficeSelection,findOfficeByKey,brandForRow,BRAND_DEFAULTS,DEMO_ROUTES,
   OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
@@ -152,6 +153,7 @@ CREATE INDEX IF NOT EXISTS idx_cases_deleted ON cases(deleted_at, id);
 `);
 
 const NEUTRAUMA_OFFICE=migrateOffices(db);
+modules.install(db); // Additive: existing offices keep all currently implemented tools enabled.
 // Additive workspace storage; the employee's office controls all reads and writes.
 setupPersonalWorkspace(db);
 setupOpsSuite(db);
@@ -411,6 +413,12 @@ function processAPI(req, res, url) {
   const user = currentUser(req,touch)||currentPlatform(req,touch);
   if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, mode: 'development' });
   if (p === '/api/auth/me' && req.method === 'GET') return send(res, 200, { user });
+  // Tenant entitlements are enforced before any module API is invoked.
+  if(p==='/api/modules/me'||p==='/api/platform/modules'||
+      /^\/api\/platform\/offices\/\d+\/(modules(?:\/[a-z_]+)?|seats)$/.test(p))
+    return modules.route({p,req,res,user,db,send,readBody});
+  const requiredModule=modules.moduleForApi(p);
+  if(requiredModule)modules.requireModule(db,user,requiredModule);
   if (p.startsWith('/api/ops/')) {
     return opsSuiteRoute({p,req,res,url,user,db,readBody,send,audit});
   }
@@ -715,6 +723,7 @@ function processAPI(req, res, url) {
           .run(name,slug,officeHash(key),JSON.stringify(routes),timestamp,
             brand.tagline,brand.color,brand.logoUrl||'',brand.welcome);
         const officeId=Number(result.lastInsertRowid);
+        modules.ensureOffice(db,officeId);
         db.prepare(`INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color,office_id)
           VALUES(?,?,?,?,?,?,?)`).run(adminEmail,adminName,'admin',hashPassword(password),timestamp,randomThemeColor(),officeId);
         db.prepare('INSERT INTO platform_audit(admin_id,action,office_id,created_at) VALUES(?,?,?,?)')
@@ -850,6 +859,7 @@ function processAPI(req, res, url) {
         err(400, 'Enter an employee name, valid email, role, and password of at least 12 characters');
       }
       try {
+        modules.requireSeat(db,user.office.id);
         const color=randomThemeColor();
         const result = db.prepare('INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color,office_id) VALUES(?,?,?,?,?,?,?)')
           .run(email, displayName, role, hashPassword(password), now(), color,user.office.id);
@@ -1125,6 +1135,17 @@ function denyWorkspaceAccess(req, res, decoded) {
       if (req.method === 'HEAD') res.end();
       else res.end('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Access restricted · Cricket</title><body style="font:16px system-ui;padding:12vh 8vw;background:#f7f9fc;color:#14223d"><p style="color:#2563eb;font-weight:700">CRICKET · ACCESS CONTROL</p><h1>This workspace is restricted.</h1><p>Your account does not have the required role for this division.</p><p><a href="/index.html">Return to your dashboard</a></p></body></html>');
     } else send(res, 403, { error: 'Insufficient permission' });
+    return true;
+  }
+  // Hiding a nav link is not an authorization boundary: protect HTML and
+  // per-module browser scripts on the server as well.
+  const assetModule=modules.moduleForAsset(decoded);
+  if(assetModule && user.office?.id && !modules.has(db,user.office.id,assetModule)){
+    if(isPage){
+      res.writeHead(403,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+      if(req.method==='HEAD')res.end();
+      else res.end('<!doctype html><html lang="en"><meta charset="utf-8"><title>Module unavailable · Cricket</title><body style="font:16px system-ui;padding:10vh 8vw"><h1>Module not enabled</h1><p>Ask your office administrator about access to this Cricket module.</p><a href="/index.html">Return to your dashboard</a></body></html>');
+    }else send(res,403,{error:'Module not enabled for this office'});
     return true;
   }
   return false;
