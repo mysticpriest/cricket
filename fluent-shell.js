@@ -162,6 +162,28 @@
      if(e.key==='Escape'&&!menu.hidden){e.preventDefault();setOpen(false);}
    });
  }
+ // Load real-time Connect notifications on every entitled Cricket screen.
+ // The dedicated Connect screen already includes this asset and owns its SSE
+ // signaling channel; other screens subscribe to the same office event stream.
+ async function loadScript(src){
+   if(document.querySelector('script[src="'+src+'"]'))return;
+   await new Promise((resolve,reject)=>{
+     const el=document.createElement('script');
+     el.src=src;
+     el.onload=resolve;el.onerror=reject;
+     document.head.append(el);
+   });
+ }
+ async function startConnectAlerts(){
+   try{
+     if(!document.querySelector('link[href="connect-alerts.css"]')){
+       const style=document.createElement('link');
+       style.rel='stylesheet';style.href='connect-alerts.css';document.head.append(style);
+     }
+     if(!window.CricketSound)await loadScript('sound-engine.js');
+     await loadScript('connect-alerts.js');
+   }catch(_){/* Other workspaces remain fully usable without notifications. */}
+ }
  async function initialize(){
    const page=location.pathname.split('/').pop();
    if(['office.html','login.html'].includes(page))return;
@@ -170,6 +192,8 @@
    if(!user)return;
    const available=await getModules(user);
    createSwitcher(user,available);
+   if(available.communications===true&&page!=='connect.html')
+     void startConnectAlerts();
    // In legacy rendering a navigation link may be replaced after login, so
    // restore glyphs when its underlying element changes, never a label.
    const nav=document.querySelector('#appSidebar .nav');
