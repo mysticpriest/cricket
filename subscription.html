@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f6f9fc">
+<title>Cricket | My Office Modules</title>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="subscription.css">
+<script src="session-guard.js"></script>
+<script defer src="subscription.js"></script>
+</head><body>
+<header class="sub-topbar">
+  <a class="logo" href="index.html"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+  <a class="button button-outline small-button" href="index.html">← Dashboard</a>
+</header>
+<main class="sub-layout">
+  <div class="sub-heading">
+    <div><span class="eyebrow">CLIENT CONTROL CENTER / SUBSCRIPTIONS</span>
+      <h1>My office modules<span class="logo-period">.</span></h1>
+      <p id="subOfficeName">View the modules available in your workspace.</p></div>
+    <span class="sub-tag">Development preview</span>
+  </div>
+  <section class="sub-summary" aria-label="Office account allocation">
+    <div><span>Accounts in use</span><strong id="subSeatsUsed">—</strong></div>
+    <div><span>Account limit</span><strong id="subSeatsLimit">—</strong></div>
+    <div><span>Subscription state</span><strong>Preview</strong></div>
+  </section>
+  <h2 class="sub-section-title">Available modules</h2>
+  <div id="subModules" class="sub-modules"><p>Loading your modules…</p></div>
+  <section class="sub-bottom">
+    <h2>Want to change your modules?</h2>
+    <p>Only Cricket platform administration can currently activate or deactivate modules and change seat limits. Contact your Cricket account representative to request changes.</p>
+    <p class="sub-fine">Catalog amounts are illustrative monthly prices, not an invoice. No payment processor, automatic billing, or charged subscription is active. This is a development-stage feature.</p>
+  </section>
+  <p id="subError" class="sub-error" role="status"></p>
+</main>
+</body></html>
