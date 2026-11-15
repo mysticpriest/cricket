@@ -71,6 +71,8 @@ function events(req,res,user,hasAccess){
  return true;
 }
 function disconnectOffice(office){
+ // Shut down active peer connections before closing the signaling channel.
+ tellOffice(office,{type:'disabled'});
  for(const [id,set] of [...streams])if(id.startsWith(office+':')){
   for(const res of set)try{res.end();}catch(_){}
   streams.delete(id);
