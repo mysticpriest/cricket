@@ -84,8 +84,13 @@ test('Modular subscriptions isolate offices, preserve existing access and enforc
     assert.match(await subscriptionDenied.text(),/Office Administrator account required/);
 
     const officeId=mine.data.office.id;
-    const bad=await http(origin,'/api/platform/offices/'+officeId+'/modules/communications',json('PATCH',{enabled:true},platform));
-    assert.equal(bad.status,400,'Planned Connect cannot be enabled as a fake product');
+    const enabledConnect=await http(origin,'/api/platform/offices/'+officeId+'/modules/communications',json('PATCH',{enabled:true},platform));
+    assert.equal(enabledConnect.status,200,'Connect is an available optional module');
+    assert.equal(enabledConnect.data.modules.find(x=>x.key==='communications').enabled,true);
+    assert.equal((await http(origin,'/api/connect/bootstrap',headers(admin))).status,200);
+    const disabledConnect=await http(origin,'/api/platform/offices/'+officeId+'/modules/communications',json('PATCH',{enabled:false},platform));
+    assert.equal(disabledConnect.status,200);
+    assert.equal((await http(origin,'/api/connect/bootstrap',headers(admin))).status,403);
     const preventBrokenDependencies=await http(origin,
       '/api/platform/offices/'+officeId+'/modules/case_management',
       json('PATCH',{enabled:false},platform));
