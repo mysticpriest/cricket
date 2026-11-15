@@ -2,6 +2,7 @@
 
 /* Cricket QC development server. Not approved for handling PHI. */
 const http = require('node:http');
+const https = require('node:https');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -22,6 +23,9 @@ const DATA = path.resolve(process.env.CRICKET_DATA_DIR || path.join(ROOT, 'data'
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 3000);
 const SECURE = process.env.NODE_ENV === 'production';
+const TLS_PFX = process.env.CRICKET_TLS_PFX || '';
+const TLS_ENABLED = Boolean(TLS_PFX);
+const COOKIE_SECURE = SECURE || TLS_ENABLED;
 const COOKIE = 'cricket_session';
 const SESSION_AGE_MS = 8 * 60 * 60 * 1000;
 const SESSION_IDLE_MS = 20 * 60 * 1000;
@@ -262,10 +266,10 @@ function platformCookie(req) {
   return cookie?cookie.slice(PLATFORM_COOKIE.length+1):null;
 }
 function setPlatformCookie(token){
-  return `${PLATFORM_COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/${SECURE?'; Secure':''}`;
+  return `${PLATFORM_COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/${COOKIE_SECURE?'; Secure':''}`;
 }
 function clearPlatformCookie(){
-  return `${PLATFORM_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${SECURE?'; Secure':''}`;
+  return `${PLATFORM_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${COOKIE_SECURE?'; Secure':''}`;
 }
 function parseCookie(req) {
   const entry = String(req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(COOKIE + '='));
@@ -274,9 +278,9 @@ function parseCookie(req) {
 function sessionToken() { return crypto.randomBytes(32).toString('base64url'); }
 function tokenHash(raw) { return crypto.createHash('sha256').update(raw).digest('hex'); }
 function setCookie(token) {
-  return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/${SECURE ? '; Secure' : ''}`; // browser-session cookie, no persistent Max-Age
+  return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/${COOKIE_SECURE ? '; Secure' : ''}`; // browser-session cookie, no persistent Max-Age
 }
-function clearCookie() { return `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${SECURE ? '; Secure' : ''}`; }
+function clearCookie() { return `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${COOKIE_SECURE ? '; Secure' : ''}`; }
 function currentUser(req, touch = true) {
   const token = parseCookie(req);
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
@@ -310,7 +314,8 @@ function requireRole(user, ...allowed) {
 }
 function requireOrigin(req) {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return;
-  const expected = process.env.PUBLIC_ORIGIN || `http://${req.headers.host}`;
+  const expected = process.env.PUBLIC_ORIGIN ||
+    `${req.socket.encrypted ? 'https' : 'http'}://${req.headers.host}`;
   const origin = req.headers.origin;
   if (origin && origin !== expected) err(403, 'Invalid request origin');
   if (req.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(req.headers['sec-fetch-site'])) err(403, 'Cross-site request denied');
@@ -335,10 +340,10 @@ function selectedOffice(req){
   return readOfficeSelection(db,token?token.slice(OFFICE_COOKIE.length+1):null);
 }
 function setOfficeCookie(token){
-  return `${OFFICE_COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=900${SECURE?'; Secure':''}`;
+  return `${OFFICE_COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=900${COOKIE_SECURE?'; Secure':''}`;
 }
 function clearOfficeCookie(){
-  return `${OFFICE_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${SECURE?'; Secure':''}`;
+  return `${OFFICE_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${COOKIE_SECURE?'; Secure':''}`;
 }
 function rateOffice(req){
   const ip=req.socket.remoteAddress||'unknown';
@@ -1252,7 +1257,7 @@ if(process.env.CRICKET_SEED_DEMO_OFFICE==='1'){
     }catch(error){db.exec('ROLLBACK');throw error;}
   }
 }
-const server = http.createServer(async (req, res) => {
+const requestHandler = async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (url.pathname.startsWith('/api/')) await processAPI(req, res, url);
@@ -1261,8 +1266,16 @@ const server = http.createServer(async (req, res) => {
     if (!res.headersSent && !res.destroyed) send(res, error.status || 500, { error: error.status ? error.message : 'Internal server error' });
     if (!error.status) console.error('[Cricket QC]', error);
   }
-});
-server.listen(PORT, HOST, () => process.stdout.write(`Cricket QC available at http://${HOST}:${PORT}\n`));
+};
+const tlsOptions = TLS_ENABLED ? {
+  pfx: fs.readFileSync(path.resolve(TLS_PFX)),
+  passphrase: process.env.CRICKET_TLS_PFX_PASSWORD || ''
+} : null;
+const server = TLS_ENABLED
+  ? https.createServer(tlsOptions, requestHandler)
+  : http.createServer(requestHandler);
+server.listen(PORT, HOST, () => process.stdout.write(
+  `Cricket QC available at ${TLS_ENABLED ? 'https' : 'http'}://${HOST}:${PORT}\n`));
 process.on('SIGTERM', () => {
   // Active EventSource connections would otherwise prevent the HTTP server
   // from closing during a service restart or Azure container deployment.
