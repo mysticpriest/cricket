@@ -77,6 +77,10 @@ function disconnectOffice(office){
  }
  for(const [id,call] of calls)if(call.office===office)calls.delete(id);
 }
+function closeAll(){
+ for(const set of streams.values())for(const res of set)try{res.end();}catch(_){}
+ streams.clear();calls.clear();
+}
 function expire(){
  const at=Date.now();
  for(const [id,c] of calls)if(c.expiry<=at){
@@ -85,6 +89,9 @@ function expire(){
   notify(c.office,c.to,{type:'call',action:'expired',callId:id});
  }
 }
+// Expire unanswered invitations even when neither employee sends a request.
+const expireTimer=setInterval(expire,5000);
+expireTimer.unref?.();
 function active(user){
  expire();
  for(const c of calls.values())if(c.office===user.office.id&&(c.from===user.id||c.to===user.id))return c;
@@ -206,4 +213,4 @@ async function route({p,req,res,user,db,send,readBody,hasAccess}){
  }
  return false;
 }
-module.exports={setup,route,disconnectOffice};
+module.exports={setup,route,disconnectOffice,closeAll};
