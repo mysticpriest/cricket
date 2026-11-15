@@ -74,6 +74,14 @@ test('Modular subscriptions isolate offices, preserve existing access and enforc
     assert.equal(list.data.catalog.find(x=>x.key==='quality_control').priceUsd,300);
     assert.equal(list.data.catalog.find(x=>x.key==='staff_accounts').priceUsd,100);
     assert.equal((await http(origin,'/subscription.html',headers(platform))).status,403);
+    const platformDenied=await fetch(origin+'/platform.html',headers(admin));
+    assert.equal(platformDenied.status,403,'Office administrators cannot enter platform console');
+    const platformDeniedText=await platformDenied.text();
+    assert.match(platformDeniedText,/Platform Administrator account required/);
+    assert.match(platformDeniedText,/office\.html/);
+    const subscriptionDenied=await fetch(origin+'/subscription.html',headers(platform));
+    assert.equal(subscriptionDenied.status,403);
+    assert.match(await subscriptionDenied.text(),/Office Administrator account required/);
 
     const officeId=mine.data.office.id;
     const bad=await http(origin,'/api/platform/offices/'+officeId+'/modules/communications',json('PATCH',{enabled:true},platform));
