@@ -10,7 +10,7 @@ test('all browser scripts parse as JavaScript without execution',()=>{
   const scripts=['script.js','login.js','inbound.js','qc.js','staff.js','cases.js',
     'qc-bridge.js','session-guard.js','presence-client.js','live-agents.js','operations.js','analytics.js','qc-insights.js','settings.js','office.js','office-workflow.js','platform.js','workspace-personal.js','shift-operations.js',
     'server/analytics.js','server/offices.js','server/personal-workspace.js',
-    'server/modules.js','captions.js','subscription.js','entitlements.js','fluent-shell.js'];
+    'server/modules.js','server/connect.js','captions.js','subscription.js','entitlements.js','fluent-shell.js','connect.js'];
   for(const file of scripts){
     assert.ok(fs.existsSync(path.join(ROOT,file)),file+' must exist');
     const result=spawnSync(process.execPath,['--check',path.join(ROOT,file)],{encoding:'utf8'});
