@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f7fa">
+<meta name="description" content="Cricket Connect: private office messaging and peer-to-peer calls">
+<title>Cricket Connect | Team communications</title>
+<link rel="stylesheet" href="workspace.css">
+<link rel="stylesheet" href="fluent.css">
+<link rel="stylesheet" href="connect.css">
+<script src="session-guard.js"></script>
+<script defer src="fluent-shell.js"></script>
+<script defer src="connect.js"></script>
+</head>
+<body class="connect-app">
+<header class="connect-top">
+  <div class="connect-top-left">
+    <a href="index.html" class="logo" aria-label="Cricket dashboard"><span class="logo-mark">C</span>cricket<span class="logo-period">.</span></a>
+    <span class="connect-product-divider" aria-hidden="true"></span>
+    <div class="connect-product"><strong>Connect</strong><span>Team communications</span></div>
+  </div>
+  <div class="connect-top-right"><span class="connect-environment">Office-only · Preview</span><a href="index.html" class="button button-outline small-button">Back to dashboard</a></div>
+</header>
+<main class="connect-shell">
+  <aside class="connect-sidebar" aria-label="Office colleagues">
+    <div class="connect-sidebar-heading">
+      <span class="connect-eyebrow">YOUR ORGANIZATION</span>
+      <h1>Messages<span class="logo-period">.</span></h1>
+      <p id="coOffice">Your private team workspace</p>
+    </div>
+    <div class="connect-search-wrap">
+      <label class="connect-sr-only" for="coSearch">Search colleagues</label>
+      <span aria-hidden="true">⌕</span>
+      <input id="coSearch" type="search" placeholder="Find a colleague…" autocomplete="off">
+    </div>
+    <div class="connect-people-label"><span>People</span><span id="coPeopleCount">—</span></div>
+    <div id="coPeople" class="connect-people" role="list" aria-label="Colleagues">
+      <p class="connect-hint">Loading colleagues…</p>
+    </div>
+    <div class="connect-sidebar-foot"><span class="connect-presence-dot"></span><span id="coConnection">Connecting to office…</span></div>
+  </aside>
+
+  <section class="connect-conversation" aria-label="Direct messages">
+    <header class="connect-chat-header">
+      <div class="connect-person-info">
+        <span id="coPeerAvatar" class="connect-avatar" aria-hidden="true">C</span>
+        <div><strong id="coPeerName">Select a colleague</strong><small id="coPeerMeta">Choose someone to start chatting or calling</small></div>
+      </div>
+      <div class="connect-header-actions">
+        <button type="button" id="coAudio" class="connect-icon-button" title="Start voice call" aria-label="Voice call" disabled>♩ <span>Voice</span></button>
+        <button type="button" id="coVideo" class="connect-icon-button" title="Start video call" aria-label="Video call" disabled>▣ <span>Video</span></button>
+      </div>
+    </header>
+    <div class="connect-chat-body" id="coChatBody">
+      <div class="connect-chat-placeholder" id="coEmpty">
+        <span class="connect-placeholder-icon" aria-hidden="true">✦</span>
+        <h2>Your conversations, in one place.</h2>
+        <p>Send a message, make a voice or video call, or share your screen with colleagues in your organization.</p>
+        <span class="connect-hint">Only employees of the same subscribed Cricket client can communicate here.</span>
+      </div>
+      <div id="coMessages" class="connect-messages" aria-live="polite" aria-label="Conversation messages"></div>
+    </div>
+    <form class="connect-compose" id="coMessageForm">
+      <label class="connect-sr-only" for="coMessage">Write a message</label>
+      <textarea id="coMessage" rows="2" maxlength="2000" placeholder="Choose someone to start a conversation…" disabled></textarea>
+      <button type="submit" class="connect-send" id="coSend" disabled aria-label="Send message">Send <span aria-hidden="true">➤</span></button>
+    </form>
+    <div class="connect-security-note">Messages stay within this office. Calls are not recorded by Cricket. Use fictional information during testing.</div>
+  </section>
+</main>
+<div id="coToast" class="connect-toast" role="status" aria-live="polite" hidden></div>
+
+<section id="coCall" class="connect-call" role="dialog" aria-modal="true" aria-label="Connect call" hidden>
+  <div class="connect-call-backdrop"></div>
+  <div class="connect-call-panel">
+    <header class="connect-call-heading">
+      <div><span class="connect-eyebrow">CRICKET CONNECT</span><h2 id="coCallName">Colleague</h2><p id="coCallStatus">Preparing call…</p></div>
+      <span class="connect-call-label" id="coCallMode">Voice</span>
+    </header>
+    <div class="connect-video-stage">
+      <video id="coRemote" autoplay playsinline aria-label="Remote video" hidden></video>
+      <div class="connect-video-empty" id="coVideoEmpty"><span class="connect-remote-avatar" id="coRemoteAvatar">C</span><strong id="coRemoteName">Connecting…</strong><small>End-to-end encrypted browser media</small></div>
+      <video id="coLocal" autoplay playsinline muted aria-label="Your camera or shared screen" hidden></video>
+    </div>
+    <div class="connect-call-controls">
+      <div id="coIncomingActions" class="connect-control-group" hidden>
+        <button id="coAccept" type="button" class="connect-control connect-control-primary">Accept call</button>
+        <button id="coDecline" type="button" class="connect-control connect-control-danger">Decline</button>
+      </div>
+      <div id="coActiveActions" class="connect-control-group" hidden>
+        <button id="coMute" type="button" class="connect-control" aria-pressed="false">Mute microphone</button>
+        <button id="coCamera" type="button" class="connect-control" aria-pressed="false">Camera off</button>
+        <button id="coShare" type="button" class="connect-control" aria-pressed="false">Share screen</button>
+        <button id="coHangup" type="button" class="connect-control connect-control-danger">End call</button>
+      </div>
+      <div id="coOutgoingActions" class="connect-control-group" hidden>
+        <button id="coCancelCall" type="button" class="connect-control connect-control-danger">Cancel call</button>
+      </div>
+    </div>
+    <p class="connect-call-note">Camera, microphone and screen permissions are controlled by your browser. Call quality depends on both networks; some connections need a TURN relay.</p>
+  </div>
+</section>
+</body></html>
