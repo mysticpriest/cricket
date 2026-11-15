@@ -1079,6 +1079,7 @@ const PAGE_ROLES = new Map([
   ['/platform.html',['platform_admin']],['/platform.js',['platform_admin']],['/platform.css',['platform_admin']],
   ['/subscription.html',['admin']],['/subscription.js',['admin']],['/subscription.css',['admin']],
   ['/connect.html',['agent','qc','admin']],['/connect.js',['agent','qc','admin']],['/connect.css',['agent','qc','admin']],
+  ['/connect-alerts.js',['agent','qc','admin']],['/connect-alerts.css',['agent','qc','admin']],
   ['/office-workflow.html',['agent','admin']],['/office-workflow.js',['agent','admin']],['/office-workflow.css',['agent','admin']],
   ['/inbound.html', ['agent', 'admin']],
   ['/inbound.css', ['agent', 'admin']],
