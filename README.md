@@ -1,5 +1,56 @@
 # Cricket | Demo-ready employee workspace
 
+## 2026 Fluent-inspired visual redesign
+
+Cricket now uses a **shared enterprise interface system** inspired by the
+Microsoft Fluent 2 design language. This is an independent Cricket interface,
+**not** an official Microsoft-branded product. The UI changes are designed to
+preserve the existing workflows, office security, authentication, saved
+layouts, client customization and subscription permissions.
+
+**What's different**
+
+- A unified light, blue-and-neutral interface across all 17 key screens:
+  office selection, sign-in, Overview, Inbound, Outbound, QC, Analytics,
+  case archive, staff administration, live operations, workflow modules,
+  Team Hub, Workforce, client subscriptions and platform administration.
+- Segoe UI / system typography, a consistent 4px-based spacing scale,
+  clearer hierarchy, softer panels, solid colors (no gradients), subtle
+  surface elevation, cleaner inputs, more predictable buttons and focus rings.
+- Redesigned multi-client Platform Console with organization summary metrics,
+  clearer status chips, existing office management and module/seat editing.
+- Rebuilt client subscriptions overview with usage cards, monthly **draft**
+  subtotals and working All / Enabled / Not enabled / Upcoming filters.
+- Accessible **Apps** switcher in authenticated workspace headers. Use
+  **Alt + G** to open/close it. Its destinations respect user role,
+  office template and currently enabled module entitlements. The existing
+  **Ctrl + K** workspace search remains available where already supported.
+- Responsive mobile and vertical-monitor layouts and reduced-motion support.
+
+**Implementation files**
+
+- \`fluent.css\` — central design tokens and cross-workspace components.
+- \`fluent-shell.js\` — line icons, app-switcher navigation and accessibility.
+- Existing page-specific CSS and JavaScript remain in place; shared styles
+  are loaded **last** to unify the visuals without changing business logic.
+- \`tests/fluent-redesign.test.js\` — design deployment and switcher checks.
+
+**Startup (unchanged):**
+
+    $env:HOST="127.0.0.1"
+    $env:PORT="3001"
+    npm.cmd start
+
+Or use \`$env:HOST="0.0.0.0"\` to bind to your local network, for
+development/testing only. Save/back up the existing \`data\` directory before
+updating from ZIP. Do not overwrite your SQLite database.
+
+The interface now uses a consistent style, but full production deployment
+still requires security and accessibility reviews, visual browser testing,
+performance validation, and compliant handling of any sensitive information.
+
+
+
 Cricket is a local-development workflow application with an employee sign-in, role-aware operations dashboard, guided Inbound workflow, automatic case capture, and QC review tools. Use **fictional test data only**. This is not a production patient data platform.
 
 
