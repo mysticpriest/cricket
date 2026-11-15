@@ -634,3 +634,72 @@ body:has(.call-intake-screen) .intake-footnote{color:var(--crk-muted)}
 @media(max-width:410px){
   .platform-overview,.sub-summary{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* Shared utility tools, settings and call captions look like one product. */
+.ut-launch{
+  background:#fff;color:var(--crk-primary);
+  border:1px solid #d5e4f0;border-radius:9px;
+  box-shadow:0 5px 19px rgba(24,50,81,.13);
+  font-weight:650;font-size:12px;
+}
+.ut-launch:hover{background:#eff5fb;color:var(--crk-primary)}
+.ut-panel,.cricket-settings-drawer,.cc-panel{
+  background:#fff;border:1px solid #dbe2e9;
+  box-shadow:0 20px 60px rgba(18,37,61,.18);
+  font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;
+}
+.ut-panel{border-radius:14px 0 0 14px}
+.cricket-settings-drawer{border-radius:14px 0 0 14px}
+.cc-panel{border-radius:12px}
+.ut-head,.cricket-settings-head,.cc-head{border-bottom-color:#e8edf1}
+.ut-title,.cricket-settings-head h2,.cc-title h2{
+  color:var(--crk-ink);font-family:inherit;font-weight:680;
+  letter-spacing:-.025em;
+}
+.ut-search-dialog{border:1px solid var(--crk-border);border-radius:12px;box-shadow:0 25px 65px rgba(17,35,59,.18)}
+.ut-search-item{border-radius:7px}
+.ut-search-item:hover{background:#eff5fa}
+.ut-tabs button,.cricket-settings-mode,.cricket-settings-option{border-radius:7px}
+.ut-note,.ut-task,.ut-notification,.cricket-settings-section,.cricket-settings-preview{
+  border-color:var(--crk-border);border-radius:9px;
+}
+.ut-btn,.ut-primary,.cricket-settings-done{
+  border-radius:7px;font-weight:600;
+}
+.ut-primary,.cricket-settings-done{background:var(--crk-primary);border-color:var(--crk-primary)}
+.ut-primary:hover,.cricket-settings-done:hover{background:var(--crk-primary-hover)}
+.cricket-settings-launcher,.cricket-settings-toggle{
+  border-radius:8px;border-color:var(--crk-border);
+}
+.cricket-settings-account{border-color:var(--crk-border)}
+.cricket-settings-swatch{box-shadow:none}
+.cricket-settings-swatch:focus-visible{outline:2px solid var(--crk-primary);outline-offset:3px}
+.cc-launcher{border-radius:8px;box-shadow:0 4px 16px rgba(23,45,70,.09);font-weight:600}
+.cc-launcher:hover{box-shadow:var(--crk-shadow)}
+.cc-primary,.cc-secondary,.cc-utility{border-radius:7px;font-weight:600}
+.cc-primary{background:var(--crk-primary);border-color:var(--crk-primary)}
+.cc-primary:hover{background:var(--crk-primary-hover)}
+.cc-help{background:#f2f7fb;border-color:#e0ebf3;border-radius:8px}
+.cc-transcript{border-radius:8px;border-color:var(--crk-border)}
+.cc-line p{color:var(--crk-text)}
+.cc-privacy{color:var(--crk-muted)}
+.cc-language-fixed{background:#eef5fb;border-radius:7px}
+.ops-shift-count{background:#fff;border:1px solid var(--crk-border);border-radius:9px}
+.ops-shift-count strong{font-weight:680;color:var(--crk-ink)}
+.ops-clock-row{border-color:var(--crk-border);border-radius:9px}
+@media(max-width:850px){
+  .simple-topbar,.qc-topbar,.an-topbar,.platform-bar,.sub-topbar{flex-wrap:wrap;gap:10px}
+  .qc-topbar .qc-spacer,.an-topbar .an-top-spacer{flex:1;min-width:5px}
+  .qc-topbar .qc-user,.an-topbar .an-account{display:none}
+  .qc-topbar .qc-btn{padding:9px 10px}
+  .simple-topbar.op-top{flex-wrap:wrap}
+  .an-hero{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:600px){
+  .ut-launch{right:12px;bottom:12px;padding:9px 11px}
+  .cc-launcher{left:12px;bottom:65px;padding:9px 11px}
+  .cricket-settings-drawer,.ut-panel{border-radius:0}
+  .crk-switcher{order:4}
+  .qc-topbar .qc-header-section{flex:1}
+}
