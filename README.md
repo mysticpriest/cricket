@@ -1,5 +1,114 @@
 # Cricket | Demo-ready employee workspace
 
+## LAN video calls + Connect notifications across Cricket (November 2026)
+
+### One-command HTTPS LAN testing on Windows
+
+If Cricket is accessible as \`http://192.168.x.x:3001\`, messages work
+but camera/mic/screen capture are blocked by browser **secure-context**
+requirements. The proper fix is a trusted **HTTPS** URL for both computers.
+You should **not** bypass TLS validation or disable browser security flags.
+
+Run **Windows PowerShell** in the extracted Cricket folder:
+
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start-lan-https.ps1
+
+This script uses **built-in Windows PowerShell PKI commands**, automatically
+detects a private LAN IPv4 (or asks you to select it), creates a unique,
+short-lived self-signed TLS certificate for that IP and \`localhost\`, exports
+a password-protected PFX for Node's HTTPS server, and starts Cricket on
+\`0.0.0.0:3001\` over HTTPS. No Python, npm packages, cloud providers or
+API keys are added. You can also specify the computer's exact IP:
+
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start-lan-https.ps1 -LanIP 192.168.1.100
+
+Replace the example IP with your host computer's current private IPv4.
+The PowerShell script asks for explicit confirmation before trusting the
+self-signed certificate on the **host's current Windows user account**.
+
+**Second Windows PC / laptop:**
+
+1. Use the **same Wi-Fi or Ethernet network** and ensure Windows Firewall
+   permits Node.js on **Private** networks for TCP port **3001**.
+2. Copy **only** \`data/certs/cricket-lan.cer\` from the host to the second
+   computer. Do **not** copy \`.pfx\` or \`.dpapi\` files (private keys).
+3. Compare the public certificate's SHA-1 thumbprint on both devices;
+   the host script prints it. You must personally verify the public
+   certificate before deciding to trust it.
+4. On the second Windows computer, double-click the \`.cer\`, choose
+   **Install Certificate → Current User → Place all certificates in the
+   following store → Trusted Root Certification Authorities**, and finish.
+   Only do this with a certificate you personally generated and verified;
+   trusting unverified certificates is dangerous.
+5. Restart Chrome or Edge, then open the **exact HTTPS LAN URL** printed by
+   the host script, for example \`https://192.168.1.100:3001\`.
+6. Sign in as different employee accounts under the **same Connect-enabled
+   office**. You should be able to message, call, share a camera, and share
+   a screen when the browsers grant permission.
+
+The host can use \`https://localhost:3001\` or its HTTPS LAN IP.
+**Do not use HTTP when testing audio/video from a second device.**
+If the browser still says the connection is not secure, double-check the
+fingerprint, certificate store, certificate validity, LAN IP and browser
+restart; do not click through a certificate warning to circumvent trust.
+If the host's private IP changes, the script creates a new certificate
+and **both devices must trust the new verified certificate**.
+
+Your generated private files stay inside \`data/certs\`, which is excluded
+from Git by \`.gitignore\`. The PFX passphrase is stored with Windows DPAPI,
+protected for the Windows user who ran the script. Don't share these files
+or the password. For a real deployment, use a publicly trusted certificate
+and a managed HTTPS frontend. This self-signed workflow is **only for LAN
+testing using fictional data**, not production security or PHI.
+
+### Messages, call pop-ups and sounds everywhere within Cricket
+
+When a signed-in employee's office has the **Communications / Cricket
+Connect** module enabled, every authenticated Cricket workspace running
+\`fluent-shell.js\` now loads a small notification listener automatically.
+The employee does not need to keep \`connect.html\` in the foreground.
+
+- Direct messages generate an in-app banner and a distinct message chime.
+- Incoming calls generate an in-app **persistent incoming-call banner**
+  with an **Open call** link and a repeating ringtone until answered,
+  declined, or timed out.
+- Outgoing calls play a repeating dial/ringback sound; ringing stops once
+  accepted, declined, ended, or expired.
+- A small **Connect** bell shows unread activity and lets employees open
+  the communications application or test sound playback.
+- On **HTTPS**, the employee can choose **Enable desktop notifications**
+  from the Connect bell (browser permission prompt). When permitted, the
+  browser can show system notifications while the Cricket tab is in the
+  background. Message bodies are never included in OS notification text.
+- Connect respects existing per-employee Cricket sound settings
+  (mute/volume), and browser autoplay restrictions. To hear tones, sound
+  preferences must be enabled and the browser may require at least one
+  click or key interaction **on the current page**. The bell offers
+  **Play test notification sound** to verify playback.
+
+**Scope:** The signed-in employee must have a Cricket page open in the
+browser. This is not yet push notification delivery to a completely
+closed browser or a signed-out employee. Desktop notifications require
+the employee's explicit browser permission and may be suppressed by
+the browser or operating system. Multiple open Cricket tabs can also
+receive separate in-app banners; group calling and native push are
+future improvements.
+
+**Privacy/isolation:** The server continues to check the client's
+subscription entitlement, authentication and office membership on every
+Connect API route. Disabling the module ends its live notification
+connections. Calls and RTC media are not recorded in Cricket. Message
+content is persisted only in its office's private database. Existing
+Team Hub messaging is unaffected.
+
+**Azure:** The same Connect front-end and notification widgets remain
+portable as static HTTPS assets. Real-time signaling, SSE connections,
+employee sessions, database storage and future TURN services need a
+separately hosted backend and managed infrastructure. The Windows LAN
+launcher is not intended for Azure production deployments.
+
+
+
 ## 2026 Fluent-inspired visual redesign
 
 Cricket now uses a **shared enterprise interface system** inspired by the
