@@ -137,6 +137,13 @@ test('Modular subscriptions isolate offices, preserve existing access and enforc
       password:'seat-cap-strong-password',role:'agent'
     },client));
     assert.equal(seatAllowed.status,201);
+    const employee=await login(origin,create.data.officeKey,'seat-allowed@example.test','seat-cap-strong-password');
+    const employeeModules=await http(origin,'/api/modules/me',headers(employee));
+    assert.equal(employeeModules.status,200);
+    assert.equal(employeeModules.data.modules.find(x=>x.key==='workflow_builder').enabled,false);
+    assert.equal(employeeModules.data.pricing,undefined,'Staff must not see pricing or billing drafts');
+    assert.equal(employeeModules.data.seats,undefined,'Staff must not see other employee seat allocations');
+    assert.equal((await http(origin,'/subscription.html',headers(employee))).status,403);
     assert.equal((await http(origin,'/api/platform/offices/'+id+'/seats',
       json('PATCH',{limit:1},platform))).status,409,
       'Do not under-provision an office with existing staff accounts');
