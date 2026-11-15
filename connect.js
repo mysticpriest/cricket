@@ -132,6 +132,7 @@
   $('coCamera').setAttribute('aria-pressed','false');$('coCamera').textContent='Camera off';
  }
  function clearCall(){
+  window.CricketConnectAlerts?.stop();
   stopMedia();state.call=null;updateCallerView();
  }
  async function hangup(){
@@ -243,6 +244,7 @@
   try{
    const result=await api('/api/connect/calls',json({recipientId:state.peer,kind}));
    state.call=result.call;updateCallerView();
+   window.CricketConnectAlerts?.startDial(result.call);
   }catch(e){stopMedia();toast(e.message,true);}
  }
  async function acceptCall(){
@@ -269,6 +271,7 @@
   catch(e){toast(e.message,true);}
  }
  async function callEvent(packet){
+  window.CricketConnectAlerts?.handle(packet);
   if(packet.action==='incoming'||packet.action==='outgoing'){
    state.call=packet.call;updateCallerView();
    if(packet.action==='incoming')toast('Incoming '+packet.call.kind+' call from '+peerName(packet.call.from));
@@ -303,12 +306,14 @@
     if(person){person.online=packet.online;roster();
       if(state.peer===person.id)$('coPeerMeta').textContent=(person.online?'Online':'Offline')+' · '+person.role;}
    }else if(packet.type==='message'){
+    window.CricketConnectAlerts?.handle(packet);
     const other=packet.from===state.self.id?packet.to:packet.from;
     if(other===state.peer)void loadMessages(other);
     else if(packet.from!==state.self.id)toast('New message from '+peerName(packet.from));
    }else if(packet.type==='call')void callEvent(packet);
    else if(packet.type==='signal')void onSignal(packet);
    else if(packet.type==='disabled'){
+    window.CricketConnectAlerts?.handle(packet);
     clearCall();state.stream?.close();
     $('coMessage').disabled=true;$('coSend').disabled=true;
     $('coAudio').disabled=true;$('coVideo').disabled=true;
@@ -374,6 +379,9 @@
     }else updateCallerView();
    }
    await connectEvents();
+   const requestedPeer=Number(new URLSearchParams(location.search).get('peer'));
+   if(Number.isSafeInteger(requestedPeer)&&state.staff.some(x=>x.id===requestedPeer))
+     await selectPeer(requestedPeer);
   }catch(e){
    $('coPeople').replaceChildren(elem('p','connect-hint','Connect could not load. '+e.message));
    $('coConnection').textContent='Offline';toast(e.message,true);
