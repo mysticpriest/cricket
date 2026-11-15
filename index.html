@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- GitHub Pages is static: show a safe fictional product tour, never
+       redirect visitors into the API-dependent employee login. This branch
+       does not change navigation on a real Cricket server or custom domain. -->
+  <script>
+    if (location.hostname === 'mysticpriest.github.io') {
+      location.replace(new URL('./demo/', location.href));
+    }
+  </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f8fc">
