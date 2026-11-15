@@ -1214,6 +1214,7 @@ if(process.env.CRICKET_SEED_DEMO_OFFICE==='1'){
       ) VALUES(?,?,?,'starter',?,1,?,?,?,?,?)`)
         .run('Northstar Support','northstar-support',officeHash(key),JSON.stringify(routes),created,
           brand.tagline,brand.color,brand.logoUrl||'',brand.welcome);
+      modules.ensureOffice(db,Number(office.lastInsertRowid));
       db.prepare(`INSERT INTO users(email,display_name,role,password_hash,created_at,theme_color,office_id)
         VALUES(?,?,?,?,?,?,?)`)
         .run('northstar-demo@cricket.example.test','Northstar Demo Admin','admin',
