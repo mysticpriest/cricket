@@ -22,12 +22,21 @@
       <p id="subOfficeName">View the modules available in your workspace.</p></div>
     <span class="sub-tag">Development preview</span>
   </div>
-  <section class="sub-summary" aria-label="Office account allocation">
-    <div><span>Accounts in use</span><strong id="subSeatsUsed">—</strong></div>
-    <div><span>Account limit</span><strong id="subSeatsLimit">—</strong></div>
-    <div><span>Subscription state</span><strong>Preview</strong></div>
+  <section class="sub-summary" aria-label="Office subscription overview">
+    <div><span>Staff accounts</span><strong id="subSeatsUsed">—</strong><small>Accounts currently assigned</small></div>
+    <div><span>Seat allocation</span><strong id="subSeatsLimit">—</strong><small>Maximum registered accounts</small></div>
+    <div><span>Enabled modules</span><strong id="subEnabledCount">—</strong><small>Available in your workspace</small></div>
+    <div><span>Draft known-price subtotal</span><strong id="subDraftSubtotal">—</strong><small>Monthly estimate, not a bill</small></div>
   </section>
-  <h2 class="sub-section-title">Available modules</h2>
+  <div class="sub-module-header">
+    <div><h2 class="sub-section-title">Your module catalog</h2><p>Everything your team can access, all in one place.</p></div>
+    <div class="sub-filters" role="group" aria-label="Filter modules">
+      <button type="button" data-module-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-module-filter="enabled" aria-pressed="false">Enabled</button>
+      <button type="button" data-module-filter="disabled" aria-pressed="false">Not enabled</button>
+      <button type="button" data-module-filter="planned" aria-pressed="false">Upcoming</button>
+    </div>
+  </div>
   <div id="subModules" class="sub-modules"><p>Loading your modules…</p></div>
   <section class="sub-bottom">
     <h2>Want to change your modules?</h2>
