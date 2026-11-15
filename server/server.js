@@ -12,6 +12,7 @@ const { analyticsAgents, analyticsQc } = require('./analytics');
 const {setup:setupPersonalWorkspace,route:personalWorkspaceRoute} = require('./personal-workspace');
 const {setup:setupOpsSuite,route:opsSuiteRoute,notify:opsNotify} = require('./operations-suite');
 const modules=require('./modules');
+const connect=require('./connect');
 const {migrateOffices,hash:officeHash,generateKey,validKey,validateRoutes,safeOffice,
   readOfficeSelection,findOfficeByKey,brandForRow,BRAND_DEFAULTS,DEMO_ROUTES,
   OFFICE_COOKIE,OFFICE_SELECTION_MS} = require('./offices');
@@ -157,6 +158,7 @@ modules.install(db); // Additive: existing offices keep all currently implemente
 // Additive workspace storage; the employee's office controls all reads and writes.
 setupPersonalWorkspace(db);
 setupOpsSuite(db);
+connect.setup(db);
 db.exec(`
 CREATE TABLE IF NOT EXISTS platform_admins(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -416,9 +418,15 @@ function processAPI(req, res, url) {
   // Tenant entitlements are enforced before any module API is invoked.
   if(p==='/api/modules/me'||p==='/api/platform/modules'||
       /^\/api\/platform\/offices\/\d+\/(modules(?:\/[a-z_]+)?|seats)$/.test(p))
-    return modules.route({p,req,res,user,db,send,readBody});
+    return modules.route({p,req,res,user,db,send,readBody,
+      onModuleChange:(officeId,key,enabled)=>{
+        if(key==='communications'&&!enabled)connect.disconnectOffice(officeId);
+      }});
   const requiredModule=modules.moduleForApi(p);
   if(requiredModule)modules.requireModule(db,user,requiredModule);
+  if(p.startsWith('/api/connect/'))
+    return connect.route({p,req,res,user,db,send,readBody,
+      hasAccess:officeId=>modules.has(db,officeId,'communications')&&Boolean(currentUser(req,false))});
   if (p.startsWith('/api/ops/')) {
     return opsSuiteRoute({p,req,res,url,user,db,readBody,send,audit});
   }
@@ -1065,6 +1073,7 @@ const PUBLIC_FILES = new Set(['/login.html','/login.js','/login.css','/workspace
 const PAGE_ROLES = new Map([
   ['/platform.html',['platform_admin']],['/platform.js',['platform_admin']],['/platform.css',['platform_admin']],
   ['/subscription.html',['admin']],['/subscription.js',['admin']],['/subscription.css',['admin']],
+  ['/connect.html',['agent','qc','admin']],['/connect.js',['agent','qc','admin']],['/connect.css',['agent','qc','admin']],
   ['/office-workflow.html',['agent','admin']],['/office-workflow.js',['agent','admin']],['/office-workflow.css',['agent','admin']],
   ['/inbound.html', ['agent', 'admin']],
   ['/inbound.css', ['agent', 'admin']],
@@ -1179,7 +1188,7 @@ function serveStatic(req, res, pathname) {
   if (denyWorkspaceAccess(req, res, decoded)) return;
   fs.readFile(filename, (error, content) => {
     if (error) return send(res, 404, { error: 'Not found' });
-    res.writeHead(200, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; frame-ancestors 'none'" });
+    res.writeHead(200, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; media-src 'self' blob:; object-src 'none'; frame-ancestors 'none'" });
     res.end(req.method === 'HEAD' ? undefined : content);
   });
 }
