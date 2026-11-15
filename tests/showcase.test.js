@@ -1,0 +1,61 @@
+'use strict';
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {spawnSync}=require('node:child_process');
+const ROOT=path.resolve(__dirname,'..');
+const read=p=>fs.readFileSync(path.join(ROOT,p),'utf8');
+test('Public showcase is a standalone, honest, fully fictional static experience',()=>{
+ const html=read('demo/index.html'),script=read('demo/app.js'),style=read('demo/style.css');
+ assert.match(html,/<title>Cricket — One platform/);
+ assert.match(html,/rel="stylesheet" href="\.\/style\.css"/);
+ assert.match(html,/src="\.\/app\.js"/);
+ for(const section of ['home','features','industries','modules','preview'])
+   assert.match(html,new RegExp('id="'+section+'"'));
+ for(const view of ['overview','workflows','quality','connect','marketplace','admin'])
+   assert.match(html,new RegExp('data-view="'+view+'"'));
+ for(const industry of ['bpo','health','agency'])assert.match(script,new RegExp('(?:  |\\n)'+industry+':\\{'));
+ assert.match(html,/SIMULATED/);
+ assert.match(html,/fictional/i);
+ assert.match(script,/Fictional training record only/);
+ assert.match(script,/No real employee is contacted/);
+ assert.match(script,/not a real subscription or charge/);
+ assert.match(html,/Healthcare view is an illustrative administrative prototype/);
+ assert.doesNotMatch(script,/\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\blocalStorage\b|\bsessionStorage\b|\bgetUserMedia\b|\bgetDisplayMedia\b/);
+ assert.doesNotMatch(style,/linear-gradient|radial-gradient|conic-gradient/i);
+ assert.match(style,/@media\(max-width:670px\)/);
+ assert.match(style, /prefers-reduced-motion/);
+ const validation=spawnSync(process.execPath,['--check',path.join(ROOT,'demo/app.js')],{encoding:'utf8'});
+ assert.equal(validation.status,0,validation.stderr);
+});
+test('Root of GitHub Pages opens a safe public demo instead of trying private login',()=>{
+ const index=read('index.html');
+ const redirect=index.indexOf("location.hostname === 'mysticpriest.github.io'");
+ const auth=index.indexOf('src="session-guard.js"');
+ assert.ok(redirect>0,'Redirect is explicitly hostname-scoped');
+ assert.ok(auth>redirect,'Redirect happens before authentication scripts');
+ assert.match(index,/location\.replace\(new URL\('\.\/demo\/', location\.href\)\)/);
+ const html=read('demo/index.html');
+ assert.doesNotMatch(html,/src="session-guard.js"/);
+});
+test('Staging deployment keeps database private, secret values out of git, and HTTPS in front',()=>{
+ const docker=read('Dockerfile'),compose=read('docker-compose.yml'),caddy=read('deploy/Caddyfile');
+ const ignore=read('.dockerignore'),gitignore=read('.gitignore'),runbook=read('deploy/README.md');
+ assert.match(docker,/FROM node:22/);
+ assert.match(docker,/USER node/);
+ assert.match(docker,/CRICKET_DATA_DIR=\/var\/lib\/cricket/);
+ assert.match(compose,/NODE_ENV: production/);
+ assert.match(compose,/PUBLIC_ORIGIN: https:/);
+ assert.match(compose,/cricket_data:\/var\/lib\/cricket/);
+ assert.match(compose,/no-new-privileges:true/);
+ assert.match(compose,/cap_drop:/);
+ assert.match(compose,/ports:\s*\n\s+- "80:80"\s*\n\s+- "443:443"/);
+ assert.doesNotMatch(compose,/ports:\s*\n\s+- "(?:3001|127\.0\.0\.1:3001):3001"/);
+ assert.match(caddy,/reverse_proxy cricket:3001/);
+ assert.match(caddy,/flush_interval -1/);
+ assert.match(ignore,/^data$/m);
+ assert.match(gitignore,/^\.env$/m);
+ assert.match(runbook,/SQLite on a network-mounted or shared cloud filesystem/);
+ assert.match(runbook,/Azure/);
+});
