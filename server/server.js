@@ -1064,6 +1064,7 @@ const PUBLIC_FILES = new Set(['/login.html','/login.js','/login.css','/workspace
   '/assets/cricket-support.webp']);
 const PAGE_ROLES = new Map([
   ['/platform.html',['platform_admin']],['/platform.js',['platform_admin']],['/platform.css',['platform_admin']],
+  ['/subscription.html',['admin']],['/subscription.js',['admin']],['/subscription.css',['admin']],
   ['/office-workflow.html',['agent','admin']],['/office-workflow.js',['agent','admin']],['/office-workflow.css',['agent','admin']],
   ['/inbound.html', ['agent', 'admin']],
   ['/inbound.css', ['agent', 'admin']],
