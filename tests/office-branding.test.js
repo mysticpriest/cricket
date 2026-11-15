@@ -64,6 +64,9 @@ test('Client branding, original NeuTrauma logo and opt-in Northstar demo bootstr
     assert.equal(page.status,200);
     const login=await fetch(url+'/login.html');
     assert.equal(login.status,200);
+    const fluent=await fetch(url+'/fluent.css');
+    assert.equal(fluent.status,200,'Public login and office pages must be able to load the shared stylesheet');
+    assert.match(fluent.headers.get('content-type'),/text\/css/);
     const loginHtml=await login.text();
     assert.match(loginHtml,/clientBrandImage/);
     assert.match(loginHtml,/login\.css/);
