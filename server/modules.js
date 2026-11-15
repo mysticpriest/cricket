@@ -102,6 +102,11 @@ async function route({p,req,res,user,db,send,readBody}){
     if(!user)fail(401,'Sign in required');
     if(!user.office?.id)fail(403,'Office account required');
     const data=preview(db,user.office.id);
+    // Employees only need their own module flags to build navigation.
+    // Commercial draft prices and seat allocations are client-admin-only.
+    if(user.role!=='admin')
+      return send(res,200,{office:{id:user.office.id,name:user.office.name},
+        modules:data.modules.map(m=>({key:m.key,enabled:m.enabled,status:m.status}))});
     return send(res,200,{office:{id:user.office.id,name:user.office.name},...data});
   }
   if(p==='/api/platform/modules'&&req.method==='GET'){
