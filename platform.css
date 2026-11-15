@@ -36,3 +36,27 @@ body{margin:0;background:#f5f8fc;color:#17243b;font-family:'DM Sans',system-ui}
 .platform-brand-editor input{font:inherit}
 .platform-brand-title{font-size:12px;color:#34495c;margin:0 0 6px}
 .platform-color-picker{width:80px!important;height:43px;padding:4px!important;cursor:pointer}
+
+
+/* Modular subscription preview — soft surfaces, no gradients. */
+.platform-subscription{margin-top:16px;padding:16px;background:#f4f8fb;border:1px solid #dce8f0;border-radius:12px}
+.platform-subscription[hidden]{display:none}
+.platform-subscription-title{font:700 15px system-ui;margin:0 0 5px;color:#223e59}
+.platform-subscription-help,.platform-subscription-disclaimer{font:500 11px/1.6 system-ui;color:#647b90;margin:4px 0 13px}
+.platform-module-list{display:grid;gap:7px;margin:12px 0}
+.platform-module-row{display:flex;align-items:center;gap:10px;border:1px solid #dee8f0;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer;min-width:0}
+.platform-module-row input{accent-color:#236f9f;width:16px;height:16px;flex:none}
+.platform-module-row input:disabled{cursor:not-allowed}
+.platform-module-detail{flex:1;display:grid;gap:4px;min-width:0}
+.platform-module-detail strong{font:750 12px system-ui;color:#243e53}
+.platform-module-detail small{font:500 10px/1.45 system-ui;color:#7890a2}
+.platform-module-price{font:750 10px system-ui;color:#2e6690;white-space:nowrap;background:#edf5fb;padding:5px 8px;border-radius:8px}
+.platform-seat-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #dae5ee}
+.platform-seat-info{flex:1;display:grid;gap:5px;min-width:120px}
+.platform-seat-info strong{font-size:12px;color:#29475e}
+.platform-seat-info small{font-size:10px;color:#7890a2}
+.platform-seat-row input{width:100px;max-width:100%;font-size:12px;padding:10px;border-radius:8px;border:1px solid #cadae7;background:#fff;color:#1e3954}
+.platform-seat-row button{padding:10px 12px;border:1px solid #bcd4e7;background:#e8f2fa;color:#245f8b;font-weight:800;border-radius:8px;cursor:pointer}
+.platform-price-total{font:800 12px/1.6 system-ui;color:#245479;margin:14px 0 4px}
+.platform-subscription-disclaimer{font-size:10px;margin:0}
+@media(max-width:650px){.platform-module-row{flex-wrap:wrap}.platform-module-price{margin-left:25px}}
