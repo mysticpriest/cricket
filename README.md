@@ -1,4 +1,17 @@
-# Cricket | Demo-ready employee workspace
+# Cricket | Modular Business Operations Platform
+
+## Public product demo and staging launch
+
+**Interactive public showcase:** [Explore Cricket on GitHub Pages](https://mysticpriest.github.io/cricket/demo/) — an enterprise-style interactive preview with fictional BPO, clinic-administration, and marketing-agency workspaces. Explore the dashboard, complete a guided sample workflow, adjust QC scores, send simulated messages, and configure draft modules and pricing. No login, uploads, real calls, payments, or customer data are used. Demo state exists in browser memory only and resets when you refresh.
+
+The GitHub Pages project root redirects to the showcase **only on `mysticpriest.github.io`**. The real authenticated app retains its existing routes and office accounts when served on a backend domain. GitHub Pages does not host Cricket's Node/SQLite APIs.
+
+**Cloud staging bundle:** `Dockerfile`, `docker-compose.yml`, `deploy/Caddyfile`, and [deployment instructions](deploy/README.md) prepare a single-node, HTTPS-reversed Cricket application for a dedicated host or Azure VM. It is **not yet provisioned in a cloud account**. The app uses single-process SQLite and server-sent events and must not be scaled horizontally in this version. All demonstrations must use fictional training data.
+
+**Status:** Published showcase assets are deployed by the repository's GitHub Pages workflow. Authenticated cloud deployment still requires a hosting account, a controlled domain and staging credentials. Real subscription billing, enterprise SLAs and healthcare regulatory readiness are not implemented.
+
+---
+
 
 ## LAN video calls + Connect notifications across Cricket (November 2026)
 
