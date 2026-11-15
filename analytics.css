@@ -177,7 +177,7 @@ button.an-legend-row:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
 .an-series-item:hover{background:#f8fafc;border-color:#bfdbfe}
 .an-series-item.muted{opacity:.43;text-decoration:line-through}
 .an-series-swatch{display:inline-block;flex:0 0 18px;height:5px;border-radius:10px;background:#2563eb}
-.an-series-swatch.striped{background-image:repeating-linear-gradient(90deg,transparent 0,transparent 5px,rgba(255,255,255,.85) 5px,rgba(255,255,255,.85) 8px)}
+.an-series-swatch.striped{background-image:none;border:1px dashed #6a8dad}
 .an-series-empty{font-size:11px;color:#94a3b8;padding:4px 0}
 .an-agent-chart-line{fill:none;pointer-events:none}
 .an-agent-chart-dot{pointer-events:none}
