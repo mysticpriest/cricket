@@ -78,6 +78,11 @@ test('Modular subscriptions isolate offices, preserve existing access and enforc
     const officeId=mine.data.office.id;
     const bad=await http(origin,'/api/platform/offices/'+officeId+'/modules/communications',json('PATCH',{enabled:true},platform));
     assert.equal(bad.status,400,'Planned Connect cannot be enabled as a fake product');
+    const preventBrokenDependencies=await http(origin,
+      '/api/platform/offices/'+officeId+'/modules/case_management',
+      json('PATCH',{enabled:false},platform));
+    assert.equal(preventBrokenDependencies.status,409,
+      'Cannot disable required case storage while workflows and QC use it');
     const disableQc=await http(origin,'/api/platform/offices/'+officeId+'/modules/quality_control',
       json('PATCH',{enabled:false},platform));
     assert.equal(disableQc.status,200);
