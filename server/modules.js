@@ -9,7 +9,7 @@ const CATALOG=Object.freeze([
   {key:'team_hub',name:'Team Hub',description:'Existing announcements and basic colleague messages',status:'available',priceUsd:null,unit:'office'},
   {key:'workforce',name:'Workforce',description:'Shifts, schedules and live operations',status:'available',priceUsd:null,unit:'office'},
   {key:'staff_accounts',name:'Staff Accounts',description:'User seats and administrative controls',status:'core',priceUsd:100,unit:'seat'},
-  {key:'communications',name:'Cricket Connect',description:'Future standalone chat, voice/video and screen sharing',status:'planned',priceUsd:250,unit:'office'}
+  {key:'communications',name:'Cricket Connect',description:'Optional office messaging, one-to-one calls and screen sharing (development preview)',status:'available',priceUsd:250,unit:'office'}
 ]);
 const BY_KEY=new Map(CATALOG.map(m=>[m.key,m]));
 const ACCESS_PATHS=Object.freeze({
@@ -21,9 +21,11 @@ const ACCESS_PATHS=Object.freeze({
   '/office-workflow.js':'workflow_builder','/office-workflow.css':'workflow_builder',
   '/workflow-runner.html':'workflow_builder','/workflow-builder.html':'workflow_builder',
   '/team-hub.html':'team_hub','/workforce.html':'workforce',
-  '/operations.html':'workforce','/operations.js':'workforce','/operations.css':'workforce'
+  '/operations.html':'workforce','/operations.js':'workforce','/operations.css':'workforce',
+  '/connect.html':'communications','/connect.js':'communications','/connect.css':'communications'
 });
 function moduleForApi(p){
+  if(p.startsWith('/api/connect/'))return 'communications';
   if(p.startsWith('/api/ops/workflows'))return 'workflow_builder';
   if(p.startsWith('/api/ops/team'))return 'team_hub';
   if(p.startsWith('/api/ops/workforce'))return 'workforce';
@@ -51,7 +53,8 @@ function install(db){
 function ensureOffice(db,officeId){
   const stamp=new Date().toISOString();
   const insert=db.prepare('INSERT OR IGNORE INTO office_modules(office_id,module_key,enabled,updated_at) VALUES(?,?,?,?)');
-  for(const module of CATALOG)insert.run(officeId,module.key,module.status==='planned'?0:1,stamp);
+  for(const module of CATALOG)insert.run(officeId,module.key,
+    module.key==='communications'||module.status==='planned'?0:1,stamp);
   db.prepare("INSERT OR IGNORE INTO office_subscription_settings(office_id,seat_limit,billing_state,updated_at) VALUES(?,NULL,'preview',?)").run(officeId,stamp);
 }
 function has(db,officeId,key){
@@ -97,7 +100,7 @@ function requirePlatform(user){
   if(!user)fail(401,'Sign in required');
   if(user.role!=='platform_admin')fail(403,'Platform administration required');
 }
-async function route({p,req,res,user,db,send,readBody}){
+async function route({p,req,res,user,db,send,readBody,onModuleChange}){
   if(p==='/api/modules/me'&&req.method==='GET'){
     if(!user)fail(401,'Sign in required');
     if(!user.office?.id)fail(403,'Office account required');
@@ -140,6 +143,7 @@ async function route({p,req,res,user,db,send,readBody}){
     if(!updated.changes)fail(404,'Module not found for office');
     db.prepare('INSERT INTO platform_audit(admin_id,action,office_id,created_at) VALUES(?,?,?,?)')
       .run(user.id,body.enabled?'module_enabled:'+key:'module_disabled:'+key,officeId,new Date().toISOString());
+    if(typeof onModuleChange==='function')onModuleChange(officeId,key,body.enabled);
     return send(res,200,{officeId,...preview(db,officeId)});
   }
   if(action==='seats'&&req.method==='PATCH'){
