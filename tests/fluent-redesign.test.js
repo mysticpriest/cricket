@@ -52,6 +52,7 @@ function mock({role='agent',disabled=['team_hub','quality_control']}={}){
    constructor(tag){
      this.tagName=tag;this.children=[];this.attributes={};this.listeners={};
      this.dataset={};this.hidden=false;this.className='';
+     this.classList={contains:name=>this.className.split(/\s+/).includes(name)};
    }
    append(...nodes){this.children.push(...nodes);}
    prepend(...nodes){this.children.unshift(...nodes);}
