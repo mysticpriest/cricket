@@ -22,7 +22,8 @@ const ACCESS_PATHS=Object.freeze({
   '/workflow-runner.html':'workflow_builder','/workflow-builder.html':'workflow_builder',
   '/team-hub.html':'team_hub','/workforce.html':'workforce',
   '/operations.html':'workforce','/operations.js':'workforce','/operations.css':'workforce',
-  '/connect.html':'communications','/connect.js':'communications','/connect.css':'communications'
+  '/connect.html':'communications','/connect.js':'communications','/connect.css':'communications',
+  '/connect-alerts.js':'communications','/connect-alerts.css':'communications'
 });
 function moduleForApi(p){
   if(p.startsWith('/api/connect/'))return 'communications';
