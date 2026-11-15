@@ -65,7 +65,9 @@ function events(req,res,user,hasAccess){
   const current=streams.get(identity);current?.delete(res);
   if(current?.size===0){streams.delete(identity);tellOffice(office,{type:'presence',userId:id,online:false});}
  };
- req.on('close',close);res.on('close',close);res.on('error',close);
+ // The incoming HTTP request may complete immediately for a GET; only
+ // the streaming response's close event indicates a disconnected subscriber.
+ res.on('close',close);res.on('error',close);
  return true;
 }
 function disconnectOffice(office){
