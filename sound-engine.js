@@ -29,6 +29,21 @@
     shift:[
       {from:440,to:560,at:0,duration:.085,gain:.11,type:'sine'},
       {from:680,to:730,at:.10,duration:.11,gain:.10,type:'sine'}
+    ],
+    'connect-text':[
+      {from:750,to:910,at:0,duration:.095,gain:.10,type:'sine'},
+      {from:1050,to:1200,at:.12,duration:.13,gain:.08,type:'sine'}
+    ],
+    'connect-incoming':[
+      {from:680,to:750,at:0,duration:.32,gain:.18,type:'sine'},
+      {from:850,to:930,at:.36,duration:.36,gain:.15,type:'sine'}
+    ],
+    'connect-ringback':[
+      {from:410,to:450,at:0,duration:.35,gain:.13,type:'sine'},
+      {from:470,to:500,at:.39,duration:.35,gain:.12,type:'sine'}
+    ],
+    'connect-ended':[
+      {from:540,to:390,at:0,duration:.18,gain:.12,type:'sine'}
     ]
   });
   const NORMAL={enabled:true,volume:25};
@@ -40,8 +55,11 @@
     enabled:value?.enabled===true,
     volume:clamp(value?.volume)
   });
-  function contextForPlayback(){
-    if(!gesture||!ready||!settings.enabled||settings.volume===0||document.hidden)return null;
+  function contextForPlayback(type){
+    // Call and message alerts must remain audible when Cricket is in a
+    // background tab, subject to browser autoplay/OS notification policies.
+    const isAlert=['connect-text','connect-incoming','connect-ringback','connect-ended'].includes(type);
+    if(!gesture||!ready||!settings.enabled||settings.volume===0||(document.hidden&&!isAlert))return null;
     if(!context){
       const Audio=window.AudioContext||window.webkitAudioContext;
       if(typeof Audio!=='function')return null;
@@ -56,10 +74,11 @@
   function play(type){
     const parts=CUES[type];
     if(!parts)return false;
-    const ctx=contextForPlayback();
+    const ctx=contextForPlayback(type);
     if(!ctx)return false;
     const time=Date.now();
-    const limit=type==='notification'||type==='message'?3500:type==='click'||type==='navigate'?75:180;
+    const limit=type==='notification'||type==='message'?3500:type==='click'||type==='navigate'?75:
+      type==='connect-text'?600:type==='connect-incoming'||type==='connect-ringback'?1900:180;
     if(type===lastCue&&time-lastPlayed<limit)return false;
     lastCue=type;lastPlayed=time;
     const start=ctx.currentTime+.005;
