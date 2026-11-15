@@ -1059,7 +1059,7 @@ function processAPI(req, res, url) {
 
 /* Authenticated workspace files are protected on the server.
    Frontend role cards are only visual hints; this is the access boundary. */
-const PUBLIC_FILES = new Set(['/login.html','/login.js','/login.css','/workspace.css',
+const PUBLIC_FILES = new Set(['/login.html','/login.js','/login.css','/workspace.css','/fluent.css',
   '/office.html','/office.js','/office.css','/assets/neutrauma-logo.webp',
   '/assets/cricket-support.webp']);
 const PAGE_ROLES = new Map([
