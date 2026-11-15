@@ -64,8 +64,8 @@ if ($needsCertificate) {
         $plain=[Convert]::ToBase64String($bytes)
     } finally { $rng.Dispose() }
     $password=ConvertTo-SecureString $plain -AsPlainText -Force
-    Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $password | Out-Null
-    Export-Certificate -Cert $cert -FilePath $cerPath | Out-Null
+    Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $password -Force | Out-Null
+    Export-Certificate -Cert $cert -FilePath $cerPath -Force | Out-Null
     $password | ConvertFrom-SecureString | Set-Content -LiteralPath $secretPath -Encoding UTF8
     $LanIP | Set-Content -LiteralPath $ipPath -Encoding UTF8
     $plain=$null
@@ -103,7 +103,7 @@ $originalPort=$env:PORT
 $originalPfx=$env:CRICKET_TLS_PFX
 $originalPfxPass=$env:CRICKET_TLS_PFX_PASSWORD
 try {
-    $securePassword=Get-Content -LiteralPath $secretPath -Raw | ConvertTo-SecureString
+    $securePassword=Get-Content -LiteralPath $secretPath | ConvertTo-SecureString
     $bstr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
     try {
         $env:CRICKET_TLS_PFX_PASSWORD=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
